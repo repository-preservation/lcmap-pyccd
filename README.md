@@ -10,4 +10,6 @@ ATBD
 
 * Outliers are flagged and omitted from the regression fitting
 
-coefs[bands(7)][coeffs(8)]
+[Test Data](docs/TestData.md)
+
+[Reference Implementation](https://github.com/USGS-EROS/matlab-ccdc/blob/master/TrendSeasonalFit_v12_30ARDLine.m)
