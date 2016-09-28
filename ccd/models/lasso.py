@@ -1,10 +1,11 @@
 from sklearn import linear_model
 import numpy as np
 from functools import partial
+from functools import lru_cache
 
 
-def generate_coefficient_matrix(observation_dates):
-    """ c1 * sin(t/365.25) + c2 * cos(t/365.25) + c3*t + c4 * 1
+def coefficient_matrix(observation_dates):
+    """c1 * sin(t/365.25) + c2 * cos(t/365.25) + c3*t + c4 * 1
 
     Args:
         observation_dates: list of ordinal dates
@@ -24,6 +25,39 @@ def generate_coefficient_matrix(observation_dates):
     return matrix
 
 
-def initialize_model(coefficients, observations):
-    """ Return a model with coefficients ready for fitting """
-    return partial(linear_model.Lasso(alpha=0.1).fit(coefficients))
+@lru_cache(maxsize=128, typed=True)
+def partial_model(observation_dates):
+    """Return a partial model with coefficients ready for fitting.
+
+    Args:
+        observation_dates: tuple (or hashable collection) of ordinal dates
+
+    Returns:
+        Partial sklearn.linear_model.Lasso().fit(observation_dates)
+
+    Example:
+        pmodel = partial_model(observation_dates)
+
+        Then:
+        fitted_model = pmodel(observations)
+        fitted_model.predict(...)
+    """
+    lasso = linear_model.Lasso(alpha=0.1)
+    return partial(lasso.fit, coefficient_matrix(observation_dates))
+
+
+def fitted_model(observation_dates, observations):
+    """Create a fully fitted lasso model.
+
+    Args:
+        observation_dates: list or ordinal observation dates
+        observations: list of values corresponding to observation_dates
+
+    Returns:
+        sklearn.linear_model.Lasso().fit(observation_dates, observations)
+
+    Example:
+        fitted_model(dates, obs).predict(...)
+    """
+    pmodel = partial_model(observation_dates)
+    return pmodel(observations)

@@ -13,28 +13,37 @@
 ## Purpose
 pyccd exists to provide the simplest possible implementation of ccd.
 
+## System Requirements
+python3-dev (ubuntu) or python3-devel (centos) for scikit-learn
+
 ## Performance TODO
 * optimize data structures (numpy)
 * use pypy
 * employ @lrucache
 
-## Developing
+## Getting Started
 It's highly recommended to create a virtual environment to perform all
-your development.
+your development and testing.
 ```bash
-$ cd pyccd
-$ virtualenv -p python3 .
+user@dev:/home/user/$ mkdir pyccd
+user@dev:/home/user/$ cd pyccd
+user@dev:/home/user/pyccd$ virtualenv -p python3 .venv
+user@dev:/home/user/pyccd$ . .venv/bin/activate
+(.venv) user@dev:/home/user/pyccd$
 ```
-
-Pull down this code.
+### Get the code
 ```bash
-$ cd pyccd
-$ git clone https://github.com/davidvhill/pyccd.py
+(.venv) user@dev:/home/user/pyccd$ git clone https://github.com/davidvhill/pyccd.py
 ```
-
-## Testing
+### Developing
+Install development dependencies.
 ```bash
-$ python setup.py test
+(.venv) user@dev:/home/user/pyccd$ pip install -e .[dev]
+```
+### Testing
+```bash
+(.venv) user@dev:/home/user/pyccd$ pip install -e .[test]
+(.venv) user@dev:/home/user/pyccd$ python setup.py test
 ```
 ## References
 

@@ -1,6 +1,6 @@
 
 # Always prefer setuptools over distutils
-from setuptools import setup, find_packages
+from setuptools import setup
 # To use a consistent encoding
 from codecs import open
 from os import path
@@ -71,19 +71,21 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['click', 'scikit-learn'],
+    install_requires=['scikit-learn>=0.17.1',
+                      'scipy',
+                      'numpy>=1.6'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
     # for example:
     # $ pip install -e .[dev,test]
     extras_require={
-        'dev': ['check-manifest'],
-        'test': ['pytest', 'coverage', 'scikit-learn'],
+        'dev': [],
+        'test': ['coverage>=4.2', 'pytest>=3.0.2'],
     },
 
-    setup_requires=['pytest-runner'],
-    tests_require=['pytest', ],
+    setup_requires=['pytest-runner', 'pip'],
+    tests_require=[],
 
     # If there are data files included in your packages that need to be
     # installed, specify them here.  If using Python 2.6 or less, then these
