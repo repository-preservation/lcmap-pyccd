@@ -1,4 +1,4 @@
-# PYCCD - Python Continuous Change Detection
+# PyCCD - Python Continuous Change Detection
 
 ## Purpose
 pyccd exists to provide the simplest possible implementation of ccd.
