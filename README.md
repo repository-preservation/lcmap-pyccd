@@ -10,6 +10,26 @@
 
 * Outliers are flagged and omitted from the regression fitting
 
-[Test Data](docs/TestData.md)
 
+
+## Developing
+It's highly recommended to create a virtual environment to perform all
+your development.
+```bash
+$ cd pyccd
+$ virtualenv -p python3 .
+```
+
+Pull down this code.
+```bash
+$ cd pyccd
+$ git clone https://github.com/davidvhill/pyccd.py
+```
+
+## Testing
+```bash
+$ python setup.py test
+```
+
+[Test Data](docs/TestData.md)
 [Reference Implementation](https://github.com/USGS-EROS/matlab-ccdc/blob/master/TrendSeasonalFit_v12_30ARDLine.m)

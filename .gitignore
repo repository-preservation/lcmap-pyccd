@@ -1,0 +1,8 @@
+.cache/
+*.eggs/*
+bin/
+include/
+lib/
+pyccd.egg-info/*
+share/
+pip-selfcheck.json
