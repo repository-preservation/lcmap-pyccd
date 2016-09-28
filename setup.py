@@ -81,7 +81,7 @@ setup(
     # $ pip install -e .[dev,test]
     extras_require={
         'dev': [],
-        'test': ['coverage>=4.2', 'pytest>=3.0.2'],
+        'test': ['coverage>=4.2', 'pytest>=3.0.2', 'aniso8601>=1.1.0'],
     },
 
     setup_requires=['pytest-runner', 'pip'],
