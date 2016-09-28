@@ -29,7 +29,16 @@ Install development dependencies.
 Install test dependencies.
 ```bash
 (.venv) user@dev:/home/user/pyccd$ pip install -e .[test]
+```
+
+Run the tests.
+```bash
 (.venv) user@dev:/home/user/pyccd$ python setup.py test
+```
+
+Alternatively.
+```bash
+(.venv) user@dev:/home/user/pyccd$ pytest
 ```
 
 ## Performance TODO
