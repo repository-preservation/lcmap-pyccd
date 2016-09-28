@@ -16,11 +16,6 @@ pyccd exists to provide the simplest possible implementation of ccd.
 ## System Requirements
 python3-dev (ubuntu) or python3-devel (centos) for sklearn
 
-## Performance TODO
-* optimize data structures (numpy)
-* use pypy
-* employ @lrucache
-
 ## Getting Started
 It's highly recommended to create a virtual environment to perform all
 your development and testing.
@@ -46,6 +41,12 @@ Install test dependencies.
 (.venv) user@dev:/home/user/pyccd$ pip install -e .[test]
 (.venv) user@dev:/home/user/pyccd$ python setup.py test
 ```
+
+## Performance TODO
+* optimize data structures (numpy)
+* use pypy
+* employ @lrucache
+
 ## References
 
 ### [Test Data](docs/TestData.md)
