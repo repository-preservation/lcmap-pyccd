@@ -3,6 +3,14 @@ import aniso8601
 import datetime
 import numpy as np
 
+<<<<<<< HEAD
+=======
+from ccd.models import lasso
+from itertools import cycle, islice
+
+
+# Test data generators for change detection.
+>>>>>>> 0410a69a941268c57f979bf61daf24f551ba9e20
 
 def gen_acquisition_dates(interval):
     """Generate acquisition dates for an ISO8601 interval.
@@ -37,6 +45,14 @@ def gen_acquisition_delta(interval):
     yield [(date-epoch).days for date in dates]
 
 
+<<<<<<< HEAD
+=======
+def read_csv_sample(path):
+    """Load a sample file containing acquisition days and spectral values"""
+    return np.genfromtxt('test/resources/sample_1.csv', delimiter=',')
+
+
+>>>>>>> 0410a69a941268c57f979bf61daf24f551ba9e20
 def acquisition_delta(interval):
     """ List of delta in days for an interval """
     return list(*gen_acquisition_delta(interval))
