@@ -14,7 +14,7 @@
 pyccd exists to provide the simplest possible implementation of ccd.
 
 ## System Requirements
-python3-dev (ubuntu) or python3-devel (centos) for scikit-learn
+python3-dev (ubuntu) or python3-devel (centos) for sklearn
 
 ## Performance TODO
 * optimize data structures (numpy)
