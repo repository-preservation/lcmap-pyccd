@@ -1,9 +1,10 @@
 from collections import namedtuple
-""" Comprehensive data model of the domain is captured in detections,
+"""Comprehensive data model of the domain is captured in detections,
 observation and observations.  Do not modify these data models unless the
 actual domain changes.  Data filtering & transformation should take place
 in another module AFTER the functions in change.py have run... as
-post-processing steps """
+post-processing steps
+"""
 # this and all other parameters for the model go into ~/.config/ccd_config.py
 # minimum_clear_observation_count = 12
 #
@@ -53,5 +54,6 @@ def regress(observation):
 
 
 def detect(observations):
-    """Runs the core ccd algorithm to detect change in the supplied data"""
+    """Runs the core ccd algorithm to detect change in the supplied data
+    """
     [regress(o) for o in sorted(observations, reverse=True)]
