@@ -71,7 +71,7 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['click', ],
+    install_requires=['click', 'scikit-learn'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
@@ -79,7 +79,7 @@ setup(
     # $ pip install -e .[dev,test]
     extras_require={
         'dev': ['check-manifest'],
-        'test': ['pytest', 'coverage'],
+        'test': ['pytest', 'coverage', 'scikit-learn'],
     },
 
     setup_requires=['pytest-runner'],
