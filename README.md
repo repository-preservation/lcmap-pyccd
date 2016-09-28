@@ -33,7 +33,7 @@ user@dev:/home/user/pyccd$ . .venv/bin/activate
 ```
 ### Get the code
 ```bash
-(.venv) user@dev:/home/user/pyccd$ git clone https://github.com/davidvhill/pyccd.py
+(.venv) user@dev:/home/user/pyccd$ git clone https://github.com/davidvhill/pyccd.git
 ```
 ### Developing
 Install development dependencies.
@@ -41,6 +41,7 @@ Install development dependencies.
 (.venv) user@dev:/home/user/pyccd$ pip install -e .[dev]
 ```
 ### Testing
+Install test dependencies.
 ```bash
 (.venv) user@dev:/home/user/pyccd$ pip install -e .[test]
 (.venv) user@dev:/home/user/pyccd$ python setup.py test
