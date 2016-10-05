@@ -15,6 +15,8 @@ from Flask.
 """
 import logging
 import sys
+from cachetools import LRUCache
+
 
 ############################
 # Logging system
@@ -23,7 +25,8 @@ import sys
 # import app
 # logger = app.logging.getLogger(__name__)
 #
-# To alter where log messages go or how they are represented, configure the
+# To alter where log messages go or how they are represented,
+# configure the
 # logging system below.
 # iso8601 date format
 
@@ -32,6 +35,8 @@ logging.basicConfig(stream=sys.stdout,
                     format='%(asctime)s %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
 
+# configure caching
+cache = LRUCache(maxsize=2000)
 
 ############################
 # Global configuration items
@@ -44,6 +49,10 @@ COEFFICIENT_CATEGORIES = {'min': 4, 'mid': 6, 'max': 8}
 # number of clear observation / number of coefficients
 CLEAR_OBSERVATION_THRESHOLD = 3
 
-QA_CONFIDENCE_FAILURE_THRESHOLD = 0.25
+CLEAR_OBSERVATION_PCT = 0.25
 
 PERMANENT_SNOW_THRESHOLD = 0.75
+
+CHANGE_PROBABILITY = 1
+
+FILL_VALUE = 255
