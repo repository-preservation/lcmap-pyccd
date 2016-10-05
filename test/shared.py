@@ -12,4 +12,4 @@ def read_data(path):
     Returns:
         A 2D numpy array.
     """
-    return np.genfromtxt(path, delimiter=',', dtype=np.int)
+    return np.genfromtxt(path, delimiter=',', dtype=np.int).T

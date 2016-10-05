@@ -74,12 +74,12 @@ def unsaturated_index(observations):
     # TODO (jmorton) Is there a more concise way to provide this function
     #      without being explicit about the expected dimensionality of the
     #      observations?
-    unsaturated = ((0 < xs[:,1]) & (xs[:,1] < 10000) &
-                   (0 < xs[:,2]) & (xs[:,2] < 10000) &
-                   (0 < xs[:,3]) & (xs[:,3] < 10000) &
-                   (0 < xs[:,4]) & (xs[:,4] < 10000) &
-                   (0 < xs[:,5]) & (xs[:,5] < 10000) &
-                   (0 < xs[:,6]) & (xs[:,6] < 10000))
+    unsaturated = ((0 < xs[1,:]) & (xs[1,:] < 10000) &
+                   (0 < xs[2,:]) & (xs[2,:] < 10000) &
+                   (0 < xs[3,:]) & (xs[3,:] < 10000) &
+                   (0 < xs[4:,]) & (xs[4,:] < 10000) &
+                   (0 < xs[5:,]) & (xs[5,:] < 10000) &
+                   (0 < xs[6:,]) & (xs[6,:] < 10000))
     return unsaturated
 
 
