@@ -1,14 +1,25 @@
 # PyCCD - Python Continuous Change Detection
-
-## Purpose
 pyccd exists to provide the simplest possible implementation of ccd.
 
-## System Requirements
-python3-dev (ubuntu) or python3-devel (centos) for sklearn
+## Using PyCCD
+```python
+insert python usage here
+...
+...
+...
+...
+...
+```
 
-## Getting Started
-It's highly recommended to create a virtual environment to perform all
-your development and testing.
+## Installing
+System requirements for PyCCD
+* python3-dev (ubuntu) or python3-devel (centos)
+* gfortran
+* libopenblas-dev
+* liblapack-dev
+* graphviz
+
+It's highly recommended to do all your development & testing in a virtual environment.
 ```bash
 user@dev:/home/user/$ mkdir pyccd
 user@dev:/home/user/$ cd pyccd
@@ -16,35 +27,39 @@ user@dev:/home/user/pyccd$ virtualenv -p python3 .venv
 user@dev:/home/user/pyccd$ . .venv/bin/activate
 (.venv) user@dev:/home/user/pyccd$
 ```
-### Get the code
+
+The rest of the command prompts are truncated to ```$``` for readability, but assume an activated virtual environment and pwd as above, or that you know what you are doing.
+
+##### Clone the repo
 ```bash
-(.venv) user@dev:/home/user/pyccd$ git clone https://github.com/davidvhill/pyccd.git
-```
-### Developing
-Install development dependencies.
-```bash
-(.venv) user@dev:/home/user/pyccd$ pip install -e .[dev]
-```
-### Testing
-Install test dependencies.
-```bash
-(.venv) user@dev:/home/user/pyccd$ pip install -e .[test]
+$ git clone https://github.com/davidvhill/pyccd.git
 ```
 
-Run the tests.
+##### Install test dependencies
 ```bash
-(.venv) user@dev:/home/user/pyccd$ python setup.py test
+$ pip install -e .[test]
 ```
 
-Alternatively.
+## Testing & Running
 ```bash
-(.venv) user@dev:/home/user/pyccd$ pytest
+$ pytest
+$ pytest --profile
+$ pytest --profile-svg
 ```
 
-## Performance TODO
-* optimize data structures (numpy)
-* use pypy
-* employ @lrucache
+##### Running via command-line
+```bash
+$ python ./ccd/cli.py
+$ pyccd
+```
+
+## Contributing
+Contributions to pyccd are most welcome, just be sure to thoroughly review the guidelines first.
+
+[Contributing](docs/CONTRIBUTING.md)
+
+[Developers Guide](docs/DEVELOPING.md)
+
 
 ## References
 
@@ -57,15 +72,11 @@ Alternatively.
    and a new regression model is started.
 5. If next three observations are not outside the range, an outlier has
     has been detected.
-
 * Outliers are flagged and omitted from the regression fitting
 
-### [Test Data](docs/TestData.md)
-
-### [Reference Implementation](https://github.com/USGS-EROS/matlab-ccdc/blob/master/TrendSeasonalFit_v12_30ARDLine.m)
-
-### [Landsat Band Specifications](http://landsat.usgs.gov/band_designations_landsat_satellites.php)
-
-### [Landsat 8 Surface Reflectance Specs](http://landsat.usgs.gov/documents/provisional_lasrc_product_guide.pdf)
-
-### [Landsat 4-7 Surface Reflectance Specs](http://landsat.usgs.gov/documents/cdr_sr_product_guide.pdf)
+Links
+* [Test Data](docs/TestData.md)
+* [Reference Implementation](https://github.com/USGS-EROS/matlab-ccdc/blob/master/TrendSeasonalFit_v12_30ARDLine.m)
+* [Landsat Band Specifications](http://landsat.usgs.gov/band_designations_landsat_satellites.php)
+* [Landsat 8 Surface Reflectance Specs](http://landsat.usgs.gov/documents/provisional_lasrc_product_guide.pdf)
+* [Landsat 4-7 Surface Reflectance Specs](http://landsat.usgs.gov/documents/cdr_sr_product_guide.pdf)

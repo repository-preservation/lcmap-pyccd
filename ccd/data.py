@@ -1,9 +1,6 @@
-""" Functions necessary to prepare data for change.detect() """
+""" General data functions """
 
 
-def is_clear():
-    pass
-
-
-def is_snow():
-    pass
+def nomodel(ccd_results):
+   """Removes models from ccd_results"""
+   return ccd_results._replace(mod)

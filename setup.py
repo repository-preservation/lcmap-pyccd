@@ -73,15 +73,19 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=['scikit-learn>=0.17.1',
                       'scipy',
-                      'numpy>=1.6'],
+                      'numpy>=1.6',
+                      'cachetools>=2.0.0',
+                      'click',
+                      'click-plugins>=1.0.3'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
     # for example:
     # $ pip install -e .[dev,test]
     extras_require={
-        'dev': [],
-        'test': ['coverage>=4.2', 'pytest>=3.0.2', 'aniso8601>=1.1.0'],
+        'test': ['flake8', 'pytest-profiling>=1.1.1',
+                 'coverage>=4.2', 'pytest>=3.0.2',
+                 'aniso8601>=1.1.0', 'gprof2dot'],
     },
 
     setup_requires=['pytest-runner', 'pip'],
@@ -103,9 +107,10 @@ setup(
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow
     # pip to create the appropriate form of executable for the target platform.
-    entry_points={
-        'console_scripts': [
-            'ccd=cli:main',
-        ],
-    },
+    # entry_points={'console_scripts': ['pyccd-detect=ccd.cli:detect', ], },
+    entry_points='''
+        [core_package.cli_plugins]
+        subcommand=ccd.cli:subcommand
+        another_subcommand=ccd.cli:another_subcommand
+    ''',
 )

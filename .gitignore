@@ -1,5 +1,6 @@
+prof/*
 .cache/
-*.eggs/*
+*.egg*
 pyccd.egg-info/*
 pip-selfcheck.json
 *.pyc
