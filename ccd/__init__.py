@@ -5,7 +5,7 @@ import numpy as np
 from ccd import app
 import importlib
 
-logger = app.logger.getLogger('ccd')
+logger = app.logging.getLogger('ccd')
 
 """
 observation = namedtuple('Observation', ['coastal_aerosol', 'red', 'green',
