@@ -1,6 +1,7 @@
 """Filters for pre-processing change model inputs.
 """
 
+
 def enough_clear(qa):
     """ some % of clear vs not clear """
     pass
@@ -26,12 +27,9 @@ def are_saturated(pixels):
     pass
 
 
-def celsius_to_kelvin(val):
-    pass
-
-
 def filter_out_of_range_specta(spectrum):
-    """ 0 to 10000 for all bands but thermal.  Thermal is -93.2 to 70.7 """
+    """ 0 to 10000 for all bands but thermal.  Thermal is -93.2C to 70.7C
+    179.95K -- 343.85K """
     pass
 
 
@@ -75,4 +73,6 @@ def categorize(qa):
 
     """
 
+
+def preprocess(matrix):
     pass
