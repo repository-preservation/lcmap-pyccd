@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """ Main bootstrap and configuration module for pyccd.  Any module that
 requires configuration or services should import app and obtain the
 configuration or service from here.
@@ -56,3 +54,12 @@ PERMANENT_SNOW_THRESHOLD = 0.75
 CHANGE_PROBABILITY = 1
 
 FILL_VALUE = 255
+
+MEOW_SIZE = 16
+
+PEEK_SIZE = 3
+
+# This is a string.fully.qualified.reference to the fitter function.
+# Cannot import and supply the function directly or we'll get a
+# circular dependency
+FITTER_FN = 'ccd.models.lasso.fitted_model'
