@@ -1,14 +1,56 @@
 """Filters for pre-processing change model inputs.
+
+This module currently uses explicit values from the Landsat CFMask:
+
+    - 0: clear
+    - 1: water
+    - 2: cloud_shadow
+    - 3: snow
+    - 4: cloud
+    - 255: fill
 """
+
+import numpy as np
+
+
+def count_clear_or_water(qa):
+    """Count clear or water data"""
+    return qa[(qa < 2)].shape[0]
+
+
+def count_fill(qa):
+    """Count fill data"""
+    fill = 255
+    return qa[(qa == fill)].shape[0]
+
+
+def count_snow(qa):
+    """Count snow data"""
+    snow = 4
+    return qa[(qa == snow)].shape[0]
+
+
+def count_total(qa):
+    """Count non-fill data"""
+    fill = 255
+    return qa[(qa != fill)].shape[0]
 
 
 def ratio_clear(qa):
     """Calculate ratio of clear to non-clear pixels; exclude, fill data."""
     # TODO (jmorton) Verify; does the ratio exclude fill data?
-    fill = 255
-    clear_count = qa[(qa < 2)].shape[0]
-    total_count = qa[(qa < fill)].shape[0]
+    clear_count = count_clear_or_water(qa)
+    total_count = count_total(qa)
     return clear_count / total_count
+
+
+def ratio_snow(qa):
+    """Calculate ratio of snow to clear pixels; exclude fill and non-clear data."""
+    # TODO (jmorton) Verify; does the ratio exclude fill?
+    # TODO (jmorton) Do we need to add 0.01 to the result like the Matlab version?
+    snowy_count = count_snow(qa)
+    clear_count = count_clear_or_water(qa)
+    return snowy_count / (clear_count+snowy_count)
 
 
 def enough_clear(qa, threshold):
@@ -16,16 +58,6 @@ def enough_clear(qa, threshold):
 
     Useful when selecting mathematical model for detection."""
     return ratio_clear(qa) >= threshold
-
-
-def ratio_snow(qa):
-    """Calculate ratio of snow to clear pixels; exclude fill and non-clear data."""
-    # TODO (jmorton) Verify; does the ratio exclude fill?
-    # TODO (jmorton) Do we need to add 0.01 to the result like the Matlab version?
-    snow = 4
-    snowy_count = qa[(qa == snow)].shape[0]
-    clear_count = qa[(qa < 2)].shape[0]
-    return snowy_count / (total_count+snowy_count)
 
 
 def enough_snow(qa, threshold):
@@ -52,9 +84,8 @@ def unsaturated_index(observations):
 
 
 def temperature_index(observations):
-    """ 0 to 10000 for all bands but thermal.  Thermal is -93.2C to 70.7C
+    """0 to 10000 for all bands but thermal.  Thermal is -93.2C to 70.7C
     179.95K -- 343.85K """
-    # Temperature check.
     # TODO (jmorton) These are parameters and should not be hard-coded.
     min_kelvin, max_kelvin = 179.95, 343.85
     temperature_index = ((min_kelvin <= observations[:,7])&
