@@ -3,12 +3,47 @@ pyccd exists to provide the simplest possible implementation of ccd.
 
 ## Using PyCCD
 ```python
-insert python usage here
-...
-...
-...
-...
-...
+>>> import ccd
+>>> results = ccd.detect(dates, reds, greens, blues, nirs, swir1s, swir2s, thermals, qas)
+>>> 
+>>> type(results)
+tuple
+>>> type(results[0])
+collections.namedtuple
+>>>
+>>> results[0]
+(
+            (start_time: int, end_time: int, observation_count int,
+             red:     (magnitudes: float,
+                       rmse: float,
+                       coefficients: (float, float, ...),
+                       intercept: float),
+             green:   (magnitudes: float,
+                       rmse: float,
+                       coefficients: (float, float, ...),
+                       intercept: float),
+             blue:    (magnitudes: float,
+                       rmse: float,
+                       coefficients: (float, float, ...),
+                       intercept: float),
+             nir:     (magnitudes: float,
+                       rmse: float,
+                       coefficients: (float, float, ...),
+                       intercept: float),
+             swir1:   (magnitudes: float,
+                       rmse: float,
+                       coefficients: (float, float, ...),
+                       intercept: float),
+             swir2:   (magnitudes: float,
+                       rmse: float,
+                       coefficients: (float, float, ...),
+                       intercept: float),
+             thermal: (magnitudes: float,
+                       rmse: float,
+                       coefficients: (float, float, ...),
+                       intercept: float)
+            ),
+        )
 ```
 
 ## Installing
