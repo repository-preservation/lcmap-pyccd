@@ -8,6 +8,7 @@ pyccd exists to provide the simplest possible implementation of ccd.
 >>> 
 >>> type(results)
 tuple
+>>>
 >>> type(results[0])
 collections.namedtuple
 >>>
