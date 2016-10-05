@@ -83,14 +83,18 @@ def unsaturated_index(observations):
     return unsaturated
 
 
-def temperature_index(observations):
-    """0 to 10000 for all bands but thermal.  Thermal is -93.2C to 70.7C
-    179.95K -- 343.85K """
-    # TODO (jmorton) These are parameters and should not be hard-coded.
-    min_kelvin, max_kelvin = 179.95, 343.85
-    temperature_index = ((min_kelvin <= observations[:,7])&
-                         (observations[:,7] <= max_kelvin))
-    return temperature_index
+def temperature_index(observations, min_kelvin=179.95, max_kelvin=343.85):
+    """Provide an index of observations within a brightness temperature range.
+
+    Thermal min/max must be provided as an unscaled value in Kelvin, the same
+    units as observed data.
+
+    For reference, the range in degrees celsius is: [-93.2C,70.7C]
+    """
+    min_kelvin *= 10
+    max_kelvin *= 10
+    return ((min_kelvin <= observations[7,:])&
+            (observations[7,:] <= max_kelvin))
 
 
 def categorize(qa):

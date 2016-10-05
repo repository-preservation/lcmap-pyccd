@@ -84,3 +84,11 @@ def test_sample_2_ratio_clear():
     qa = data[8,:]
     ratio = ratio_clear(qa)
     assert ratio == pytest.approx(0.662, rel=1e-2)
+
+def test_sample_2_exercise_temperature_index():
+    # This sample data does not have any thermal values that
+    # are outside the threshold... this test still serves
+    # a purpose though.
+    data = shared.read_data("test/resources/sample_2.csv")
+    index = temperature_index(data)
+    assert data[:,index].shape == (9,724)
