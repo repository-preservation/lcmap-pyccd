@@ -13,73 +13,142 @@ This module currently uses explicit values from the Landsat CFMask:
 import numpy as np
 
 
-def count_clear_or_water(qa):
-    """Count clear or water data"""
-    return qa[(qa < 2)].shape[0]
+def count_clear_or_water(quality):
+    """Count clear or water data.
+
+    Arguments:
+        quality: CFMask quality band values.
+
+    Returns:
+        integer: number of clear or water observation implied by QA data.
+    """
+    return quality[(quality < 2)].shape[0]
 
 
-def count_fill(qa):
-    """Count fill data"""
+def count_fill(quality):
+    """Count fill data.
+
+    Arguments:
+        quality: CFMask quality band values.
+
+    Returns:
+        integer: number of filled observation implied by QA data.
+    """
     fill = 255
-    return qa[(qa == fill)].shape[0]
+    return quality[(quality == fill)].shape[0]
 
 
-def count_snow(qa):
-    """Count snow data"""
+def count_snow(quality):
+    """Count snow data.
+
+    Useful for determining ratio of snow:clear pixels.
+
+    Arguments:
+        quality: CFMask quality band values.
+
+    Returns:
+        integer: number of snow pixels implied by QA data
+    """
     snow = 4
-    return qa[(qa == snow)].shape[0]
+    return quality[(quality == snow)].shape[0]
 
 
-def count_total(qa):
-    """Count non-fill data"""
+def count_total(quality):
+    """Count non-fill data.
+
+    Useful for determining ratio of clear:total pixels.
+
+    Arguments:
+        quality: CFMask quality band values.
+
+    Returns:
+        integer: number of non-fill pixels implied by QA data.
+    """
     fill = 255
-    return qa[(qa != fill)].shape[0]
+    return quality[(quality != fill)].shape[0]
 
 
-def ratio_clear(qa):
-    """Calculate ratio of clear to non-clear pixels; exclude, fill data."""
+def ratio_clear(quality):
+    """Calculate ratio of clear to non-clear pixels; exclude, fill data.
+
+    Useful for determining ratio of clear:total pixels.
+
+    Arguments:
+        quality: CFMask quality band values.
+
+    Returns:
+        integer: number of non-fill pixels implied by QA data.
+    """
     # TODO (jmorton) Verify; does the ratio exclude fill data?
-    clear_count = count_clear_or_water(qa)
-    total_count = count_total(qa)
+    clear_count = count_clear_or_water(quality)
+    total_count = count_total(quality)
     return clear_count / total_count
 
 
-def ratio_snow(qa):
-    """Calculate ratio of snow to clear pixels; exclude fill and non-clear data."""
+def ratio_snow(quality):
+    """Calculate ratio of snow to clear pixels; exclude fill and non-clear data.
+
+    Useful for determining ratio of snow:clear pixels.
+
+    Arguments:
+        quality: CFMask quality band values.
+
+    Returns:
+        float: Value between zero and one indicating amount of snow-observations.
+    """
     # TODO (jmorton) Verify; does the ratio exclude fill?
     # TODO (jmorton) Do we need to add 0.01 to the result like the Matlab version?
-    snowy_count = count_snow(qa)
-    clear_count = count_clear_or_water(qa)
+    snowy_count = count_snow(quality)
+    clear_count = count_clear_or_water(quality)
     return snowy_count / (clear_count+snowy_count)
 
 
-def enough_clear(qa, threshold):
+def enough_clear(quality, threshold = 0.25):
     """Determine if clear observations exceed threshold.
 
-    Useful when selecting mathematical model for detection."""
-    return ratio_clear(qa) >= threshold
+    Useful when selecting mathematical model for detection. More clear observations
+    allow for models with more coefficients.
+
+    Arguments:
+        quality: CFMask quality band values.
+        threshold: minimum ratio of clear/water to not-clear/water values.
+
+    Returns:
+        float: Value between zero and one indicating amount of snow-observations.
+    """
+    return ratio_clear(quality) >= threshold
 
 
-def enough_snow(qa, threshold):
+def enough_snow(quality, threshold = 0.75):
     """Determine if snow observations exceed threshold.
 
+    Arguments:
+        quality: CFMask quality band values.
+        threshold: minimum ratio of snow to clear/water values.
+
     Useful when selecting detection algorithm."""
-    return ratio_snow(qa) >= threshold
+    return ratio_snow(quality) >= threshold
 
 
 def unsaturated_index(observations):
     """Produce bool index for observations that are unsaturated (values between 0..10,000)
 
-    Useful for efficiently filtering nd arrays."""
+    Useful for efficiently filtering noisy-data from arrays.
+
+    Arguments:
+        observations: time/spectra/qa major nd-array, assumed to be shaped as
+            (9,n-moments) of unscaled data.
+
+    """
     # TODO (jmorton) Is there a more concise way to provide this function
     #      without being explicit about the expected dimensionality of the
     #      observations?
-    unsaturated = ((0 < xs[1,:]) & (xs[1,:] < 10000) &
-                   (0 < xs[2,:]) & (xs[2,:] < 10000) &
-                   (0 < xs[3,:]) & (xs[3,:] < 10000) &
-                   (0 < xs[4:,]) & (xs[4,:] < 10000) &
-                   (0 < xs[5:,]) & (xs[5,:] < 10000) &
-                   (0 < xs[6:,]) & (xs[6,:] < 10000))
+    unsaturated = ((0 < observations[1,:]) & (observations[1,:] < 10000) &
+                   (0 < observations[2,:]) & (observations[2,:] < 10000) &
+                   (0 < observations[3,:]) & (observations[3,:] < 10000) &
+                   (0 < observations[4:,]) & (observations[4,:] < 10000) &
+                   (0 < observations[5:,]) & (observations[5,:] < 10000) &
+                   (0 < observations[6:,]) & (observations[6,:] < 10000))
     return unsaturated
 
 
@@ -89,7 +158,15 @@ def temperature_index(observations, min_kelvin=179.95, max_kelvin=343.85):
     Thermal min/max must be provided as an unscaled value in Kelvin, the same
     units as observed data.
 
-    For reference, the range in degrees celsius is: [-93.2C,70.7C]
+    The range in degrees celsius is [-93.2C,70.7C]
+
+    Arguments:
+        observations: time/spectra/qa major nd-array, assumed to be shaped as
+            (9,n-moments) of unscaled data.
+        min_kelvin: minimum temperature in degrees kelvin, by default 179.95K,
+            -93.2C.
+        max_kelvin: maximum temperature in degrees kelvin, by default 343.85K,
+            70.7C.
     """
     min_kelvin *= 10
     max_kelvin *= 10
