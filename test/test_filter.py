@@ -92,3 +92,8 @@ def test_sample_2_exercise_temperature_index():
     data = shared.read_data("test/resources/sample_2.csv")
     index = temperature_index(data)
     assert data[:,index].shape == (9,724)
+
+def test_sample_2_preprocessing():
+    data = shared.read_data("test/resources/sample_2.csv")
+    meow = preprocess(data)
+    assert meow.shape == (9,477), meow.shape

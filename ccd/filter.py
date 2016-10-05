@@ -130,6 +130,10 @@ def enough_snow(quality, threshold = 0.75):
     return ratio_snow(quality) >= threshold
 
 
+def clear_index(observations):
+    return (observations[8,:] < 2)
+
+
 def unsaturated_index(observations):
     """Produce bool index for observations that are unsaturated (values between 0..10,000)
 
@@ -146,9 +150,9 @@ def unsaturated_index(observations):
     unsaturated = ((0 < observations[1,:]) & (observations[1,:] < 10000) &
                    (0 < observations[2,:]) & (observations[2,:] < 10000) &
                    (0 < observations[3,:]) & (observations[3,:] < 10000) &
-                   (0 < observations[4:,]) & (observations[4,:] < 10000) &
-                   (0 < observations[5:,]) & (observations[5,:] < 10000) &
-                   (0 < observations[6:,]) & (observations[6,:] < 10000))
+                   (0 < observations[4,:]) & (observations[4,:] < 10000) &
+                   (0 < observations[5,:]) & (observations[5,:] < 10000) &
+                   (0 < observations[6,:]) & (observations[6,:] < 10000))
     return unsaturated
 
 
@@ -190,10 +194,12 @@ def categorize(qa):
 
     ELSE
         DO NORMAL CHANGE DETECTION
-
-
     """
-
+    pass
 
 def preprocess(matrix):
-    pass
+    """Filter matrix for clear pixels that fall within temperature and saturation thresholds."""
+    criteria = (clear_index(matrix)
+                & temperature_index(matrix)
+                & unsaturated_index(matrix))
+    return matrix[:, criteria]
