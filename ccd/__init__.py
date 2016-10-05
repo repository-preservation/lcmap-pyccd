@@ -44,6 +44,71 @@ def attr_from_str(value, delimiter='.'):
         return None
 
 
+def __result_to_detection(change_tuple):
+    """Transforms results of change.detect to the detections namedtuple.
+
+    Args: A tuple as returned from change.detect
+            (start_time, end_time, models, errors_, magnitudes_)
+
+    Returns: A namedtuple representing a change detection
+
+        (start_time=int, end_time=int, observation_count=int,
+         red =     (magnitudes=float,
+                    rmse=float,
+                    coefficients=(float, float, ...),
+                    intercept=float),
+         green =   (magnitudes=float,
+                    rmse=float,
+                    coefficients=(float, float, ...),
+                    intercept=float),
+         blue =    (magnitudes=float,
+                    rmse=float,
+                    coefficients=(float, float, ...),
+                    intercept=float),
+         nir =     (magnitudes=float,
+                    rmse=float,
+                    coefficients=(float, float, ...),
+                    intercept=float),
+         swir1 =   (magnitudes=float,
+                    rmse=float,
+                    coefficients=(float, float, ...),
+                    intercept=float),
+         swir2 =   (magnitudes=float,
+                    rmse=float,
+                    coefficients=(float, float, ...),
+                    intercept=float),
+         thermal = (magnitudes=float,
+                    rmse=float,
+                    coefficients=(float, float, ...),
+                    intercept=float),
+        )
+    """
+    spectra = ((0, 'red'), (1, 'green'), (2, 'blue'), (3, 'nir'),
+               (4, 'swir1'), (5, 'swir2'), (6, 'thermal'))
+
+    # get the start and end time for each detection period
+    detection = {'start': change_tuple[0],
+                 'end': change_tuple[1],
+                 'observation_count': None,  # dummy value for now
+                 'category': None}           # dummy value for now
+
+    # gather the results for each spectra
+    for ix, name in spectra:
+        model, error, mags = change_tuple[2], change_tuple[3], change_tuple[4]
+
+        # build the inner band namedtuple and add to tmp detection dict()
+        _band = band(mags[ix],
+                     error[ix],
+                     model[ix].coefficients,
+                     model[ix].intercept_)
+
+        # assign _band to the tmp dict under key as specified in spectra tuple
+        detection[name] = _band
+
+    # build the namedtuple from the dict and return
+    return detections(**detection)
+
+
 def __as_detections(detect_tuple):
     """Transforms results of change.detect to the detections namedtuple.
 
@@ -56,40 +121,14 @@ def __as_detections(detect_tuple):
 
     Returns: A tuple of namedtuples representing change detections
         (
-            (start_time: int, end_time: int, observation_count int,
-             red:     (magnitudes: float,
-                       rmse: float,
-                       coefficients: (float, float, ...),
-                       intercept: float),
-             green:   (magnitudes: float,
-                       rmse: float,
-                       coefficients: (float, float, ...),
-                       intercept: float),
-             blue:    (magnitudes: float,
-                       rmse: float,
-                       coefficients: (float, float, ...),
-                       intercept: float),
-             nir:     (magnitudes: float,
-                       rmse: float,
-                       coefficients: (float, float, ...),
-                       intercept: float),
-             swir1:   (magnitudes: float,
-                       rmse: float,
-                       coefficients: (float, float, ...),
-                       intercept: float),
-             swir2:   (magnitudes: float,
-                       rmse: float,
-                       coefficients: (float, float, ...),
-                       intercept: float),
-             thermal: (magnitudes: float,
-                       rmse: float,
-                       coefficients: (float, float, ...),
-                       intercept: float)
-            ),
+            ccd.detections,
+            ccd.detections,
+            ccd.detections,
         )
     """
-
-    pass
+    # iterate over each detection, build the result and return as tuple of
+    # namedtuples
+    return (__result_to_detection(t) for t in detect_tuple)
 
 
 def __as_spectra(matrix):
