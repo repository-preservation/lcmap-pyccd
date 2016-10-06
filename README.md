@@ -88,6 +88,9 @@ $ pip install -e .[test]
 $ pytest
 $ pytest --profile
 $ pytest --profile-svg
+
+# pytest-watch
+$ ptw 
 ```
 
 ##### Running via command-line
