@@ -88,7 +88,8 @@ setup(
                  'coverage>=4.2',
                  'pytest>=3.0.2',
                  'pytest-profiling>=1.1.1',
-                 'gprof2dot>=2015.12.1'],
+                 'gprof2dot>=2015.12.1',
+                 'pytest-watch>=4.1.0'],
     },
 
     setup_requires=['pytest-runner', 'pip'],

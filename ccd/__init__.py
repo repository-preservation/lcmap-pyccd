@@ -26,7 +26,7 @@ detections = namedtuple("Detections", ['start_date', 'end_date',
                                        'category'])
 
 
-def attr_from_str(value, delimiter='.'):
+def attr_from_str(value):
     """Returns a reference to the full qualified function, attribute or class.
 
     Args:
@@ -35,7 +35,7 @@ def attr_from_str(value, delimiter='.'):
     Returns:
         A reference to the target attribute (e.g. fitted_model)
     """
-    module, target = value.rsplit(delimiter, 1)
+    module, target = value.rsplit('.', 1)
     try:
         obj = importlib.import_module(module)
         return getattr(obj, target)
