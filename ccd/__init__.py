@@ -114,9 +114,6 @@ def __as_detections(detect_tuple):
     """
     # iterate over each detection, build the result and return as tuple of
     # namedtuples
-    print("NUM DETECTIONS")
-    print(len(detect_tuple))
-
     return tuple([__result_to_detection(t) for t in detect_tuple])
 
 
