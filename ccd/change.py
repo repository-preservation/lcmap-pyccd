@@ -22,7 +22,7 @@ For more information please refer to the `CCDC Algorithm Description Document`_.
 
 import numpy as np
 from ccd.models import lasso
-
+from ccd.tmask import tmask
 
 def rmse(models, times, observations):
     """Calculate RMSE for all models; used to determine if models are stable.
@@ -225,6 +225,13 @@ def initialize(times, observations, fitter_fn, meow_ix, meow_size,
         end_ix = find_time_index(times, meow_ix, meow_size, day_delta)
         if end_ix is None:
             break
+
+        # Count outliers in the window, if there are too many outliers
+        # then try try again.
+        times_, observations_ = tmask(times, observations)
+        if (len(times_) < meow_size) or ((times_[-1] - times_[0]) < day_delta):
+            meow_ix += 1
+            continue
 
         # Each spectra, although analyzed independently, all share
         # a common time-frame. Consequently, it doesn't make sense
