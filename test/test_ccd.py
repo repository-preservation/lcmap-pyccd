@@ -1,66 +1,10 @@
-import aniso8601
-import datetime
 import numpy as np
-import ccd.change as change
+
+from shared import acquisition_delta
+from shared import sinusoid
 
 from ccd.models import lasso
-
-
-def gen_acquisition_dates(interval):
-    """Generate acquisition dates for an ISO8601 interval.
-
-    Args:
-        interval: An ISO8610 interval.
-
-    Returns:
-        generator producing datetime.date or datetime.datetime
-        depending on the resolution of the interval.
-
-    Example:
-        gen_acquisition_dates('R10/2015-01-01/P16D')
-    """
-    dates = aniso8601.parse_repeating_interval(interval)
-    return dates
-
-
-def gen_acquisition_delta(interval):
-    """Generate delta in days for an acquisition day since 1970-01-01.
-
-    Args:
-        interval: ISO8601 date range
-
-    Returns:
-        generator producing delta in days from 1970-01-01
-
-    Example:
-        gen_acquisition_delta('R90/P16D/2000-01-01')
-    """
-    epoch = datetime.datetime.utcfromtimestamp(0).date()
-    dates = gen_acquisition_dates(interval)
-    yield [(date-epoch).days for date in dates]
-
-
-def acquisition_delta(interval):
-    """List of delta in days for an interval
-
-    Args:
-        interval: ISO8601 date range
-
-    Returns:
-        list of deltas in days from 1970-01-01
-
-    Example:
-        acquisition_delta('R90/P16D/2000-01-01')
-    """
-    return list(*gen_acquisition_delta(interval))
-
-
-def sinusoid(times, frequency=1, amplitude=0.1, seed=42):
-    """Produce a sinusoidal wave for testing data"""
-    np.random.seed(seed)
-    xs = times
-    ys = np.array([np.sin(2*np.pi*x/365.2)*amplitude for x in xs])
-    return np.array(list([y for y in ys]))
+import ccd.change as change
 
 
 def test_not_enough_observations():

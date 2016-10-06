@@ -7,22 +7,12 @@ import importlib
 
 logger = app.logging.getLogger('ccd')
 
-"""
-observation = namedtuple('Observation', ['coastal_aerosol', 'red', 'green',
-                                         'blue', 'nir', 'swir1',
-                                         'swir2', 'panchromatic',
-                                         'is_cloud', 'is_clear', 'is_snow',
-                                         'is_fill', 'is_water',
-                                         'qa_confidence'])
-"""
-
 band = namedtuple("Band", ['magnitude', 'rmse', 'coefficients', 'intercept'])
 
-detections = namedtuple("Detections", ['start_date', 'end_date',
-                                       'observation_count'
+detections = namedtuple("Detections", ['start_day', 'end_day',
+                                       'observation_count',
                                        'red', 'green', 'blue',
                                        'nir', 'swir1', 'swir2',
-                                       'thermal',
                                        'category'])
 
 
@@ -48,11 +38,11 @@ def __result_to_detection(change_tuple):
     """Transforms results of change.detect to the detections namedtuple.
 
     Args: A tuple as returned from change.detect
-            (start_time, end_time, models, errors_, magnitudes_)
+            (start_day, end_day, models, errors_, magnitudes_)
 
     Returns: A namedtuple representing a change detection
 
-        (start_time=int, end_time=int, observation_count=int,
+        (start_day=int, end_day=int, observation_count=int,
          red =     (magnitudes=float,
                     rmse=float,
                     coefficients=(float, float, ...),
@@ -77,18 +67,14 @@ def __result_to_detection(change_tuple):
                     rmse=float,
                     coefficients=(float, float, ...),
                     intercept=float),
-         thermal = (magnitudes=float,
-                    rmse=float,
-                    coefficients=(float, float, ...),
-                    intercept=float),
         )
     """
     spectra = ((0, 'red'), (1, 'green'), (2, 'blue'), (3, 'nir'),
-               (4, 'swir1'), (5, 'swir2'), (6, 'thermal'))
+               (4, 'swir1'), (5, 'swir2'))
 
     # get the start and end time for each detection period
-    detection = {'start': change_tuple[0],
-                 'end': change_tuple[1],
+    detection = {'start_day': change_tuple[0],
+                 'end_day': change_tuple[1],
                  'observation_count': None,  # dummy value for now
                  'category': None}           # dummy value for now
 
@@ -99,7 +85,7 @@ def __result_to_detection(change_tuple):
         # build the inner band namedtuple and add to tmp detection dict()
         _band = band(mags[ix],
                      error[ix],
-                     model[ix].coefficients,
+                     model[ix].coef_,
                      model[ix].intercept_)
 
         # assign _band to the tmp dict under key as specified in spectra tuple
@@ -114,9 +100,9 @@ def __as_detections(detect_tuple):
 
     Args: A tuple of tuples as returned from change.detect
         (
-            (start_time, end_time, models, errors_, magnitudes_),
-            (start_time, end_time, models, errors_, magnitudes_),
-            (start_time, end_time, models, errors_, magnitudes_)
+            (start_day, end_day, models, errors_, magnitudes_),
+            (start_day, end_day, models, errors_, magnitudes_),
+            (start_day, end_day, models, errors_, magnitudes_)
         )
 
     Returns: A tuple of namedtuples representing change detections
@@ -128,15 +114,19 @@ def __as_detections(detect_tuple):
     """
     # iterate over each detection, build the result and return as tuple of
     # namedtuples
-    return (__result_to_detection(t) for t in detect_tuple)
+    print("NUM DETECTIONS")
+    print(len(detect_tuple))
+
+    return tuple([__result_to_detection(t) for t in detect_tuple])
 
 
-def __as_spectra(matrix):
-    """ Slice only the spectra from the matrix and return """
-    return matrix[1:7]
+def __split_dates_spectra(matrix):
+    """ Slice the dates and spectra from the matrix and return """
+    return matrix[0], matrix[1:7]
 
 
-def detect(dates, reds, greens, blues, nirs, swir1s, swir2s, thermals, qas):
+def detect(dates, reds, greens, blues, nirs,
+           swir1s, swir2s, thermals, qas, preprocess=True):
     """Entry point call to detect change
 
     Args:
@@ -162,11 +152,14 @@ def detect(dates, reds, greens, blues, nirs, swir1s, swir2s, thermals, qas):
     __preprocessed = __preprocess(__matrix)
 
     # get the spectra separately so we can call detect
-    __spectra = __as_spectra(__preprocessed)
+    if preprocess is True:
+        __dates, __spectra = __split_dates_spectra(__preprocessed)
+    else:
+        __dates, __spectra = __split_dates_spectra(__matrix)
 
     # load the fitter_fn from app.FITTER_FN
     __fitter_fn = attr_from_str(app.FITTER_FN)
 
     # call detect and return results as the detections namedtuple
-    return __as_detections(__detect(dates, __spectra, __fitter_fn,
+    return __as_detections(__detect(__dates, __spectra, __fitter_fn,
                                     app.MEOW_SIZE, app.PEEK_SIZE))
