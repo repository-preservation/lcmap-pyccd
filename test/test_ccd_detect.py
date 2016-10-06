@@ -9,7 +9,8 @@ def test_sample2_ccd_detect():
     """ Sample 2 contains two changes and should test the full path through
     the algorithm including preprocessing """
     data = read_data("test/resources/sample_2.csv")
-    results = ccd.detect(*data)
+    results = ccd.detect(data[0], data[1], data[2], data[3], data[4],
+                         data[5], data[6], data[7], data[8])
     assert len(results) == 2
 
 
@@ -18,5 +19,6 @@ def test_detect_two_changes():
     during preprocessing due to nonsensical qa values.
     Thus preprocess==False """
     data = two_change_data()
-    results = ccd.detect(*data, preprocess=False)
+    results = ccd.detect(data[0], data[1], data[2], data[3], data[4],
+                         data[5], data[6], data[7], data[8], preprocess=False)
     assert len(results) == 2
