@@ -43,6 +43,11 @@ def test_ratio_clear():
     ratio = ratio_clear(qa)
     assert ratio == pytest.approx(0.347, rel=1e-2)
 
+def test_t_mask():
+    data = shared.read_data("test/resources/sample_1.csv")
+    filtered = t_mask(data, (2,5), (5000,5000))
+    assert filtered.shape == (9, 66), filtered.shape
+
 #
 # Sample 2 (test/resources/sample_2.csv)
 #
