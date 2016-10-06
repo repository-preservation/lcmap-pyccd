@@ -172,6 +172,8 @@ def temperature_index(observations, min_kelvin=179.95, max_kelvin=343.85):
         max_kelvin: maximum temperature in degrees kelvin, by default 343.85K,
             70.7C.
     """
+    # threshold parameters are unscaled, observations are scaled so the former
+    # needs to be scaled...
     min_kelvin *= 10
     max_kelvin *= 10
     return ((min_kelvin <= observations[7,:])&
@@ -198,7 +200,7 @@ def categorize(qa):
     pass
 
 def preprocess(matrix):
-    """Filter matrix for clear pixels that fall within temperature and saturation thresholds."""
+    """Filter matrix for clear pixels within temperature and saturation thresholds."""
     criteria = (clear_index(matrix)
                 & temperature_index(matrix)
                 & unsaturated_index(matrix))
