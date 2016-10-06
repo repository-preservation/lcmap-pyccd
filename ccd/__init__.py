@@ -145,12 +145,9 @@ def detect(dates, reds, greens, blues, nirs,
                          blues, nirs, swir1s,
                          swir2s, thermals, qas])
 
-    # clean up the inputs
-    __preprocessed = __preprocess(__matrix)
-
     # get the spectra separately so we can call detect
     if preprocess is True:
-        __dates, __spectra = __split_dates_spectra(__preprocessed)
+        __dates, __spectra = __split_dates_spectra(__preprocess(__matrix))
     else:
         __dates, __spectra = __split_dates_spectra(__matrix)
 
