@@ -24,7 +24,7 @@ def coefficient_matrix(observation_dates):
 
 # TODO (jmorton) have a set of constants for array indexes based on what is passed in.
 
-def tmask(times, observations, bands=(1,4), thresholds=(5000,5000)):
+def tmask(times, observations, adjusted_rmse, bands=(1, 4)):
     """Produce an index for filtering outliers.
 
     Arguments:
@@ -54,11 +54,11 @@ def tmask(times, observations, bands=(1,4), thresholds=(5000,5000)):
 
     # For each band, determine if the delta between predeicted and actual
     # values exceeds the threshold. If it does, then it is an outlier.
-    for band_ix, threshold in zip(bands, thresholds):
-        actual = observations[band_ix,:]
+    for band_ix, armse in zip(bands, adjusted_rmse):
+        actual = observations[band_ix, :]
         fit = regression.fit(C, actual)
         predicted = fit.predict(C)
-        outliers = outliers + (abs(predicted-actual) > threshold)
+        outliers = outliers + (abs(predicted-actual) > armse)
 
     # Keep all observations that aren't outliers.
-    return np.array(times)[~outliers], observations[:,~outliers]
+    return np.array(times)[~outliers], observations[:, ~outliers]

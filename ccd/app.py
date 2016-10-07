@@ -59,6 +59,8 @@ MEOW_SIZE = 16
 
 PEEK_SIZE = 3
 
+T_CONST = 4.89
+
 # This is a string.fully.qualified.reference to the fitter function.
 # Cannot import and supply the function directly or we'll get a
 # circular dependency

@@ -23,6 +23,7 @@ For more information please refer to the `CCDC Algorithm Description Document`_.
 import numpy as np
 from ccd.models import lasso
 from ccd.tmask import tmask
+from ccd import app
 
 def rmse(models, times, observations):
     """Calculate RMSE for all models; used to determine if models are stable.
@@ -194,7 +195,7 @@ def enough_time(times, meow_ix, day_delta=365):
 
 
 def initialize(times, observations, fitter_fn, meow_ix, meow_size,
-               day_delta=365):
+               adjusted_rmse, day_delta=365):
     """Determine the window indices, models, and errors for observations.
 
     Args:
@@ -228,7 +229,7 @@ def initialize(times, observations, fitter_fn, meow_ix, meow_size,
 
         # Count outliers in the window, if there are too many outliers
         # then try try again.
-        times_, observations_ = tmask(times, observations)
+        times_, observations_ = tmask(times, observations, adjusted_rmse)
         if (len(times_) < meow_size) or ((times_[-1] - times_[0]) < day_delta):
             meow_ix += 1
             continue
@@ -268,7 +269,8 @@ def extend(times, observations, meow_ix, end_ix, peek_size, fitter_fn, models):
         peek_size: looked ahead for detecting change
         fitter_fn: function used to model observations
         models: previously generated models, used to calculate magnitude
-        day_delta: minimum difference between time at meow_ix and most recent observation
+        day_delta: minimum difference between time at meow_ix and most
+        recent observation
 
     Returns:
         tuple: end index, models, and change magnitude.
@@ -329,6 +331,9 @@ def detect(times, observations, fitter_fn,
     # taking a range of times and spectral values.
     meow_ix = 0
 
+    # calculate the adjusted RMSE
+    adjusted_rmse = np.median(np.absolute(observations), 1) * app.T_CONST
+
     # Only build models as long as sufficient data exists. The observation
     # window starts at meow_ix and is fixed until the change model no longer
     # fits new observations, i.e. a change is detected. The meow_ix updated
@@ -339,7 +344,8 @@ def detect(times, observations, fitter_fn,
         # Step 1: Initialize -- find an initial stable time-frame.
         meow_ix, end_ix, models, errors_ = initialize(times, observations,
                                                       fitter_fn, meow_ix,
-                                                      meow_size)
+                                                      meow_size,
+                                                      adjusted_rmse)
 
         # Step 2: Extension -- expand time-frame until a change is detected.
         end_ix, models, magnitudes_ = extend(times, observations, meow_ix,
