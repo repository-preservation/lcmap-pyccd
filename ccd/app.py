@@ -30,8 +30,9 @@ from cachetools import LRUCache
 
 logging.basicConfig(stream=sys.stdout,
                     level=logging.DEBUG,
-                    format='%(asctime)s %(message)s',
+                    format='%(asctime)s %(module)s::%(funcName)-20s - %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
+
 
 # configure caching
 cache = LRUCache(maxsize=2000)
