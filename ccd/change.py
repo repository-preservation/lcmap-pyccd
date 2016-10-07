@@ -51,6 +51,7 @@ def rmse(models, times, observations):
         error = (np.linalg.norm(predictions - observed) /
                  np.sqrt(len(predictions)))
         errors.append(error)
+    log.debug("calculate RMSE")
     return errors
 
 
@@ -68,7 +69,9 @@ def stable(errors, threshold=2.0):
     Returns:
         bool: True, if all models RMSE is below threshold, False otherwise.
     """
-    return all([e < threshold for e in errors])
+    below = ([e < threshold for e in errors])
+    log.debug("check model stability, all errors below {0}? {1}".format(threshold, below))
+    return all(below)
 
 
 def magnitudes(models, times, observations):
@@ -97,6 +100,7 @@ def magnitudes(models, times, observations):
         # This approach matches what is done if 2-norm (largest sing. value)
         magnitude = np.linalg.norm((predicted-observed), ord=2)
         magnitudes.append(magnitude)
+    log.debug("calculate magnitudes".format(magnitudes))
     return magnitudes
 
 
@@ -113,7 +117,9 @@ def accurate(magnitudes, threshold=0.99):
         bool: True if each model's predicted and observed values are
             below the threshold, False otherwise.
     """
-    return all([m < threshold for m in magnitudes])
+    below = [m < threshold for m in magnitudes]
+    log.debug("all errors below {0}? {1}".format(threshold, below))
+    return all(below)
 
 
 def end_index(meow_ix, meow_size):
@@ -148,6 +154,7 @@ def find_time_index(times, meow_ix, meow_size, day_delta=365):
     # If the last time is less than a year, then iterating through
     # times to find an index is futile.
     if not enough_time(times, meow_ix, day_delta=365):
+        log.debug("insufficient time ({0} days) after times[{1}]:{2}".format(day_delta,meow_ix,times[meow_ix]))
         return None
 
     end_ix = end_index(meow_ix, meow_size)
@@ -156,9 +163,11 @@ def find_time_index(times, meow_ix, meow_size, day_delta=365):
     # performant and elegant, have at it!
     while end_ix < len(times):
         if (times[end_ix]-times[meow_ix]) >= day_delta:
-            return end_ix
+            break
         else:
             end_ix += 1
+
+    log.debug("sufficient time from times[{0}..{1}] (day #{2} to #{3})".format(meow_ix, end_ix, times[meow_ix], times[end_ix]))
 
     return end_ix
 
@@ -222,11 +231,16 @@ def initialize(times, observations, fitter_fn, meow_ix, meow_size,
     """
 
     # Guard...
-    if (not enough_samples(times, meow_ix, meow_size) or
-            not enough_time(times, meow_ix, day_delta)):
+    if not enough_samples(times, meow_ix, meow_size):
+        log.debug("failed, insufficient clear observations")
+        return meow_ix, None, None, None
+
+    if not enough_time(times, meow_ix, day_delta):
+        log.debug("failed, insufficient time range")
         return meow_ix, None, None, None
 
     while (meow_ix+meow_size) <= len(times):
+        log.debug("initialize from {0}..{1}".format(meow_ix, meow_ix+meow_size))
 
         # Finding a sufficient window of time needs must run
         # each iteration because the starting point (meow_ix)
@@ -241,6 +255,7 @@ def initialize(times, observations, fitter_fn, meow_ix, meow_size,
         # then try try again.
         times_, observations_ = tmask(times, observations, adjusted_rmse)
         if (len(times_) < meow_size) or ((times_[-1] - times_[0]) < day_delta):
+            log.debug("continue, not enough observations ({0}) after tmask".format(len(times_)))
             meow_ix += 1
             continue
 
@@ -250,6 +265,7 @@ def initialize(times, observations, fitter_fn, meow_ix, meow_size,
         period = times[meow_ix:end_ix]
         spectra = observations[:, meow_ix:end_ix]
         models = [fitter_fn(period, spectrum) for spectrum in spectra]
+        log.debug("update change models")
 
         # TODO (jmorton): The error of a model is calculated during
         # initialization, but isn't subsequently updated. Determine
@@ -260,10 +276,14 @@ def initialize(times, observations, fitter_fn, meow_ix, meow_size,
         # exists somewhere in the observation window. The window shifts
         # forward in time, and begins initialization again.
         if not stable(errors_):
+            log.debug("unstable model, shift start time and retry")
             meow_ix += 1
+            continue
         else:
+            log.debug("stable model, done.")
             break
 
+    log.debug("complete, meow_ix: {0}, end_ix: {1}".format(meow_ix, end_ix))
     return meow_ix, end_ix, models, errors_
 
 
@@ -280,7 +300,7 @@ def extend(times, observations, meow_ix, end_ix, peek_size, fitter_fn, models):
         fitter_fn: function used to model observations
         models: previously generated models, used to calculate magnitude
         day_delta: minimum difference between time at meow_ix and most
-        recent observation
+            recent observation
 
     Returns:
         tuple: end index, models, and change magnitude.
@@ -289,10 +309,18 @@ def extend(times, observations, meow_ix, end_ix, peek_size, fitter_fn, models):
     # The second step is to update a model until observations that do not
     # fit the model are found.
 
-    if (end_ix is None) or ((end_ix+peek_size) > len(times)):
+    log.debug("change detection started {0}..{1}".format(meow_ix, end_ix))
+
+    if end_ix is None:
+        log.debug("failed, end_ix is None... initialize must have failed")
+        return end_ix, models, None
+
+    if (end_ix+peek_size) > len(times):
+        log.debug("failed, end_index+peek_size {0}+{1} exceed available data ({2})".format(end_ix, peek_size, len(times)))
         return end_ix, models, None
 
     while (end_ix+peek_size) <= len(times):
+        log.debug("detecting change in times[{0}..{1}]".format(end_ix, end_ix+peek_size))
         peek_ix = end_ix + peek_size
 
         # TODO (jmorton): Should this be prior and peeked period and spectra
@@ -302,11 +330,15 @@ def extend(times, observations, meow_ix, end_ix, peek_size, fitter_fn, models):
 
         magnitudes_ = magnitudes(models, period, spectra)
         if accurate(magnitudes_):
+            log.debug("no change detected {0}..{1}+{2}".format(meow_ix, end_ix, peek_size))
             models = [fitter_fn(period, spectrum) for spectrum in spectra]
+            log.debug("change model updated")
             end_ix += 1
         else:
+            log.debug(" change detected, break {0}..{1}+{2}".format(meow_ix, end_ix, peek_size))
             break
 
+    log.debug("change detection finished {0}..{1}".format(meow_ix, end_ix))
     return end_ix, models, magnitudes_
 
 
@@ -333,10 +365,8 @@ def detect(times, observations, fitter_fn,
         list: Change models for each observation of each spectra.
     """
 
-    log.debug('''change.detect(times={0}, observations={1},
-               fitter_fn={2}, meow_size={3},
-               peek_size={4}'''.format(times, observations, fitter_fn,
-                                       meow_size, peek_size))
+    log.debug("build change model – time: {0}, obs: {1}, {2}, meow_size: {3}, peek_size: {4}".format(
+              times.shape, observations.shape, fitter_fn, meow_size, peek_size))
 
     # Accumulator for models. This is a list of lists; each top-level list
     # corresponds to a particular spectra.
@@ -357,12 +387,14 @@ def detect(times, observations, fitter_fn,
     while (meow_ix is not None) and (meow_ix+meow_size) <= len(times):
 
         # Step 1: Initialize -- find an initial stable time-frame.
+        log.debug("initialize change model")
         meow_ix, end_ix, models, errors_ = initialize(times, observations,
                                                       fitter_fn, meow_ix,
                                                       meow_size,
                                                       adjusted_rmse)
 
         # Step 2: Extension -- expand time-frame until a change is detected.
+        log.debug("extend change model")
         end_ix, models, magnitudes_ = extend(times, observations, meow_ix,
                                              end_ix, peek_size, fitter_fn,
                                              models)
@@ -371,6 +403,7 @@ def detect(times, observations, fitter_fn,
         # spectra are complete for a period of time. If meow_ix and end_ix
         # are not present, then not enough observations exist for a useful
         # model to be produced, so nothing is appened to results.
+        log.debug("accumulate results: {} so far".format(len(results)))
         if (meow_ix is not None) and (end_ix is not None):
             result = (times[meow_ix], times[end_ix],
                       models, errors_, magnitudes_)
@@ -381,4 +414,5 @@ def detect(times, observations, fitter_fn,
         # to be None, in which case iteration stops.
         meow_ix = end_ix
 
+    log.debug("change detection complete")
     return results
