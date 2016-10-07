@@ -89,3 +89,10 @@ def sinusoid(times, frequency=1, amplitude=0.1, seed=42):
     xs = times
     ys = np.array([np.sin(2*np.pi*x/365.2)*amplitude for x in xs])
     return np.array(list([y for y in ys]))
+
+
+def sample_data(time_range, bands = 6):
+    """Produce N-bands of data with a sample for each moment in time range"""
+    times = np.array(acquisition_delta(time_range))
+    observations = np.array([sinusoid(times) for _ in range(bands)])
+    return times, observations
