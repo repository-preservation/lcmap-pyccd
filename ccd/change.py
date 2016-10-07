@@ -1,20 +1,23 @@
 """Functions for producing change model parameters.
 
-The change module provides a 'detect' function used to produce change model parameters
-for multi-spectra time-series data. It is implemented in a manner independent of data
-sources, input formats, pre-processing routines, and output formats.
+The change module provides a 'detect' function used to produce change model
+parameters for multi-spectra time-series data. It is implemented in a manner
+independent of data sources, input formats, pre-processing routines, and
+output formats.
 
-In general, change detection is an iterative, two-step process: an initial stable period
-of time is found for a time-series of data and then the same window is extended until a
-change is detected. These steps repeat until all available observations are considered.
+In general, change detection is an iterative, two-step process: an initial
+stable period of time is found for a time-series of data and then the same
+window is extended until a change is detected. These steps repeat until all
+available observations are considered.
 
-The result of this process is a list-of-lists of change models that correspond to
-observation spectra.
+The result of this process is a list-of-lists of change models that correspond
+to observation spectra.
 
-Preprocessing routines are essential to, but distinct from, the core change detection
-algorithm. See the `ccd.filter` for more details related to this step.
+Preprocessing routines are essential to, but distinct from, the core change
+detection algorithm. See the `ccd.filter` for more details related to this
+step.
 
-For more information please refer to the `CCDC Algorithm Description Document`_.
+For more information please refer to the `CCDC Algorithm Description Document`.
 
 .. _Algorithm Description Document:
    http://landsat.usgs.gov/documents/ccdc_add.pdf
@@ -24,6 +27,9 @@ import numpy as np
 from ccd.models import lasso
 from ccd.tmask import tmask
 from ccd import app
+
+log = app.logging.getLogger(__name__)
+
 
 def rmse(models, times, observations):
     """Calculate RMSE for all models; used to determine if models are stable.
@@ -158,7 +164,8 @@ def find_time_index(times, meow_ix, meow_size, day_delta=365):
 
 
 def enough_samples(times, meow_ix, meow_size):
-    """Change detection requires a minimum number of samples (as specified by meow size).
+    """Change detection requires a minimum number of samples (as specified
+    by meow size).
 
     This function improves readability of logic that performs this check.
 
@@ -170,15 +177,18 @@ def enough_samples(times, meow_ix, meow_size):
         meow_size: offset of last time from meow_ix
 
     Returns:
-        bool: True if times contains enough samples after meow_ix, False otherwise.
+        bool: True if times contains enough samples after meow_ix,
+        False otherwise.
     """
     return (meow_ix+meow_size) <= len(times)
 
 
 def enough_time(times, meow_ix, day_delta=365):
-    """Change detection requires a minimum amount of time (as specified by day_delta).
+    """Change detection requires a minimum amount of time (as specified by
+    day_delta).
 
-    This function, like `enough_samples` improves readability of logic that performs this check.
+    This function, like `enough_samples` improves readability of logic
+    that performs this check.
 
     Args:
         times: list of ordinal day numbers relative to some epoch,
@@ -322,6 +332,11 @@ def detect(times, observations, fitter_fn,
     Returns:
         list: Change models for each observation of each spectra.
     """
+
+    log.debug('''change.detect(times={0}, observations={1},
+               fitter_fn={2}, meow_size={3},
+               peek_size={4}'''.format(times, observations, fitter_fn,
+                                       meow_size, peek_size))
 
     # Accumulator for models. This is a list of lists; each top-level list
     # corresponds to a particular spectra.
