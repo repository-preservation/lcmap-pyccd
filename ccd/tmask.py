@@ -1,5 +1,9 @@
 import numpy as np
 import sklearn.linear_model as lm
+import ccd.app as app
+
+log = app.logging.getLogger(__name__)
+
 
 def coefficient_matrix(observation_dates):
     """c1 * sin(t/365.25) + c2 * cos(t/365.25) + c3*t + c4 * 1
@@ -24,7 +28,7 @@ def coefficient_matrix(observation_dates):
 
 # TODO (jmorton) have a set of constants for array indexes based on what is passed in.
 
-def tmask(times, observations, adjusted_rmse, bands=(1, 4)):
+def tmask(times, observations, tmask_matrix, adjusted_rmse, bands=(1, 4)):
     """Produce an index for filtering outliers.
 
     Arguments:
@@ -43,21 +47,21 @@ def tmask(times, observations, adjusted_rmse, bands=(1, 4)):
     # TODO (jmorton) Determine suitable defaults for thresholds, the values
     #                are completely arbitrary.
 
-    # Time and expected values using a four-part matrix of coefficients.
-    C = coefficient_matrix(times)
+    # Time and expected values using a four-part matrix of coefficients. The tmask
+    # is calculated for a subset of the overall observations.
     regression = lm.LinearRegression()
 
     # Accumulator for outliers. This starts off as a list of False values
     # because we don't assume anything is an outlier.
-    _, samples = observations.shape
-    outliers = np.zeros(samples, dtype=bool)
+    _, sample_count = observations.shape
+    outliers = np.zeros(sample_count, dtype=bool)
 
     # For each band, determine if the delta between predeicted and actual
     # values exceeds the threshold. If it does, then it is an outlier.
     for band_ix, armse in zip(bands, adjusted_rmse):
         actual = observations[band_ix, :]
-        fit = regression.fit(C, actual)
-        predicted = fit.predict(C)
+        fit = regression.fit(tmask_matrix, actual)
+        predicted = fit.predict(tmask_matrix)
         outliers = outliers + (abs(predicted-actual) > armse)
 
     # Keep all observations that aren't outliers.
