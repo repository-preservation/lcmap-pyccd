@@ -91,8 +91,7 @@ $ ptw
 
 ##### Running via command-line
 ```bash
-$ python ./ccd/cli.py
-$ pyccd
+$ python ./ccd/cli.py test/resources/sample_2.csv
 ```
 
 ## Contributing
