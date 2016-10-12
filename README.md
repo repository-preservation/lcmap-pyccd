@@ -73,7 +73,7 @@ The rest of the command prompts are truncated to ```$``` for readability, but as
 
 ##### Clone the repo
 ```bash
-$ git clone https://github.com/davidvhill/pyccd.git
+$ git clone https://github.com/usgs-eros/pyccd.git
 ```
 
 ##### Install test dependencies
