@@ -7,13 +7,13 @@ import importlib
 
 logger = app.logging.getLogger('ccd')
 
-band = namedtuple("Band", ['magnitude', 'rmse', 'coefficients', 'intercept'])
+# band = namedtuple("Band", ['magnitude', 'rmse', 'coefficients', 'intercept'])
 
-detections = namedtuple("Detections", ['start_day', 'end_day',
-                                       'observation_count',
-                                       'red', 'green', 'blue',
-                                       'nir', 'swir1', 'swir2',
-                                       'category'])
+# detections = namedtuple("Detections", ['start_day', 'end_day',
+#                                        'observation_count',
+#                                        'red', 'green', 'blue',
+#                                        'nir', 'swir1', 'swir2',
+#                                        'category'])
 
 
 def attr_from_str(value):
@@ -81,10 +81,10 @@ def __result_to_detection(change_tuple):
     # gather the results for each spectra
     for ix, name in spectra:
         model, error, mags = change_tuple[2], change_tuple[3], change_tuple[4]
-        _band = {'magnitude': mags[ix],
-                 'rmse': error[ix],
-                 'coefficients': tuple(model[ix].coef_),
-                 'intercept': model[ix].intercept_}
+        _band = {'magnitude': float(mags[ix]),
+                 'rmse': float(error[ix]),
+                 'coefficients': tuple([float(x) for x in model[ix].coef_]),
+                 'intercept': float(model[ix].intercept_)}
 
         # build the inner band namedtuple and add to tmp detection dict()
         # _band = band(mags[ix],
@@ -96,7 +96,7 @@ def __result_to_detection(change_tuple):
         detection[name] = _band
 
     # build the namedtuple from the dict and return
-    return detections(**detection)
+    return detection
 
 
 def __as_detections(detect_tuple):
@@ -111,9 +111,7 @@ def __as_detections(detect_tuple):
 
     Returns: A tuple of dicts representing change detections
         (
-            ccd.detections,
-            ccd.detections,
-            ccd.detections,
+            {},{},{}}
         )
     """
     # iterate over each detection, build the result and return as tuple of

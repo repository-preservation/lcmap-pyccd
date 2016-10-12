@@ -7,40 +7,42 @@ pyccd exists to provide the simplest possible implementation of ccd.
 >>> results = ccd.detect(dates, reds, greens, blues, nirs, swir1s, swir2s, thermals, qas)
 >>>
 >>> type(results)
-tuple
+<class 'tuple'>
 >>>
 >>> type(results[0])
-collections.namedtuple
+<class 'dict'>
 >>>
 >>> results[0]
 (
-            (start_time=int, end_time=int, observation_count=int,
-             red =     (magnitudes=float,
-                        rmse=float,
-                        coefficients=(float, float, ...),
-                        intercept=float),
-             green =   (magnitudes=float,
-                        rmse=float,
-                        coefficients=(float, float, ...),
-                        intercept=float),
-             blue =    (magnitudes=float,
-                        rmse=float,
-                        coefficients=(float, float, ...),
-                        intercept=float),
-             nir =     (magnitudes=float,
-                        rmse=float,
-                        coefficients=(float, float, ...),
-                        intercept=float),
-             swir1 =   (magnitudes=float,
-                        rmse=float,
-                        coefficients=(float, float, ...),
-                        intercept=float),
-             swir2 =   (magnitudes=float,
-                        rmse=float,
-                        coefficients=(float, float, ...),
-                        intercept=float)
-            ),
-        )
+{start_day:int,
+ end_day:int,
+ observation_count:int,
+ red:      {magnitudes:float,
+            rmse:float,
+            coefficients:(float, float, ...),
+            intercept:float},
+ green:    {magnitudes:float,
+            rmse:float,
+            coefficients:(float, float, ...),
+            intercept:float},
+ blue:     {magnitudes:float,
+            rmse:float,
+            coefficients:(float, float, ...),
+            intercept:float},
+ nir:      {magnitudes:float,
+            rmse:float,
+            coefficients:(float, float, ...),
+            intercept:float},
+swir1:    {magnitudes:float,
+           rmse:float,
+           coefficients:(float, float, ...),
+           intercept:float},
+swir2:    {magnitudes:float,
+           rmse:float,
+           coefficients:(float, float, ...),
+           intercept:float}
+},
+)
 ```
 
 ## Installing
@@ -91,7 +93,7 @@ $ ptw
 
 ##### Running via command-line
 ```bash
-$ python ./ccd/cli.py test/resources/sample_2.csv
+$ python ./ccd/cli.py sample test/resources/sample_2.csv
 ```
 
 ## Contributing
