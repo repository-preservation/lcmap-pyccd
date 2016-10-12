@@ -54,7 +54,7 @@ def rmse(models, coefficient_matrix, observations):
     return errors
 
 
-def stable(errors, threshold=2.0):
+def stable(errors, threshold=200.0):
     """Determine if all models RMSE are below threshold.
 
     Convenience function used to improve readability of code.
