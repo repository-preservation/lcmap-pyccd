@@ -73,8 +73,8 @@ def __result_to_detection(change_tuple):
                (4, 'swir1'), (5, 'swir2'))
 
     # get the start and end time for each detection period
-    detection = {'start_day': change_tuple[0],
-                 'end_day': change_tuple[1],
+    detection = {'start_day': int(change_tuple[0]),
+                 'end_day': int(change_tuple[1]),
                  'observation_count': None,  # dummy value for now
                  'category': None}           # dummy value for now
 
@@ -85,7 +85,7 @@ def __result_to_detection(change_tuple):
         # build the inner band namedtuple and add to tmp detection dict()
         _band = band(mags[ix],
                      error[ix],
-                     model[ix].coef_,
+                     tuple(model[ix].coef_),
                      model[ix].intercept_)
 
         # assign _band to the tmp dict under key as specified in spectra tuple
