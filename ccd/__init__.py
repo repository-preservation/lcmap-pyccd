@@ -35,39 +35,39 @@ def attr_from_str(value):
 
 
 def __result_to_detection(change_tuple):
-    """Transforms results of change.detect to the detections namedtuple.
+    """Transforms results of change.detect to the detections dict.
 
     Args: A tuple as returned from change.detect
             (start_day, end_day, models, errors_, magnitudes_)
 
-    Returns: A namedtuple representing a change detection
+    Returns: A dict representing a change detection
 
-        (start_day=int, end_day=int, observation_count=int,
-         red =     (magnitudes=float,
-                    rmse=float,
-                    coefficients=(float, float, ...),
-                    intercept=float),
-         green =   (magnitudes=float,
-                    rmse=float,
-                    coefficients=(float, float, ...),
-                    intercept=float),
-         blue =    (magnitudes=float,
-                    rmse=float,
-                    coefficients=(float, float, ...),
-                    intercept=float),
-         nir =     (magnitudes=float,
-                    rmse=float,
-                    coefficients=(float, float, ...),
-                    intercept=float),
-         swir1 =   (magnitudes=float,
-                    rmse=float,
-                    coefficients=(float, float, ...),
-                    intercept=float),
-         swir2 =   (magnitudes=float,
-                    rmse=float,
-                    coefficients=(float, float, ...),
-                    intercept=float),
-        )
+        {start_day:int, end_day:int, observation_count:int,
+         red:      {magnitudes:float,
+                    rmse:float,
+                    coefficients:(float, float, ...),
+                    intercept:float},
+         green:    {magnitudes:float,
+                    rmse:float,
+                    coefficients:(float, float, ...),
+                    intercept:float},
+         blue:     {magnitudes:float,
+                    rmse:float,
+                    coefficients:(float, float, ...),
+                    intercept:float},
+         nir:     {magnitudes:float,
+                    rmse:float,
+                    coefficients:(float, float, ...),
+                    intercept:float},
+         swir1:   {magnitudes:float,
+                    rmse:float,
+                    coefficients:(float, float, ...),
+                    intercept:float},
+         swir2:    {magnitudes:float,
+                    rmse:float,
+                    coefficients:(float, float, ...),
+                    intercept:float},
+        }
     """
     spectra = ((0, 'red'), (1, 'green'), (2, 'blue'), (3, 'nir'),
                (4, 'swir1'), (5, 'swir2'))
@@ -81,12 +81,16 @@ def __result_to_detection(change_tuple):
     # gather the results for each spectra
     for ix, name in spectra:
         model, error, mags = change_tuple[2], change_tuple[3], change_tuple[4]
+        _band = {'magnitude': mags[ix],
+                 'rmse': error[ix],
+                 'coefficients': tuple(model[ix].coef_),
+                 'intercept': model[ix].intercept_}
 
         # build the inner band namedtuple and add to tmp detection dict()
-        _band = band(mags[ix],
-                     error[ix],
-                     tuple(model[ix].coef_),
-                     model[ix].intercept_)
+        # _band = band(mags[ix],
+        #             error[ix],
+        #             tuple(model[ix].coef_),
+        #             model[ix].intercept_)
 
         # assign _band to the tmp dict under key as specified in spectra tuple
         detection[name] = _band
@@ -98,14 +102,14 @@ def __result_to_detection(change_tuple):
 def __as_detections(detect_tuple):
     """Transforms results of change.detect to the detections namedtuple.
 
-    Args: A tuple of tuples as returned from change.detect
+    Args: A tuple of dicts as returned from change.detect
         (
             (start_day, end_day, models, errors_, magnitudes_),
             (start_day, end_day, models, errors_, magnitudes_),
             (start_day, end_day, models, errors_, magnitudes_)
         )
 
-    Returns: A tuple of namedtuples representing change detections
+    Returns: A tuple of dicts representing change detections
         (
             ccd.detections,
             ccd.detections,
