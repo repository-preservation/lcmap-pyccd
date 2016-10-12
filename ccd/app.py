@@ -62,6 +62,8 @@ PEEK_SIZE = 3
 
 T_CONST = 4.89
 
+STABILITY_THRESHOLD = 200.0
+
 # This is a string.fully.qualified.reference to the fitter function.
 # Cannot import and supply the function directly or we'll get a
 # circular dependency
