@@ -1,4 +1,3 @@
-from collections import namedtuple
 from ccd.change import detect as __detect
 from ccd.filter import preprocess as __preprocess
 import numpy as np
@@ -6,14 +5,6 @@ from ccd import app
 import importlib
 
 logger = app.logging.getLogger('ccd')
-
-# band = namedtuple("Band", ['magnitude', 'rmse', 'coefficients', 'intercept'])
-
-# detections = namedtuple("Detections", ['start_day', 'end_day',
-#                                        'observation_count',
-#                                        'red', 'green', 'blue',
-#                                        'nir', 'swir1', 'swir2',
-#                                        'category'])
 
 
 def attr_from_str(value):
@@ -86,13 +77,7 @@ def __result_to_detection(change_tuple):
                  'coefficients': tuple([float(x) for x in model[ix].coef_]),
                  'intercept': float(model[ix].intercept_)}
 
-        # build the inner band namedtuple and add to tmp detection dict()
-        # _band = band(mags[ix],
-        #             error[ix],
-        #             tuple(model[ix].coef_),
-        #             model[ix].intercept_)
-
-        # assign _band to the tmp dict under key as specified in spectra tuple
+        # assign _band to the subdict
         detection[name] = _band
 
     # build the namedtuple from the dict and return
