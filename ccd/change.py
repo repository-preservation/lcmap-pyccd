@@ -73,7 +73,7 @@ def stable(errors, threshold=200.0):
     return all(below)
 
 
-def magnitudes(models, coefficients, observations):
+def magnitudes(models, coefficient_matrix, observations):
     """Calculate change magnitudes for each model and spectra.
 
     Magnitude is the 2-norm of the difference between predicted
@@ -92,7 +92,7 @@ def magnitudes(models, coefficients, observations):
     magnitudes = []
 
     for model, observed in zip(models, observations):
-        predicted = model.predict(coefficients)
+        predicted = model.predict(coefficient_matrix)
         # TODO (jmorton): VERIFY CORRECTNESS
         # This approach matches what is done if 2-norm (largest sing. value)
         magnitude = np.linalg.norm((predicted-observed), ord=2)
