@@ -4,6 +4,7 @@ import ccd.app as app
 
 log = app.logging.getLogger(__name__)
 
+
 def robust_fit_coefficient_matrix(observation_dates):
     """c1 * sin(t/365.25) + c2 * cos(t/365.25) + c3*t + c4 * 1
 
@@ -49,7 +50,6 @@ def tmask(times, observations, tmask_matrix, adjusted_rmse, bands=(1, 4)):
     #                are completely arbitrary.
 
     # Time and expected values using a four-part matrix of coefficients.
-    C = robust_fit_coefficient_matrix(times)
     regression = lm.LinearRegression()
 
     # Accumulator for outliers. This starts off as a list of False values

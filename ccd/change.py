@@ -390,7 +390,7 @@ def detect(times, observations, fitter_fn,
     # needs to be performed only once, but the lasso and tmask matrices are
     # different.
     model_matrix = lasso.coefficient_matrix(times)
-    tmask_matrix = tmask.coefficient_matrix(times)
+    tmask_matrix = tmask.robust_fit_coefficient_matrix(times)
 
     # Only build models as long as sufficient data exists. The observation
     # window starts at meow_ix and is fixed until the change model no longer
@@ -408,7 +408,7 @@ def detect(times, observations, fitter_fn,
 
         # Step 2: Extension -- expand time-frame until a change is detected.
         log.debug("extend change model")
-        end_ix, models, magnitudes_ = extend(times, observations, tmask_matrix,
+        end_ix, models, magnitudes_ = extend(times, observations, model_matrix,
                                              meow_ix, end_ix, peek_size,
                                              fitter_fn, models)
 
