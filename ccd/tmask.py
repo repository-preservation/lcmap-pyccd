@@ -4,8 +4,7 @@ import ccd.app as app
 
 log = app.logging.getLogger(__name__)
 
-
-def coefficient_matrix(observation_dates):
+def robust_fit_coefficient_matrix(observation_dates):
     """c1 * sin(t/365.25) + c2 * cos(t/365.25) + c3*t + c4 * 1
 
     Args:
@@ -14,19 +13,21 @@ def coefficient_matrix(observation_dates):
     Returns:
         Populated numpy array with coefficient values
     """
-    # c1 = np.array([np.sin(t/365.25) for t in observation_dates])
-    # c2 = np.array([np.cos(t/365.25) for t in observation_dates])
-    # c3 = np.array([t for t in observation_dates])
-    # c4 = np.ones(len(c1))
 
-    matrix = np.ones(shape=(len(observation_dates), 4))
-    matrix[:, 0] = [np.sin(2*np.pi*t/365.25) for t in observation_dates]
-    matrix[:, 1] = [np.cos(2*np.pi*t/365.25) for t in observation_dates]
-    matrix[:, 2] = [t for t in observation_dates]
+    annual_cycle = 2*np.pi/365.25
+    observation_cycle = annual_cycle / len(observation_dates)
+
+    matrix = np.ones(shape=(len(observation_dates), 5))
+    matrix[:, 0] = [np.cos(annual_cycle*t) for t in observation_dates]
+    matrix[:, 1] = [np.sin(annual_cycle*t) for t in observation_dates]
+    matrix[:, 2] = [np.cos(observation_cycle*t) for t in observation_dates]
+    matrix[:, 3] = [np.sin(observation_cycle*t) for t in observation_dates]
+    matrix[:, 4] = [t for t in observation_dates]
     return matrix
 
 
-# TODO (jmorton) have a set of constants for array indexes based on what is passed in.
+# TODO (jmorton) have a set of constants for array
+# indexes based on what is passed in.
 
 def tmask(times, observations, tmask_matrix, adjusted_rmse, bands=(1, 4)):
     """Produce an index for filtering outliers.
@@ -47,8 +48,8 @@ def tmask(times, observations, tmask_matrix, adjusted_rmse, bands=(1, 4)):
     # TODO (jmorton) Determine suitable defaults for thresholds, the values
     #                are completely arbitrary.
 
-    # Time and expected values using a four-part matrix of coefficients. The tmask
-    # is calculated for a subset of the overall observations.
+    # Time and expected values using a four-part matrix of coefficients.
+    C = robust_fit_coefficient_matrix(times)
     regression = lm.LinearRegression()
 
     # Accumulator for outliers. This starts off as a list of False values
