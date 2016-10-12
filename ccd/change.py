@@ -69,7 +69,8 @@ def stable(errors, threshold=app.STABILITY_THRESHOLD):
         bool: True, if all models RMSE is below threshold, False otherwise.
     """
     below = ([e < threshold for e in errors])
-    log.debug("check model stability, all errors below {0}? {1}".format(threshold, below))
+    log.debug("check model stability, all errors \
+               below {0}? {1}".format(threshold, below))
     return all(below)
 
 
@@ -151,7 +152,8 @@ def find_time_index(times, meow_ix, meow_size, day_delta=365):
     # If the last time is less than a year, then iterating through
     # times to find an index is futile.
     if not enough_time(times, meow_ix, day_delta=365):
-        log.debug("insufficient time ({0} days) after times[{1}]:{2}".format(day_delta,meow_ix,times[meow_ix]))
+        log.debug("insufficient time ({0} days) after \
+                   times[{1}]:{2}".format(day_delta, meow_ix, times[meow_ix]))
         return None
 
     end_ix = end_index(meow_ix, meow_size)
@@ -164,7 +166,9 @@ def find_time_index(times, meow_ix, meow_size, day_delta=365):
         else:
             end_ix += 1
 
-    log.debug("sufficient time from times[{0}..{1}] (day #{2} to #{3})".format(meow_ix, end_ix, times[meow_ix], times[end_ix]))
+    log.debug("sufficient time from times[{0}..{1}] \
+               (day #{2} to #{3})".format(meow_ix, end_ix,
+                                          times[meow_ix], times[end_ix]))
 
     return end_ix
 
@@ -239,7 +243,8 @@ def initialize(times, observations, fitter_fn,  model_matrix, tmask_matrix,
         return meow_ix, None, None, None
 
     while (meow_ix+meow_size) <= len(times):
-        log.debug("initialize from {0}..{1}".format(meow_ix, meow_ix+meow_size))
+        log.debug("initialize from {0}..{1}".format(meow_ix,
+                                                    meow_ix+meow_size))
 
         # Finding a sufficient window of time needs must run
         # each iteration because the starting point (meow_ix)
@@ -253,12 +258,13 @@ def initialize(times, observations, fitter_fn,  model_matrix, tmask_matrix,
         # Count outliers in the window, if there are too many outliers then
         # try again.
         times_, observations_ = tmask.tmask(times[meow_ix:end_ix+1],
-                                            observations[:,meow_ix:end_ix+1],
-                                            tmask_matrix[meow_ix:end_ix+1,:],
+                                            observations[:, meow_ix:end_ix+1],
+                                            tmask_matrix[meow_ix:end_ix+1, :],
                                             adjusted_rmse)
 
         if (len(times_) < meow_size) or ((times_[-1] - times_[0]) < day_delta):
-            log.debug("continue, not enough observations ({0}) after tmask".format(len(times_)))
+            log.debug("continue, not enough observations \
+                       ({0}) after tmask".format(len(times_)))
             meow_ix += 1
             continue
 
@@ -322,11 +328,15 @@ def extend(times, observations, coefficients,
         return end_ix, models, None
 
     if (end_ix+peek_size) > len(times):
-        log.debug("failed, end_index+peek_size {0}+{1} exceed available data ({2})".format(end_ix, peek_size, len(times)))
+        log.debug("failed, end_index+peek_size {0}+{1} \
+                   exceed available data ({2})".format(end_ix,
+                                                       peek_size,
+                                                       len(times)))
         return end_ix, models, None
 
     while (end_ix+peek_size) <= len(times):
-        log.debug("detecting change in times[{0}..{1}]".format(end_ix, end_ix+peek_size))
+        log.debug("detecting change in \
+                   times[{0}..{1}]".format(end_ix, end_ix+peek_size))
         peek_ix = end_ix + peek_size
 
         # TODO (jmorton): Should this be prior and peeked period and spectra
@@ -337,12 +347,16 @@ def extend(times, observations, coefficients,
 
         magnitudes_ = magnitudes(models, coefficient_slice, spectra_slice)
         if accurate(magnitudes_):
-            log.debug("no change detected {0}..{1}+{2}".format(meow_ix, end_ix, peek_size))
+            log.debug("no change detected {0}..{1}+{2}".format(meow_ix,
+                                                               end_ix,
+                                                               peek_size))
             models = [fitter_fn(time_slice, spectrum) for spectrum in spectra_slice]
             log.debug("change model updated")
             end_ix += 1
         else:
-            log.debug(" change detected, break {0}..{1}+{2}".format(meow_ix, end_ix, peek_size))
+            log.debug(" change detected, break {0}..{1}+{2}".format(meow_ix,
+                                                                    end_ix,
+                                                                    peek_size))
             break
 
     log.debug("change detection finished {0}..{1}".format(meow_ix, end_ix))
@@ -372,8 +386,10 @@ def detect(times, observations, fitter_fn,
         list: Change models for each observation of each spectra.
     """
 
-    log.debug("build change model – time: {0}, obs: {1}, {2}, meow_size: {3}, peek_size: {4}".format(
-              times.shape, observations.shape, fitter_fn, meow_size, peek_size))
+    log.debug("build change model – time: {0}, obs: {1}, {2}, \
+               meow_size: {3}, peek_size: {4}".format(
+              times.shape, observations.shape,
+              fitter_fn, meow_size, peek_size))
 
     # Accumulator for models. This is a list of lists; each top-level list
     # corresponds to a particular spectra.
@@ -402,7 +418,8 @@ def detect(times, observations, fitter_fn,
         # Step 1: Initialize -- find an initial stable time-frame.
         log.debug("initialize change model")
         meow_ix, end_ix, models, errors_ = initialize(times, observations,
-                                                      fitter_fn, model_matrix, tmask_matrix,
+                                                      fitter_fn, model_matrix,
+                                                      tmask_matrix,
                                                       meow_ix, meow_size,
                                                       adjusted_rmse)
 
