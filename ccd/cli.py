@@ -22,7 +22,7 @@ def cli():
 
 @cli.command()
 @click.argument('path')
-@click.option('--format', default='json', type=click.Choice(['json','table']))
+@click.option('--format', default='json', type=click.Choice(['json', 'table']))
 def sample(path, format):
     """Subcommand for processing sample data."""
 
@@ -39,13 +39,15 @@ def sample(path, format):
 
     logger.debug("Done...")
 
+
 @cli.command()
 def another_subcommand():
     """Another Subcommand that does something."""
     logger.info("Another Subcommand running...")
 
+
 def results_to_table(results):
-    """Moo."""
+    """Output change detection results into text table"""
     change_format = "Time Segment {0}: {1}...{2}"
     band_format = "{0:10} {1:10.4f} {2:10.4f} {3:10.4} {4:10.4f} {5:10.4f} {6:>10.4f} {7:>15.2f}"
     columns = ["band", "mags", 'rmse', 'c1', 'c2', 'c3', 'c4', 'intercept']
@@ -55,7 +57,7 @@ def results_to_table(results):
         click.echo(change_format.format(ix, segment['start_day'], segment['end_day']))
 
         click.echo("{0:<10} {1:>10} {2:>10} {3:>10} {4:>10} {5:>10} {6:>10} {7:>15}".format(*columns))
-        for color in ['red','green','blue','nir','swir1','swir2']:
+        for color in ['red', 'green', 'blue', 'nir', 'swir1', 'swir2']:
             click.echo(band_format.format(*[color,
                                           segment[color]['magnitude'],
                                           segment[color]['rmse'],

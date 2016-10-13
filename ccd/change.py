@@ -120,7 +120,6 @@ def accurate(magnitudes, threshold=0.99):
     return all(below)
 
 
-
 def end_index(meow_ix, meow_size):
     """Find end index for minimum expected observation window.
 
@@ -294,7 +293,8 @@ def initialize(times, observations, fitter_fn,  model_matrix, tmask_matrix,
             log.debug("stable model, done.")
             break
 
-    log.debug("initialize complete, meow_ix: {0}, end_ix: {1}".format(meow_ix, end_ix))
+    log.debug("initialize complete, meow_ix: {0}, end_ix: {1}".format(meow_ix,
+                                                                      end_ix))
     return meow_ix, end_ix, models, errors_
 
 
@@ -348,7 +348,9 @@ def extend(times, observations, coefficients,
 
         magnitudes_ = magnitudes(models, coefficient_slice, spectra_slice)
         if accurate(magnitudes_):
-            log.debug("errors below threshold {0}..{1}+{2}".format(meow_ix, end_ix, peek_size))
+            log.debug("errors below threshold {0}..{1}+{2}".format(meow_ix,
+                                                                   end_ix,
+                                                                   peek_size))
             models = [fitter_fn(time_slice, spectrum) for spectrum in spectra_slice]
             log.debug("change model updated")
             end_ix += 1
@@ -356,7 +358,8 @@ def extend(times, observations, coefficients,
             log.debug("errors above threshold – change detected {0}..{1}+{2}".format(meow_ix, end_ix, peek_size))
             break
 
-    log.debug("extension complete, meow_ix: {0}, end_ix: {1}".format(meow_ix, end_ix))
+    log.debug("extension complete, meow_ix: {0}, end_ix: {1}".format(meow_ix,
+                                                                     end_ix))
     return end_ix, models, magnitudes_
 
 

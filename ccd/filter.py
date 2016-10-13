@@ -10,8 +10,6 @@ This module currently uses explicit values from the Landsat CFMask:
     - 255: fill
 """
 
-import numpy as np
-
 
 def count_clear_or_water(quality):
     """Count clear or water data.
@@ -94,32 +92,35 @@ def ratio_snow(quality):
         quality: CFMask quality band values.
 
     Returns:
-        float: Value between zero and one indicating amount of snow-observations.
+        float: Value between zero and one indicating amount of
+            snow-observations.
     """
     # TODO (jmorton) Verify; does the ratio exclude fill?
-    # TODO (jmorton) Do we need to add 0.01 to the result like the Matlab version?
+    # TODO (jmorton) Do we need to add 0.01 to the result like
+    #      the Matlab version?
     snowy_count = count_snow(quality)
     clear_count = count_clear_or_water(quality)
     return snowy_count / (clear_count+snowy_count)
 
 
-def enough_clear(quality, threshold = 0.25):
+def enough_clear(quality, threshold=0.25):
     """Determine if clear observations exceed threshold.
 
-    Useful when selecting mathematical model for detection. More clear observations
-    allow for models with more coefficients.
+    Useful when selecting mathematical model for detection. More clear
+    observations allow for models with more coefficients.
 
     Arguments:
         quality: CFMask quality band values.
         threshold: minimum ratio of clear/water to not-clear/water values.
 
     Returns:
-        float: Value between zero and one indicating amount of snow-observations.
+        float: Value between zero and one indicating amount of
+           snow-observations.
     """
     return ratio_clear(quality) >= threshold
 
 
-def enough_snow(quality, threshold = 0.75):
+def enough_snow(quality, threshold=0.75):
     """Determine if snow observations exceed threshold.
 
     Arguments:
@@ -131,11 +132,11 @@ def enough_snow(quality, threshold = 0.75):
 
 
 def clear_index(observations):
-    return (observations[8,:] < 2)
+    return (observations[8, :] < 2)
 
 
 def unsaturated_index(observations):
-    """Produce bool index for observations that are unsaturated (values between 0..10,000)
+    """bool index for unsaturated obserervations between 0..10,000
 
     Useful for efficiently filtering noisy-data from arrays.
 
@@ -147,12 +148,12 @@ def unsaturated_index(observations):
     # TODO (jmorton) Is there a more concise way to provide this function
     #      without being explicit about the expected dimensionality of the
     #      observations?
-    unsaturated = ((0 < observations[1,:]) & (observations[1,:] < 10000) &
-                   (0 < observations[2,:]) & (observations[2,:] < 10000) &
-                   (0 < observations[3,:]) & (observations[3,:] < 10000) &
-                   (0 < observations[4,:]) & (observations[4,:] < 10000) &
-                   (0 < observations[5,:]) & (observations[5,:] < 10000) &
-                   (0 < observations[6,:]) & (observations[6,:] < 10000))
+    unsaturated = ((0 < observations[1, :]) & (observations[1, :] < 10000) &
+                   (0 < observations[2, :]) & (observations[2, :] < 10000) &
+                   (0 < observations[3, :]) & (observations[3, :] < 10000) &
+                   (0 < observations[4, :]) & (observations[4, :] < 10000) &
+                   (0 < observations[5, :]) & (observations[5, :] < 10000) &
+                   (0 < observations[6, :]) & (observations[6, :] < 10000))
     return unsaturated
 
 
@@ -176,8 +177,8 @@ def temperature_index(observations, min_kelvin=179.95, max_kelvin=343.85):
     # needs to be scaled...
     min_kelvin *= 10
     max_kelvin *= 10
-    return ((min_kelvin <= observations[7,:])&
-            (observations[7,:] <= max_kelvin))
+    return ((min_kelvin <= observations[7, :]) &
+            (observations[7, :] <= max_kelvin))
 
 
 def categorize(qa):
@@ -201,9 +202,8 @@ def categorize(qa):
 
 
 def preprocess(matrix):
-    """Filter matrix for clear pixels within temperature and saturation thresholds."""
+    """Filter matrix for clear pixels within temp/saturation range."""
     criteria = (clear_index(matrix)
                 & temperature_index(matrix)
                 & unsaturated_index(matrix))
     return matrix[:, criteria]
-    # return t_mask(matrix[:, criteria])
