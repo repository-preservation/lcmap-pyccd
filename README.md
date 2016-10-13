@@ -17,27 +17,27 @@ pyccd exists to provide the simplest possible implementation of ccd.
 {start_day:int,
  end_day:int,
  observation_count:int,
- red:      {magnitudes:float,
+ red:      {magnitude:float,
             rmse:float,
             coefficients:(float, float, ...),
             intercept:float},
- green:    {magnitudes:float,
+ green:    {magnitude:float,
             rmse:float,
             coefficients:(float, float, ...),
             intercept:float},
- blue:     {magnitudes:float,
+ blue:     {magnitude:float,
             rmse:float,
             coefficients:(float, float, ...),
             intercept:float},
- nir:      {magnitudes:float,
+ nir:      {magnitude:float,
             rmse:float,
             coefficients:(float, float, ...),
             intercept:float},
-swir1:    {magnitudes:float,
+swir1:    {magnitude:float,
            rmse:float,
            coefficients:(float, float, ...),
            intercept:float},
-swir2:    {magnitudes:float,
+swir2:    {magnitude:float,
            rmse:float,
            coefficients:(float, float, ...),
            intercept:float}
@@ -56,8 +56,8 @@ System requirements (Ubuntu)
 System requirements (Centos)
 * python3-devel
 * gfortran
-* lapack-devel
-* blas-devel
+* blas-dev
+* lapack-dev
 * graphviz
 
 It's highly recommended to do all your development & testing in a virtual environment.
@@ -103,6 +103,34 @@ Contributions to pyccd are most welcome, just be sure to thoroughly review the g
 
 [Developers Guide](docs/DEVELOPING.md)
 
+## Versions
+PyCCD versions comply with [PEP440](https://www.python.org/dev/peps/pep-0440/)
+and [Semantic Versioning](http://semver.org/), thus MAJOR.MINOR.PATCH.LABEL as
+defined by:
+> Given a version number MAJOR.MINOR.PATCH, increment the:
+
+> 1. MAJOR version when you make incompatible API changes
+
+> 2. MINOR version when you add functionality in a backwards-compatible manner, and
+
+> 3. PATCH version when you make backwards-compatible bug fixes.
+
+> Additional labels for pre-release and build metadata are available as extensions to the MAJOR.MINOR.PATCH format.
+
+Alpha releases (x.x.x.ax) indicate that the code functions but the result may
+or may not be correct.
+
+Beta releases (x.x.x.bx) indicate that the code functions and the results
+are believed to be correct by the developers but have not yet been verified.
+
+Release candidates (x.x.x.rcx) indicate that the code functions and the results
+are correct according to the developers and verifiers and is ready for final
+performance and acceptance testing.
+
+Full version releases (x.x.x) indicate that the code functions, the results
+are verified to be correct and it has passed all testing and quality checks.
+
+PyCCD's version is defined by the ```ccd/__init__.py/__version__``` attribute ONLY.
 
 ## References
 
