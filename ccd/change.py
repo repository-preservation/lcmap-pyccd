@@ -116,8 +116,9 @@ def accurate(magnitudes, threshold=0.99):
             below the threshold, False otherwise.
     """
     below = [m < threshold for m in magnitudes]
-    log.debug("all errors below {0}? {1}".format(threshold, below))
+    log.debug("change magnitued within {0}? {1}".format(threshold, below))
     return all(below)
+
 
 
 def end_index(meow_ix, meow_size):
@@ -293,7 +294,7 @@ def initialize(times, observations, fitter_fn,  model_matrix, tmask_matrix,
             log.debug("stable model, done.")
             break
 
-    log.debug("complete, meow_ix: {0}, end_ix: {1}".format(meow_ix, end_ix))
+    log.debug("initialize complete, meow_ix: {0}, end_ix: {1}".format(meow_ix, end_ix))
     return meow_ix, end_ix, models, errors_
 
 
@@ -347,19 +348,15 @@ def extend(times, observations, coefficients,
 
         magnitudes_ = magnitudes(models, coefficient_slice, spectra_slice)
         if accurate(magnitudes_):
-            log.debug("no change detected {0}..{1}+{2}".format(meow_ix,
-                                                               end_ix,
-                                                               peek_size))
+            log.debug("errors below threshold {0}..{1}+{2}".format(meow_ix, end_ix, peek_size))
             models = [fitter_fn(time_slice, spectrum) for spectrum in spectra_slice]
             log.debug("change model updated")
             end_ix += 1
         else:
-            log.debug(" change detected, break {0}..{1}+{2}".format(meow_ix,
-                                                                    end_ix,
-                                                                    peek_size))
+            log.debug("errors above threshold – change detected {0}..{1}+{2}".format(meow_ix, end_ix, peek_size))
             break
 
-    log.debug("change detection finished {0}..{1}".format(meow_ix, end_ix))
+    log.debug("extension complete, meow_ix: {0}, end_ix: {1}".format(meow_ix, end_ix))
     return end_ix, models, magnitudes_
 
 
@@ -400,6 +397,9 @@ def detect(times, observations, fitter_fn,
     meow_ix = 0
 
     # calculate the adjusted RMSE
+    # Is this correct?
+    # np.median(np.abs(np.diff(observations, n=1, axis=1)), axis=1)
+    # ...or is this correct?
     adjusted_rmse = np.median(np.absolute(observations), 1) * app.T_CONST
 
     # pre-calculate coefficient matrix for all time values; this calculation
@@ -433,12 +433,12 @@ def detect(times, observations, fitter_fn,
         # spectra are complete for a period of time. If meow_ix and end_ix
         # are not present, then not enough observations exist for a useful
         # model to be produced, so nothing is appened to results.
-        log.debug("accumulate results: {} so far".format(len(results)))
         if (meow_ix is not None) and (end_ix is not None):
             result = (times[meow_ix], times[end_ix],
                       models, errors_, magnitudes_)
             results += (result,)
 
+        log.debug("accumulate results, {} so far".format(len(results)))
         # Step 4: Iterate. The meow_ix is moved to the end of the current
         # timeframe and a new model is generated. It is possible for end_ix
         # to be None, in which case iteration stops.
