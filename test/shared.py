@@ -1,6 +1,10 @@
 import numpy as np
 import datetime
 import aniso8601
+import ccd.app as app
+
+
+log = app.logging.getLogger(__name__)
 
 
 def two_change_data():
@@ -86,13 +90,26 @@ def acquisition_delta(interval):
 def sinusoid(times, frequency=1, amplitude=0.1, seed=42):
     """Produce a sinusoidal wave for testing data"""
     np.random.seed(seed)
-    xs = times
-    ys = np.array([np.sin(2*np.pi*x/365.2)*amplitude for x in xs])
-    return np.array(list([y for y in ys]))
+    xs = np.linspace(0, 2*np.pi, len(times))
+    ys = np.array([np.sin(x)*amplitude for x in xs])
+    scaled_ys = np.array(ys*100+1000, dtype=np.int16)
+    log.debug(scaled_ys)
+    return np.array(scaled_ys)
 
 
-def sample_data(time_range, bands = 6):
+def sample_sinusoid(time_range, bands = 6):
     """Produce N-bands of data with a sample for each moment in time range"""
     times = np.array(acquisition_delta(time_range))
     observations = np.array([sinusoid(times) for _ in range(bands)])
+    return times, observations
+
+
+def line(times, value = 1000):
+    return np.full(len(times), value, dtype=np.int16)
+
+
+def sample_line(time_range, bands = 6):
+    """Produce N-bands of data with a sample for each moment in time range"""
+    times = np.array(acquisition_delta(time_range))
+    observations = np.array([line(times) for _ in range(bands)])
     return times, observations
