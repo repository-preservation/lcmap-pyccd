@@ -39,9 +39,9 @@ Workflow
 14. When a release candidate has been reviewed and tested, the Software Library Maintainer will merge the release branch to the master branch
 15. When the release has been merged to the master branch, the Software Library Maintainer will tag master with the version number of the release
 16. At this point, the feature freeze is over and the develop branch may again have new features (for the next release) merged into it
-17, On the date specified by the Change Review Board, the latest release of the software will be deployed by Operations and thus made available to users of the software
+17. On the date specified by the Change Review Board, the latest release of the software will be deployed by Operations and thus made available to users of the software
 
-![lcmap-pyccd git branching model][git-model.png]
+![lcmap-pyccd git branching model](./git-model.png?raw=true "LCMAP-PyCCD Branching Model")
 
 #### app.py
 
