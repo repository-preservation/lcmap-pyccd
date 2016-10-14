@@ -42,7 +42,7 @@ Workflow
 17. On the date specified by the Change Review Board, the latest release of the software will be deployed by Operations and thus made available to users of the software
 
 ## Branching Model for LCMAP-PyCCD
-#### [Adopted from GitFlow by Vincent Driessen](https://datasift.github.io/gitflow/IntroducingGitFlow.html)
+#### [Adopted by LCMAP-PyCCD from Vincent Driessen](https://datasift.github.io/gitflow/IntroducingGitFlow.html)
 ![lcmap-pyccd git branching model](./git-model.png?raw=true "LCMAP-PyCCD Branching Model")
 
 #### app.py
