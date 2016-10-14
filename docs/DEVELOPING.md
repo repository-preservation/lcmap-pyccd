@@ -50,7 +50,7 @@ Workflow
 Top level interface for exposing functionality.  Anything not intended to be called externally should be prefixed with a double underscore.  Considered the public interface.
 
 #### ```ccd/app.py```
-Master configuration and service kernel for all other modules.  Takes advantage of module level caching on first import.  Logging, caching and configuration are set up here and made available to other modules via importing.
+Master configuration and service kernel for all other modules.  Takes advantage of module level caching on first import.  Logging, caching and configuration are set up here and made available to other modules via ```import```.
 
 #### ```ccd/cli.py``` and entry_point scripts
 The command line interface is implemented using the click project, which
