@@ -6,6 +6,12 @@ import importlib
 
 logger = app.logging.getLogger('ccd')
 
+# Versions should comply with PEP440.  For a discussion on single-sourcing
+# the version across setup.py and the project code, see
+# https://packaging.python.org/en/latest/single_source_version.html
+__version__ = '1.0.0.a1'
+__name__ = 'pyccd'
+
 
 def attr_from_str(value):
     """Returns a reference to the full qualified function, attribute or class.

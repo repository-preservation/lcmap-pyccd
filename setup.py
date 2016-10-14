@@ -4,6 +4,8 @@ from setuptools import setup
 # To use a consistent encoding
 from codecs import open
 from os import path
+from ccd import __version__ as __version
+from ccd import __name__ as __name
 
 here = path.abspath(path.dirname(__file__))
 
@@ -12,12 +14,13 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='pyccd',
+
+    name=__name,
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.0.0',
+    version=__version,
 
     description='Python implementation of change detection',
     long_description=long_description,
@@ -114,7 +117,7 @@ setup(
     # entry_points={'console_scripts': ['pyccd-detect=ccd.cli:detect', ], },
     entry_points='''
         [core_package.cli_plugins]
-        subcommand=ccd.cli:subcommand
+        sample=ccd.cli:sample
         another_subcommand=ccd.cli:another_subcommand
     ''',
 )

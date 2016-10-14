@@ -107,6 +107,7 @@ Contributions to pyccd are most welcome, just be sure to thoroughly review the g
 PyCCD versions comply with [PEP440](https://www.python.org/dev/peps/pep-0440/)
 and [Semantic Versioning](http://semver.org/), thus MAJOR.MINOR.PATCH.LABEL as
 defined by:
+
 > Given a version number MAJOR.MINOR.PATCH, increment the:
 
 > 1. MAJOR version when you make incompatible API changes

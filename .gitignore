@@ -1,3 +1,4 @@
+build/*
 prof/*
 .cache/
 *.egg*
