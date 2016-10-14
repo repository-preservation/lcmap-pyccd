@@ -1,16 +1,18 @@
 ## PyCCD Development Process
 Roles
-Developer
-Technical Reviewers
-Science Reviewers
-Change Review Board - in addition to the decisions makers, we recommend the board include one or more of the following advisors:
-An advocate for developers
-A library maintainer / release manager representative
-An operations representative
-Software Library Maintainers
-Operations
+
+* Developer
+* Technical Reviewers
+* Science Reviewers
+* Change Review Board - in addition to the decisions makers, we recommend the board include one or more of the following advisors:
+* An advocate for developers
+* A library maintainer / release manager representative
+* An operations representative
+* Software Library Maintainers
+* Operations
 
 Workflow
+
 1. A Developer gets a new idea for a feature
 2. The Developer forks the software repository
 3. The Developer creates a feature branch from the branch named develop
