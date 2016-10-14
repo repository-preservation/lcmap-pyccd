@@ -14,7 +14,8 @@ pyccd exists to provide the simplest possible implementation of ccd.
 >>>
 >>> results[0]
 (
-{start_day:int,
+{algorithm:'pyccd:x.x.x'
+ start_day:int,
  end_day:int,
  observation_count:int,
  red:      {magnitude:float,

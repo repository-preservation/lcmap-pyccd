@@ -4,13 +4,12 @@ import numpy as np
 from ccd import app
 import importlib
 
-logger = app.logging.getLogger('ccd')
-
-# Versions should comply with PEP440.  For a discussion on single-sourcing
-# the version across setup.py and the project code, see
-# https://packaging.python.org/en/latest/single_source_version.html
+# Versions should comply with PEP440.
 __version__ = '1.0.0.a1'
 __name__ = 'pyccd'
+__algorithm__ = ':'.join([__name__, __version__])
+
+logger = app.logging.getLogger(__name__)
 
 
 def attr_from_str(value):
@@ -39,7 +38,9 @@ def __result_to_detection(change_tuple):
 
     Returns: A dict representing a change detection
 
-        {start_day:int, end_day:int, observation_count:int,
+        {algorithm:'pyccd:x.x.x',
+         start_day:int,
+         end_day:int, observation_count:int,
          red:      {magnitudes:float,
                     rmse:float,
                     coefficients:(float, float, ...),
@@ -70,7 +71,8 @@ def __result_to_detection(change_tuple):
                (4, 'swir1'), (5, 'swir2'))
 
     # get the start and end time for each detection period
-    detection = {'start_day': int(change_tuple[0]),
+    detection = {'algorithm': __algorithm__,
+                 'start_day': int(change_tuple[0]),
                  'end_day': int(change_tuple[1]),
                  'observation_count': None,  # dummy value for now
                  'category': None}           # dummy value for now
@@ -106,7 +108,7 @@ def __as_detections(detect_tuple):
         )
     """
     # iterate over each detection, build the result and return as tuple of
-    # namedtuples
+    # dicts
     return tuple([__result_to_detection(t) for t in detect_tuple])
 
 
