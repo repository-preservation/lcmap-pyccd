@@ -45,16 +45,21 @@ Workflow
 #### [Adopted by LCMAP-PyCCD from Vincent Driessen](https://datasift.github.io/gitflow/IntroducingGitFlow.html)
 ![lcmap-pyccd git branching model](./git-model.png?raw=true "LCMAP-PyCCD Branching Model")
 
-#### app.py
+## Code
+#### ```ccd/__init__.py```
+Top level interface for exposing functionality.  Anything not intended to be called externally should be prefixed with a double underscore.  Considered the public interface.
 
-#### cli.py and entry_point scripts
+#### ```ccd/app.py```
+Master configuration and service kernel for all other modules.  Takes advantage of module level caching on first import.  Logging, caching and configuration are set up here and made available to other modules via importing.
+
+#### ```ccd/cli.py``` and entry_point scripts
 The command line interface is implemented using the click project, which
 provides decorators for functions that become command line arguments.
 
 Integration with setup.py entry_point is done via click-plugins, which allow
 cli commands to also be designated as entry point scripts.
 
-See ccd.cli.py, setup.py and the click/click-plugin documentation.
+See ```ccd/cli.py```, ```setup.py``` and the click/click-plugin documentation.
 
 * [Click Docs](http://click.pocoo.org/5/)
 * [Click On Github](https://github.com/pallets/click)
