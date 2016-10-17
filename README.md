@@ -12,7 +12,7 @@ pyccd exists to provide the simplest possible implementation of ccd.
 >>> type(results[0])
 <class 'dict'>
 >>>
->>> results[0]
+>>> results
 (
 {algorithm:'pyccd:x.x.x'
  start_day:int,
@@ -74,7 +74,7 @@ The rest of the command prompts are truncated to ```$``` for readability, but as
 
 ##### Clone the repo
 ```bash
-$ git clone https://github.com/usgs-eros/pyccd.git
+$ git clone https://github.com/usgs-eros/lcmap-pyccd.git
 ```
 
 ##### Install test dependencies
