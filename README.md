@@ -77,13 +77,10 @@ The rest of the command prompts are truncated to ```$``` for readability, but as
 ##### Clone the repo
 ```bash
 $ git clone https://github.com/usgs-eros/lcmap-pyccd.git
-<<<<<<< HEAD
-=======
 ```
 or if you have ssh keys set up in github:
 ```bash
 $ git clone git@github.com:usgs-eros/lcmap-pyccd.git
->>>>>>> corrected installation failures from setup.py attempting to import __init__.py prior to dependencies being installed
 ```
 ##### Install test dependencies
 ```bash
