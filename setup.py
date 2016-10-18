@@ -4,8 +4,6 @@ from setuptools import setup
 # To use a consistent encoding
 from codecs import open
 from os import path
-from ccd import __version__ as __version
-from ccd import __name__ as __name
 
 here = path.abspath(path.dirname(__file__))
 
@@ -13,14 +11,21 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
+# bring in __version__ and __name from version.py for install.
+with open(path.join(here, 'ccd', 'version.py')) as h:
+    exec(h.read())
+
 setup(
 
+    # __name is defined in version.py
     name=__name,
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version=__version,
+
+    # __version__ is defined in version.py
+    version=__version__,
 
     description='Python implementation of change detection',
     long_description=long_description,
