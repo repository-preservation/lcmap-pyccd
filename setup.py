@@ -98,6 +98,7 @@ setup(
                  'pytest-profiling>=1.1.1',
                  'gprof2dot>=2015.12.1',
                  'pytest-watch>=4.1.0'],
+        'dev': ['jupyter',],
     },
 
     setup_requires=['pytest-runner', 'pip'],
