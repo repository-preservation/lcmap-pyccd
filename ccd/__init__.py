@@ -3,13 +3,11 @@ from ccd.filter import preprocess as __preprocess
 import numpy as np
 from ccd import app
 import importlib
+from .version import __version__
+from .version import __algorithm__
+from .version import __name
 
-# Versions should comply with PEP440.
-__version__ = '1.0.0.a1'
-__name__ = 'pyccd'
-__algorithm__ = ':'.join([__name__, __version__])
-
-logger = app.logging.getLogger(__name__)
+logger = app.logging.getLogger(__name)
 
 
 def attr_from_str(value):

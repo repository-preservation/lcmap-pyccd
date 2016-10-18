@@ -53,6 +53,7 @@ System requirements (Ubuntu)
 * libopenblas-dev
 * liblapack-dev
 * graphviz
+* python-virtualenv
 
 System requirements (Centos)
 * python3-devel
@@ -60,6 +61,7 @@ System requirements (Centos)
 * blas-dev
 * lapack-dev
 * graphviz
+* python-virtualenv
 
 It's highly recommended to do all your development & testing in a virtual environment.
 ```bash
@@ -75,8 +77,14 @@ The rest of the command prompts are truncated to ```$``` for readability, but as
 ##### Clone the repo
 ```bash
 $ git clone https://github.com/usgs-eros/lcmap-pyccd.git
+<<<<<<< HEAD
+=======
 ```
-
+or if you have ssh keys set up in github:
+```bash
+$ git clone git@github.com:usgs-eros/lcmap-pyccd.git
+>>>>>>> corrected installation failures from setup.py attempting to import __init__.py prior to dependencies being installed
+```
 ##### Install test dependencies
 ```bash
 $ pip install -e .[test]
@@ -132,7 +140,8 @@ performance and acceptance testing.
 Full version releases (x.x.x) indicate that the code functions, the results
 are verified to be correct and it has passed all testing and quality checks.
 
-PyCCD's version is defined by the ```ccd/__init__.py/__version__``` attribute ONLY.
+PyCCD's version is defined by the ```ccd/version.py/__version__``` attribute
+ONLY.
 
 ## References
 
