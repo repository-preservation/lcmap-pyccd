@@ -82,6 +82,13 @@ or if you have ssh keys set up in github:
 ```bash
 $ git clone git@github.com:usgs-eros/lcmap-pyccd.git
 ```
+
+##### Install dev dependencies
+Install jupyter notebook.
+```bash
+$ pip install -e .[dev]
+```
+
 ##### Install test dependencies
 ```bash
 $ pip install -e .[test]
