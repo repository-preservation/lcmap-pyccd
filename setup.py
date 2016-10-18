@@ -31,7 +31,7 @@ setup(
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://github.com/davidvhill/pyccd',
+    url='https://github.com/usgs-eros/lcmap-pyccd',
 
     # Author details
     author='',
