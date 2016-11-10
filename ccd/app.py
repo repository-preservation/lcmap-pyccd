@@ -76,6 +76,8 @@ STABILITY_THRESHOLD = 200.0
 
 DETECTION_BANDS = range(2, 7)
 
+QA_BAND = 8
+
 # Tmasking threshold
 TMASK_THRESHOLD = chi2.ppf(0.999999, len(DETECTION_BANDS))
 
