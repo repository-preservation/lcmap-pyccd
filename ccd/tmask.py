@@ -30,7 +30,7 @@ def robust_fit_coefficient_matrix(observation_dates):
 # TODO (jmorton) have a set of constants for array
 # indexes based on what is passed in.
 
-def tmask(times, observations, tmask_matrix, adjusted_rmse, bands=(1, 4)):
+def tmask(times, observations, tmask_matrix, adjusted_rmse, bands=(app.GREEN_IDX, app.SWIR_1_IDX)):
     """Produce an index for filtering outliers.
 
     Arguments:

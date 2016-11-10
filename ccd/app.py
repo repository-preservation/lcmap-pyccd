@@ -48,6 +48,16 @@ CONSECUTIVE_OBSERVATIONS_COUNT = 6
 # 2 for tri-modal; 2 for bi-modal; 2 for seasonality; 2 for linear
 COEFFICIENT_CATEGORIES = {'min': 4, 'mid': 6, 'max': 8}
 
+# Define special bands indices on data
+BLUE_IDX = 0
+GREEN_IDX = 1
+RED_IDX = 2
+NIR_IDX = 3
+SWIR_1_IDX = 4
+SWIR_2_IDX = 5
+THERMAL_IDX = 6
+QA_IDX = 7
+
 # number of clear observation / number of coefficients
 CLEAR_OBSERVATION_THRESHOLD = 3
 
@@ -75,8 +85,6 @@ T_CONST = 4.89
 STABILITY_THRESHOLD = 200.0
 
 DETECTION_BANDS = range(2, 7)
-
-QA_BAND = 8
 
 # Tmasking threshold
 TMASK_THRESHOLD = chi2.ppf(0.999999, len(DETECTION_BANDS))

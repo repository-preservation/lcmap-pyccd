@@ -399,11 +399,10 @@ def detect(times, observations, fitter_fn,
     # taking a range of times and spectral values.
     meow_ix = 0
 
-    # calculate the adjusted RMSE
-    # Is this correct?
-    # np.median(np.abs(np.diff(observations, n=1, axis=1)), axis=1)
+    # calculate a modified first-order variogram/madogram
+    np.median(np.abs(np.diff(observations, n=1, axis=1)), axis=1)
     # ...or is this correct?
-    adjusted_rmse = np.median(np.absolute(observations), 1) * app.T_CONST
+    # adjusted_rmse = np.median(np.absolute(observations), 1) * app.T_CONST
 
     # pre-calculate coefficient matrix for all time values; this calculation
     # needs to be performed only once, but the lasso and tmask matrices are

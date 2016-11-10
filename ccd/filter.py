@@ -139,9 +139,6 @@ def unsaturated_index(observations):
             (9,n-moments) of unscaled data.
 
     """
-    # TODO (jmorton) Is there a more concise way to provide this function
-    #      without being explicit about the expected dimensionality of the
-    #      observations?
     unsaturated = ((0 < observations[1, :]) & (observations[1, :] < 10000) &
                    (0 < observations[2, :]) & (observations[2, :] < 10000) &
                    (0 < observations[3, :]) & (observations[3, :] < 10000) &
