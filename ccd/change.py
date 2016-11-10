@@ -26,8 +26,7 @@ For more information please refer to the `CCDC Algorithm Description Document`.
 import numpy as np
 import ccd.models.lasso as lasso
 import ccd.tmask as tmask
-from ccd import app
-from ccd import fit_procedures
+from ccd import app, fit_procedures, filter
 
 log = app.logging.getLogger(__name__)
 
@@ -452,26 +451,19 @@ def detect(times, observations, fitter_fn,
     return results
 
 
-def determine_fit_procedure(qa_band):
+def determine_fit_procedure(quality):
     """Determine which curve fitting function to use
 
     This is based on information from the QA band
 
     Args:
-        qa_band: QA information for each observation
+        quality: QA information for each observation
 
     Returns:
         method: the corresponding method that will be use to generate the curves
     """
-    count = len(qa_band[qa_band < app.QA_FILL])
-    clear_count = len(qa_band[qa_band == app.QA_CLEAR | qa_band == app.QA_WATER])
-    snow_count = len(qa_band[qa_band == app.QA_SNOW])
-
-    clear_pct = clear_count / count
-    snow_pct = snow_count / (clear_count + snow_count + 0.01)
-
-    if clear_pct < app.CLEAR_PCT_THREHOLD:
-        if snow_pct > app.SNOW_PCT_THRESHOLD:
+    if not filter.enough_clear(quality):
+        if filter.enough_snow(quality):
             return fit_procedures.permanent_snow_procedure
         else:
             return fit_procedures.fmask_fail_procedure

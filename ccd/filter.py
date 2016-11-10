@@ -10,30 +10,31 @@ This module currently uses explicit values from the Landsat CFMask:
     - 255: fill
 """
 
+from ccd import app
+
 
 def count_clear_or_water(quality):
     """Count clear or water data.
 
     Arguments:
-        quality: CFMask quality band values.
+        quality: quality band values.
 
     Returns:
         integer: number of clear or water observation implied by QA data.
     """
-    return quality[(quality < 2)].shape[0]
+    return quality[(quality == app.QA_CLEAR) | (quality == app.QA_WATER)].shape[0]
 
 
 def count_fill(quality):
     """Count fill data.
 
     Arguments:
-        quality: CFMask quality band values.
+        quality: quality band values.
 
     Returns:
         integer: number of filled observation implied by QA data.
     """
-    fill = 255
-    return quality[(quality == fill)].shape[0]
+    return quality[quality == app.QA_FILL].shape[0]
 
 
 def count_snow(quality):
@@ -42,13 +43,12 @@ def count_snow(quality):
     Useful for determining ratio of snow:clear pixels.
 
     Arguments:
-        quality: CFMask quality band values.
+        quality: quality band values.
 
     Returns:
         integer: number of snow pixels implied by QA data
     """
-    snow = 4
-    return quality[(quality == snow)].shape[0]
+    return quality[quality == app.QA_SNOW].shape[0]
 
 
 def count_total(quality):
@@ -57,13 +57,12 @@ def count_total(quality):
     Useful for determining ratio of clear:total pixels.
 
     Arguments:
-        quality: CFMask quality band values.
+        quality: quality band values.
 
     Returns:
         integer: number of non-fill pixels implied by QA data.
     """
-    fill = 255
-    return quality[(quality != fill)].shape[0]
+    return quality[quality != app.QA_FILL].shape[0]
 
 
 def ratio_clear(quality):
@@ -72,12 +71,11 @@ def ratio_clear(quality):
     Useful for determining ratio of clear:total pixels.
 
     Arguments:
-        quality: CFMask quality band values.
+        quality: quality band values.
 
     Returns:
         integer: number of non-fill pixels implied by QA data.
     """
-    # TODO (jmorton) Verify; does the ratio exclude fill data?
     clear_count = count_clear_or_water(quality)
     total_count = count_total(quality)
     return clear_count / total_count
@@ -95,44 +93,40 @@ def ratio_snow(quality):
         float: Value between zero and one indicating amount of
             snow-observations.
     """
-    # TODO (jmorton) Verify; does the ratio exclude fill?
-    # TODO (jmorton) Do we need to add 0.01 to the result like
-    #      the Matlab version?
     snowy_count = count_snow(quality)
     clear_count = count_clear_or_water(quality)
-    return snowy_count / (clear_count+snowy_count)
+    return snowy_count / (clear_count + snowy_count + 0.01)
 
 
-def enough_clear(quality, threshold=0.25):
+def enough_clear(quality, threshold=app.CLEAR_PCT_THREHOLD):
     """Determine if clear observations exceed threshold.
 
     Useful when selecting mathematical model for detection. More clear
     observations allow for models with more coefficients.
 
     Arguments:
-        quality: CFMask quality band values.
+        quality: quality band values.
         threshold: minimum ratio of clear/water to not-clear/water values.
 
     Returns:
-        float: Value between zero and one indicating amount of
-           snow-observations.
+        boolean: True if >= threshold
     """
     return ratio_clear(quality) >= threshold
 
 
-def enough_snow(quality, threshold=0.75):
+def enough_snow(quality, threshold=app.SNOW_PCT_THRESHOLD):
     """Determine if snow observations exceed threshold.
 
+    Useful when selecting detection algorithm.
+
     Arguments:
-        quality: CFMask quality band values.
+        quality: quality band values.
         threshold: minimum ratio of snow to clear/water values.
 
-    Useful when selecting detection algorithm."""
+    Returns:
+        boolean: True if >= threshold
+    """
     return ratio_snow(quality) >= threshold
-
-
-def clear_index(observations):
-    return (observations[8, :] < 2)
 
 
 def unsaturated_index(observations):
@@ -179,26 +173,6 @@ def temperature_index(observations, min_kelvin=179.95, max_kelvin=343.85):
     max_kelvin *= 10
     return ((min_kelvin <= observations[7, :]) &
             (observations[7, :] <= max_kelvin))
-
-
-def categorize(qa):
-    """ determine the category to use for detecting change """
-    """
-    IF clear_pct IS LESS THAN CLEAR_OBSERVATION_THRESHOLD
-    THEN
-
-        IF permanent_snow_pct IS GREATER THAN PERMANENT_SNOW_THRESHOLD
-        THEN
-            IF ENOUGH snow pixels
-            THEN
-                DO snow based change detection
-            ELSE
-                BAIL
-
-    ELSE
-        DO NORMAL CHANGE DETECTION
-    """
-    pass
 
 
 def preprocess(matrix):
