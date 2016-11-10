@@ -449,3 +449,16 @@ def detect(times, observations, fitter_fn,
 
     log.debug("change detection complete")
     return results
+
+
+def determine_fit_method(qa_band):
+    """Determine which curve fitting function to use
+
+    This is based on how
+
+    Args:
+        qa_band: QA information for each observation
+
+    Returns:
+        method: the corresponding method that will be use to generate the curves
+    """

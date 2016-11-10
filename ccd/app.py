@@ -14,6 +14,7 @@ from Flask.
 import logging
 import sys
 from cachetools import LRUCache
+from scipy.stats import chi2
 
 
 ############################
@@ -42,19 +43,28 @@ cache = LRUCache(maxsize=2000)
 ############################
 MINIMUM_CLEAR_OBSERVATION_COUNT = 12
 
+CONSECUTIVE_OBSERVATIONS_COUNT = 6
+
 # 2 for tri-modal; 2 for bi-modal; 2 for seasonality; 2 for linear
 COEFFICIENT_CATEGORIES = {'min': 4, 'mid': 6, 'max': 8}
 
 # number of clear observation / number of coefficients
 CLEAR_OBSERVATION_THRESHOLD = 3
 
-CLEAR_OBSERVATION_PCT = 0.25
+CLEAR_PCT_THREHOLD = 0.25
 
-PERMANENT_SNOW_THRESHOLD = 0.75
+SNOW_PCT_THRESHOLD = 0.75
 
 CHANGE_PROBABILITY = 1
 
-FILL_VALUE = 255
+# Representative values in the QA band
+QA_FILL = 255
+
+QA_CLEAR = 0
+
+QA_WATER = 1
+
+QA_SNOW = 3
 
 MEOW_SIZE = 16
 
@@ -63,6 +73,14 @@ PEEK_SIZE = 3
 T_CONST = 4.89
 
 STABILITY_THRESHOLD = 200.0
+
+DETECTION_BANDS = range(2, 7)
+
+# Tmasking threshold
+TMASK_THRESHOLD = chi2.ppf(0.999999, len(DETECTION_BANDS))
+
+# Change detection threshold
+CHANGE_THRESHOLD = chi2.ppf(0.99, len(DETECTION_BANDS))
 
 # This is a string.fully.qualified.reference to the fitter function.
 # Cannot import and supply the function directly or we'll get a
