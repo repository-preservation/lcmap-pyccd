@@ -29,6 +29,7 @@ import ccd.tmask as tmask
 from ccd import app, fit_procedures, filter
 
 log = app.logging.getLogger(__name__)
+config = app.config
 
 
 def rmse(models, coefficient_matrix, observations):
@@ -54,7 +55,7 @@ def rmse(models, coefficient_matrix, observations):
     return errors
 
 
-def stable(errors, threshold=app.STABILITY_THRESHOLD):
+def stable(errors, threshold=config.STABILITY_THRESHOLD):
     """Determine if all models RMSE are below threshold.
 
     Convenience function used to improve readability of code.

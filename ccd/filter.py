@@ -10,7 +10,7 @@ This module currently uses explicit values from the Landsat CFMask:
     - 255: fill
 """
 
-from ccd import app
+from ccd.app import config
 
 
 def count_clear_or_water(quality):
@@ -22,7 +22,7 @@ def count_clear_or_water(quality):
     Returns:
         integer: number of clear or water observation implied by QA data.
     """
-    return quality[(quality == app.QA_CLEAR) | (quality == app.QA_WATER)].shape[0]
+    return quality[(quality == config.QA_CLEAR) | (quality == config.QA_WATER)].shape[0]
 
 
 def count_fill(quality):
@@ -34,7 +34,7 @@ def count_fill(quality):
     Returns:
         integer: number of filled observation implied by QA data.
     """
-    return quality[quality == app.QA_FILL].shape[0]
+    return quality[quality == config.QA_FILL].shape[0]
 
 
 def count_snow(quality):
@@ -48,7 +48,7 @@ def count_snow(quality):
     Returns:
         integer: number of snow pixels implied by QA data
     """
-    return quality[quality == app.QA_SNOW].shape[0]
+    return quality[quality == config.QA_SNOW].shape[0]
 
 
 def count_total(quality):
@@ -62,7 +62,7 @@ def count_total(quality):
     Returns:
         integer: number of non-fill pixels implied by QA data.
     """
-    return quality[quality != app.QA_FILL].shape[0]
+    return quality[quality != config.QA_FILL].shape[0]
 
 
 def ratio_clear(quality):
@@ -98,7 +98,7 @@ def ratio_snow(quality):
     return snowy_count / (clear_count + snowy_count + 0.01)
 
 
-def enough_clear(quality, threshold=app.CLEAR_PCT_THREHOLD):
+def enough_clear(quality, threshold=config.CLEAR_PCT_THREHOLD):
     """Determine if clear observations exceed threshold.
 
     Useful when selecting mathematical model for detection. More clear
@@ -114,7 +114,7 @@ def enough_clear(quality, threshold=app.CLEAR_PCT_THREHOLD):
     return ratio_clear(quality) >= threshold
 
 
-def enough_snow(quality, threshold=app.SNOW_PCT_THRESHOLD):
+def enough_snow(quality, threshold=config.SNOW_PCT_THRESHOLD):
     """Determine if snow observations exceed threshold.
 
     Useful when selecting detection algorithm.

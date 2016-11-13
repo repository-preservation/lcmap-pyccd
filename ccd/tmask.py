@@ -1,8 +1,8 @@
 import numpy as np
 import sklearn.linear_model as lm
-import ccd.app as app
+from ccd.app import logging, config
 
-log = app.logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def robust_fit_coefficient_matrix(observation_dates):
@@ -30,7 +30,7 @@ def robust_fit_coefficient_matrix(observation_dates):
 # TODO (jmorton) have a set of constants for array
 # indexes based on what is passed in.
 
-def tmask(times, observations, tmask_matrix, adjusted_rmse, bands=(app.GREEN_IDX, app.SWIR_1_IDX)):
+def tmask(times, observations, tmask_matrix, adjusted_rmse, bands=(config.GREEN_IDX, config.SWIR_1_IDX)):
     """Produce an index for filtering outliers.
 
     Arguments:

@@ -13,8 +13,32 @@ from Flask.
 """
 import logging
 import sys
+import yaml
 from cachetools import LRUCache
-from scipy.stats import chi2
+
+
+# Simplify parameter setting and make it easier for adjustment
+class Config(dict):
+    def __init__(self, config_path='parameters.yaml'):
+        with open(config_path, 'r') as f:
+            super(Config, self).__init__(yaml.load(f.read()))
+
+    def __getattr__(self, name):
+        if name in self:
+            return self[name]
+        else:
+            raise AttributeError('No such attribute: ' + name)
+
+    def __setattr__(self, name, value):
+        self[name] = value
+
+    def __delattr__(self, name):
+        if name in self:
+            del self[name]
+        else:
+            raise AttributeError('No such attribute: ' + name)
+
+config = Config()
 
 
 ############################
@@ -41,56 +65,56 @@ cache = LRUCache(maxsize=2000)
 ############################
 # Global configuration items
 ############################
-MINIMUM_CLEAR_OBSERVATION_COUNT = 12
-
-CONSECUTIVE_OBSERVATIONS_COUNT = 6
-
-# 2 for tri-modal; 2 for bi-modal; 2 for seasonality; 2 for linear
-COEFFICIENT_CATEGORIES = {'min': 4, 'mid': 6, 'max': 8}
-
-# Define special bands indices on data
-BLUE_IDX = 0
-GREEN_IDX = 1
-RED_IDX = 2
-NIR_IDX = 3
-SWIR_1_IDX = 4
-SWIR_2_IDX = 5
-THERMAL_IDX = 6
-QA_IDX = 7
-
-# number of clear observation / number of coefficients
-CLEAR_OBSERVATION_THRESHOLD = 3
-
-CLEAR_PCT_THREHOLD = 0.25
-
-SNOW_PCT_THRESHOLD = 0.75
-
-CHANGE_PROBABILITY = 1
-
-# Representative values in the QA band
-QA_FILL = 255
-
-QA_CLEAR = 0
-
-QA_WATER = 1
-
-QA_SNOW = 3
-
-MEOW_SIZE = 16
-
-PEEK_SIZE = 3
-
-T_CONST = 4.89
-
-STABILITY_THRESHOLD = 200.0
-
-DETECTION_BANDS = range(2, 7)
-
-# Tmasking threshold
-TMASK_THRESHOLD = chi2.ppf(0.999999, len(DETECTION_BANDS))
-
-# Change detection threshold
-CHANGE_THRESHOLD = chi2.ppf(0.99, len(DETECTION_BANDS))
+# MINIMUM_CLEAR_OBSERVATION_COUNT = 12
+#
+# CONSECUTIVE_OBSERVATIONS_COUNT = 6
+#
+# # 2 for tri-modal; 2 for bi-modal; 2 for seasonality; 2 for linear
+# COEFFICIENT_CATEGORIES = {'min': 4, 'mid': 6, 'max': 8}
+#
+# # Define special bands indices on data
+# BLUE_IDX = 0
+# GREEN_IDX = 1
+# RED_IDX = 2
+# NIR_IDX = 3
+# SWIR_1_IDX = 4
+# SWIR_2_IDX = 5
+# THERMAL_IDX = 6
+# QA_IDX = 7
+#
+# # number of clear observation / number of coefficients
+# CLEAR_OBSERVATION_THRESHOLD = 3
+#
+# CLEAR_PCT_THREHOLD = 0.25
+#
+# SNOW_PCT_THRESHOLD = 0.75
+#
+# CHANGE_PROBABILITY = 1
+#
+# # Representative values in the QA band
+# QA_FILL = 255
+#
+# QA_CLEAR = 0
+#
+# QA_WATER = 1
+#
+# QA_SNOW = 3
+#
+# MEOW_SIZE = 16
+#
+# PEEK_SIZE = 3
+#
+# T_CONST = 4.89
+#
+# STABILITY_THRESHOLD = 200.0
+#
+# DETECTION_BANDS = range(2, 7)
+#
+# # Tmasking threshold
+# TMASK_THRESHOLD = chi2.ppf(0.999999, len(DETECTION_BANDS))
+#
+# # Change detection threshold
+# CHANGE_THRESHOLD = chi2.ppf(0.99, len(DETECTION_BANDS))
 
 # This is a string.fully.qualified.reference to the fitter function.
 # Cannot import and supply the function directly or we'll get a

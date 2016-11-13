@@ -1,0 +1,57 @@
+############################
+# Default Configuration Options
+############################
+MINIMUM_CLEAR_OBSERVATION_COUNT: 12
+CONSECUTIVE_OBSERVATIONS_COUNT: 6
+
+# 2 for tri-modal; 2 for bi-modal; 2 for seasonality; 2 for linear
+COEFFICIENT_CATEGORIES:
+  'min': 4
+  'mid': 6
+  'max': 8
+
+############################
+# Define spectral band indices on input observations array
+############################
+BLUE_IDX: 0
+GREEN_IDX: 1
+RED_IDX: 2
+NIR_IDX: 3
+SWIR_1_IDX: 4
+SWIR_2_IDX: 5
+THERMAL_IDX: 6
+QA_IDX: 7
+
+DETECTION_BANDS:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+
+############################
+# Representative values in the QA band
+############################
+QA_FILL: 255
+QA_CLEAR: 0
+QA_WATER: 1
+QA_SNOW: 3
+
+############################
+# Threshold values used
+############################
+CLEAR_OBSERVATION_THRESHOLD: 3
+CLEAR_PCT_THREHOLD: 0.25
+SNOW_PCT_THRESHOLD: 0.75
+TMASK_THRESHOLD: 38.258336377145845
+CHANGE_THRESHOLD: 16.811893829770927
+T_CONST: 4.89
+STABILITY_THRESHOLD: 200.0
+
+CHANGE_PROBABILITY: 1
+
+############################
+# Affects how
+############################
+MEOW_SIZE: 16
+PEEK_SIZE: 3
