@@ -1,4 +1,5 @@
 from ccd.change import detect as __detect
+from ccd.change import determine_fit_procedure as __determine_fit_procedure
 from ccd.filter import preprocess as __preprocess
 import numpy as np
 from ccd import app
@@ -8,6 +9,7 @@ from .version import __algorithm__
 from .version import __name
 
 logger = app.logging.getLogger(__name)
+config = app.config
 
 
 def attr_from_str(value):
@@ -116,7 +118,7 @@ def __split_dates_spectra(matrix):
 
 
 def detect(dates, reds, greens, blues, nirs,
-           swir1s, swir2s, thermals, qas, preprocess=True):
+           swir1s, swir2s, thermals, quality, preprocess=True):
     """Entry point call to detect change
 
     Args:
@@ -128,7 +130,7 @@ def detect(dates, reds, greens, blues, nirs,
         swir1s:   numpy array of swir1 band values
         swir2s:   numpy array of swir2 band values
         thermals: numpy array of thermal band values
-        qas:      numpy array of qa band values
+        quality:      numpy array of qa band values
 
     Returns:
         Tuple of ccd.detections namedtuples
@@ -136,7 +138,7 @@ def detect(dates, reds, greens, blues, nirs,
 
     __matrix = np.array([dates, reds, greens,
                          blues, nirs, swir1s,
-                         swir2s, thermals, qas])
+                         swir2s, thermals, quality])
 
     # get the spectra separately so we can call detect
     if preprocess is True:
@@ -145,8 +147,11 @@ def detect(dates, reds, greens, blues, nirs,
         __dates, __spectra = __split_dates_spectra(__matrix)
 
     # load the fitter_fn from app.FITTER_FN
-    __fitter_fn = attr_from_str(app.FITTER_FN)
+    __fitter_fn = attr_from_str(config.FITTER_FN)
+
+    # Determine which procedure to use for the detection
+    __procedure = __determine_fit_procedure(quality)
 
     # call detect and return results as the detections namedtuple
-    return __as_detections(__detect(__dates, __spectra, __fitter_fn,
-                                    app.MEOW_SIZE, app.PEEK_SIZE))
+    return __as_detections(__detect(__dates, __spectra, __fitter_fn, __procedure,
+                                    config.MEOW_SIZE, config.PEEK_SIZE))

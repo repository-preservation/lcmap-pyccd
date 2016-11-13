@@ -55,3 +55,4 @@ CHANGE_PROBABILITY: 1
 ############################
 MEOW_SIZE: 16
 PEEK_SIZE: 3
+FITTER_FN: 'ccd.models.lasso.fitted_model'
