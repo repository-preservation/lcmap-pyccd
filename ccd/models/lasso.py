@@ -11,24 +11,31 @@ def __coefficient_cache_key(observation_dates):
 
 
 @cached(cache=cache, key=__coefficient_cache_key)
-def coefficient_matrix(observation_dates):
-    """c1 * sin(t/365.25) + c2 * cos(t/365.25) + c3*t + c4 * 1
-
+def coefficient_matrix(observation_dates, df):
+    """
     Args:
         observation_dates: list of ordinal dates
+        df: degrees of freedom, how many coefficients to use
 
     Returns:
         Populated numpy array with coefficient values
     """
-    # c1 = np.array([np.sin(t/365.25) for t in observation_dates])
-    # c2 = np.array([np.cos(t/365.25) for t in observation_dates])
-    # c3 = np.array([t for t in observation_dates])
-    # c4 = np.ones(len(c1))
+    w = 2 * np.pi / 365.25
 
-    matrix = np.ones(shape=(len(observation_dates), 4))
-    matrix[:, 0] = [np.sin(2*np.pi*t/365.25) for t in observation_dates]
-    matrix[:, 1] = [np.cos(2*np.pi*t/365.25) for t in observation_dates]
-    matrix[:, 2] = [t for t in observation_dates]
+    matrix = np.zeros(shape=(len(observation_dates), 8))
+
+    matrix[:, 0] = [t for t in observation_dates]
+    matrix[:, 1] = [np.cos(w*t) for t in observation_dates]
+    matrix[:, 2] = [np.sin(w*t) for t in observation_dates]
+
+    if df == 6:
+        matrix[:, 3] = [np.cos(2 * w * t) for t in observation_dates]
+        matrix[:, 4] = [np.sin(2 * w * t) for t in observation_dates]
+
+    if df == 8:
+        matrix[:, 5] = [np.cos(3 * w * t) for t in observation_dates]
+        matrix[:, 6] = [np.sin(3 * w * t) for t in observation_dates]
+
     return matrix
 
 
