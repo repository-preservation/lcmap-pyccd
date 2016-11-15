@@ -11,9 +11,7 @@ Module level constructs are only evaluated once in a Python application's
 lifecycle, usually at the time of first import. This pattern is borrowed
 from Flask.
 """
-import logging
-import sys
-import yaml
+import logging, sys, yaml, os
 from cachetools import LRUCache
 
 
@@ -41,7 +39,7 @@ class Config(dict):
 ############################
 # Configuration/parameter defaults
 ############################
-config = Config()
+config = Config(os.path.join(os.path.dirname(__file__), 'parameters.yaml'))
 
 
 ############################

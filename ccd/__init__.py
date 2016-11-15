@@ -136,16 +136,16 @@ def detect(dates, reds, greens, blues, nirs,
         Tuple of ccd.detections namedtuples
     """
 
-    __spectra = np.stack((reds, greens,
-                          blues, nirs, swir1s,
-                          swir2s, thermals, quality), axis=1)
+    spectra = np.stack((reds, greens,
+                        blues, nirs, swir1s,
+                        swir2s, thermals, quality))
 
     # load the fitter_fn from app.FITTER_FN
-    __fitter_fn = attr_from_str(config.FITTER_FN)
+    fitter_fn = attr_from_str(config.FITTER_FN)
 
     # Determine which procedure to use for the detection
-    __procedure = __determine_fit_procedure(quality)
+    procedure = __determine_fit_procedure(quality)
 
     # call detect and return results as the detections namedtuple
-    return __as_detections(__procedure(dates, __spectra, __fitter_fn,
-                                       config.MEOW_SIZE, config.PEEK_SIZE))
+    return __as_detections(procedure(dates, spectra, fitter_fn,
+                                     config.MEOW_SIZE, config.PEEK_SIZE))

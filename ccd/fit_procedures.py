@@ -1,8 +1,34 @@
+"""Functions for producing change model parameters.
+
+The change module provides a 'detect' function used to produce change model
+parameters for multi-spectra time-series data. It is implemented in a manner
+independent of data sources, input formats, pre-processing routines, and
+output formats.
+
+In general, change detection is an iterative, two-step process: an initial
+stable period of time is found for a time-series of data and then the same
+window is extended until a change is detected. These steps repeat until all
+available observations are considered.
+
+The result of this process is a list-of-lists of change models that correspond
+to observation spectra.
+
+Preprocessing routines are essential to, but distinct from, the core change
+detection algorithm. See the `ccd.filter` for more details related to this
+step.
+
+For more information please refer to the `CCDC Algorithm Description Document`.
+
+.. _Algorithm Description Document:
+   http://landsat.usgs.gov/documents/ccdc_add.pdf
+"""
+
 import numpy as np
 
 from ccd import tmask
 from ccd.models import lasso
 from ccd.app import logging, config
+from ccd.change import initialize, extend
 
 
 log = logging.getLogger(__name__)
@@ -16,7 +42,7 @@ def fmask_fail_procedure():
     pass
 
 
-def standard_fit_procedure(times, observations, fitter_fn,
+def standard_fit_procedure(dates, observations, fitter_fn,
                            meow_size=config.MEOW_SIZE, peek_size=config.PEEK_SIZE):
     """Runs the core change detection algorithm.
 
@@ -24,7 +50,7 @@ def standard_fit_procedure(times, observations, fitter_fn,
         observations.
 
         Args:
-            times: list of ordinal day numbers relative to some epoch,
+            dates: list of ordinal day numbers relative to some epoch,
                 the particular epoch does not matter.
             observations: values for one or more spectra corresponding
                 to each time.
@@ -41,7 +67,7 @@ def standard_fit_procedure(times, observations, fitter_fn,
 
     log.debug("build change model – time: {0}, obs: {1}, {2}, \
                    meow_size: {3}, peek_size: {4}".format(
-        times.shape, observations.shape,
+        dates.shape, observations.shape,
         fitter_fn, meow_size, peek_size))
 
     # Accumulator for models. This is a list of lists; each top-level list
@@ -60,19 +86,19 @@ def standard_fit_procedure(times, observations, fitter_fn,
     # pre-calculate coefficient matrix for all time values; this calculation
     # needs to be performed only once, but the lasso and tmask matrices are
     # different.
-    model_matrix = lasso.coefficient_matrix(times)
-    tmask_matrix = tmask.robust_fit_coefficient_matrix(times)
+    model_matrix = lasso.coefficient_matrix(dates)
+    tmask_matrix = tmask.tmask_coefficient_matrix(dates)
 
     # Only build models as long as sufficient data exists. The observation
     # window starts at meow_ix and is fixed until the change model no longer
     # fits new observations, i.e. a change is detected. The meow_ix updated
     # at the end of each iteration using an end index, so it is possible
     # it will become None.
-    while (meow_ix is not None) and (meow_ix + meow_size) <= len(times):
+    while (meow_ix is not None) and (meow_ix + meow_size) <= len(dates):
 
         # Step 1: Initialize -- find an initial stable time-frame.
         log.debug("initialize change model")
-        meow_ix, end_ix, models, errors_ = initialize(times, observations,
+        meow_ix, end_ix, models, errors_ = initialize(dates, observations,
                                                       fitter_fn, model_matrix,
                                                       tmask_matrix,
                                                       meow_ix, meow_size,
@@ -80,7 +106,7 @@ def standard_fit_procedure(times, observations, fitter_fn,
 
         # Step 2: Extension -- expand time-frame until a change is detected.
         log.debug("extend change model")
-        end_ix, models, magnitudes_ = extend(times, observations, model_matrix,
+        end_ix, models, magnitudes_ = extend(dates, observations, model_matrix,
                                              meow_ix, end_ix, peek_size,
                                              fitter_fn, models)
 
@@ -89,7 +115,7 @@ def standard_fit_procedure(times, observations, fitter_fn,
         # are not present, then not enough observations exist for a useful
         # model to be produced, so nothing is appened to results.
         if (meow_ix is not None) and (end_ix is not None):
-            result = (times[meow_ix], times[end_ix],
+            result = (dates[meow_ix], dates[end_ix],
                       models, errors_, magnitudes_)
             results += (result,)
 
