@@ -22,7 +22,7 @@ def coefficient_matrix(observation_dates, df):
     """
     w = 2 * np.pi / 365.25
 
-    matrix = np.zeros(shape=(len(observation_dates), 8))
+    matrix = np.zeros(shape=(len(observation_dates), 8), order='F')
 
     matrix[:, 0] = [t for t in observation_dates]
     matrix[:, 1] = [np.cos(w*t) for t in observation_dates]

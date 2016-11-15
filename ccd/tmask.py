@@ -17,7 +17,7 @@ def tmask_coefficient_matrix(dates):
     annual_cycle = 2*np.pi/365.25
     observation_cycle = annual_cycle / np.ceil((dates[-1] - dates[0]) / 365.25)
 
-    matrix = np.ones(shape=(len(dates), 5))
+    matrix = np.zeros(shape=(len(dates), 5), order='F')
     matrix[:, 0] = [np.cos(annual_cycle*t) for t in dates]
     matrix[:, 1] = [np.sin(annual_cycle*t) for t in dates]
     matrix[:, 2] = [np.cos(observation_cycle*t) for t in dates]
