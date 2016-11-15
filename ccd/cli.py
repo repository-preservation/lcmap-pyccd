@@ -8,6 +8,7 @@ from pkg_resources import iter_entry_points
 import click
 import json
 import numpy as np
+import time
 
 
 logger = app.logging.getLogger(__name__)
@@ -30,7 +31,10 @@ def sample(path, format):
     samples = np.genfromtxt(path, delimiter=',', dtype=np.int).T
 
     logger.debug("Building change model...")
+
+    t1 = time.time()
     results = ccd.detect(*samples)
+    print ("ElapsedTime: ", "%.3f"%(time.time() - t1))
 
     if format == 'table':
         click.echo(results_to_table(results))

@@ -27,7 +27,8 @@ from cachetools import LRUCache
 # configure the
 # logging system below.
 # iso8601 date format
-__format = '%(asctime)s %(module)s::%(funcName)-20s - %(message)s'
+#__format = '%(asctime)s %(module)s::%(funcName)-20s - %(message)s'
+__format = '%(asctime)s.%(msecs)03d %(module)s::%(funcName)-20s - %(message)s'
 logging.basicConfig(stream=sys.stdout,
                     level=logging.DEBUG,
                     format=__format,
