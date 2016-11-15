@@ -118,33 +118,27 @@ def __split_dates_spectra(matrix):
 
 
 def detect(dates, reds, greens, blues, nirs,
-           swir1s, swir2s, thermals, quality, preprocess=True):
+           swir1s, swir2s, thermals, quality):
     """Entry point call to detect change
 
     Args:
-        dates:    numpy array of ordinal date values
-        reds:     numpy array of red band values
-        greens:   numpy array of green band values
-        blues:    numpy array of blue band values
-        nirs:     numpy array of nir band values
-        swir1s:   numpy array of swir1 band values
-        swir2s:   numpy array of swir2 band values
-        thermals: numpy array of thermal band values
-        quality:      numpy array of qa band values
+        dates:    1d-array or list of ordinal date values
+        reds:     1d-array or list of red band values
+        greens:   1d-array or list of green band values
+        blues:    1d-array or list of blue band values
+        nirs:     1d-array or list of nir band values
+        swir1s:   1d-array or list of swir1 band values
+        swir2s:   1d-array or list of swir2 band values
+        thermals: 1d-array or list of thermal band values
+        quality:  1d-array or list of qa band values
 
     Returns:
         Tuple of ccd.detections namedtuples
     """
 
-    __matrix = np.array([dates, reds, greens,
-                         blues, nirs, swir1s,
-                         swir2s, thermals, quality])
-
-    # get the spectra separately so we can call detect
-    if preprocess is True:
-        __dates, __spectra = __split_dates_spectra(__preprocess(__matrix))
-    else:
-        __dates, __spectra = __split_dates_spectra(__matrix)
+    __spectra = np.stack((reds, greens,
+                          blues, nirs, swir1s,
+                          swir2s, thermals, quality), axis=1)
 
     # load the fitter_fn from app.FITTER_FN
     __fitter_fn = attr_from_str(config.FITTER_FN)
@@ -153,5 +147,5 @@ def detect(dates, reds, greens, blues, nirs,
     __procedure = __determine_fit_procedure(quality)
 
     # call detect and return results as the detections namedtuple
-    return __as_detections(__detect(__dates, __spectra, __fitter_fn, __procedure,
-                                    config.MEOW_SIZE, config.PEEK_SIZE))
+    return __as_detections(__procedure(dates, __spectra, __fitter_fn,
+                                       config.MEOW_SIZE, config.PEEK_SIZE))

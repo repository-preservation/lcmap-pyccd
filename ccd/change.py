@@ -32,7 +32,7 @@ log = app.logging.getLogger(__name__)
 config = app.config
 
 
-def detect(times, observations, fitter_fn, fit_procedure,
+def detect(dates, observations, fitter_fn, fit_procedure,
            meow_size=config.MEOW_SIZE, peek_size=config.PEEK_SIZE):
     """Runs the core change detection algorithm.
 
@@ -40,7 +40,7 @@ def detect(times, observations, fitter_fn, fit_procedure,
     observations.
 
     Args:
-        times: list of ordinal day numbers relative to some epoch,
+        dates: list of ordinal day numbers relative to some epoch,
             the particular epoch does not matter.
         observations: values for one or more spectra corresponding
             to each time.
@@ -57,7 +57,7 @@ def detect(times, observations, fitter_fn, fit_procedure,
 
     log.debug("build change model – time: {0}, obs: {1}, {2}, \
                meow_size: {3}, peek_size: {4}".format(
-              times.shape, observations.shape,
+              dates.shape, observations.shape,
               fitter_fn, meow_size, peek_size))
 
     # Accumulator for models. This is a list of lists; each top-level list
@@ -76,19 +76,19 @@ def detect(times, observations, fitter_fn, fit_procedure,
     # pre-calculate coefficient matrix for all time values; this calculation
     # needs to be performed only once, but the lasso and tmask matrices are
     # different.
-    model_matrix = lasso.coefficient_matrix(times)
-    tmask_matrix = tmask.robust_fit_coefficient_matrix(times)
+    model_matrix = lasso.coefficient_matrix(dates)
+    tmask_matrix = tmask.tmask_coefficient_matrix(dates)
 
     # Only build models as long as sufficient data exists. The observation
     # window starts at meow_ix and is fixed until the change model no longer
     # fits new observations, i.e. a change is detected. The meow_ix updated
     # at the end of each iteration using an end index, so it is possible
     # it will become None.
-    while (meow_ix is not None) and (meow_ix+meow_size) <= len(times):
+    while (meow_ix is not None) and (meow_ix+meow_size) <= len(dates):
 
         # Step 1: Initialize -- find an initial stable time-frame.
         log.debug("initialize change model")
-        meow_ix, end_ix, models, errors_ = initialize(times, observations,
+        meow_ix, end_ix, models, errors_ = initialize(dates, observations,
                                                       fitter_fn, model_matrix,
                                                       tmask_matrix,
                                                       meow_ix, meow_size,
@@ -96,7 +96,7 @@ def detect(times, observations, fitter_fn, fit_procedure,
 
         # Step 2: Extension -- expand time-frame until a change is detected.
         log.debug("extend change model")
-        end_ix, models, magnitudes_ = extend(times, observations, model_matrix,
+        end_ix, models, magnitudes_ = extend(dates, observations, model_matrix,
                                              meow_ix, end_ix, peek_size,
                                              fitter_fn, models)
 
@@ -105,7 +105,7 @@ def detect(times, observations, fitter_fn, fit_procedure,
         # are not present, then not enough observations exist for a useful
         # model to be produced, so nothing is appened to results.
         if (meow_ix is not None) and (end_ix is not None):
-            result = (times[meow_ix], times[end_ix],
+            result = (dates[meow_ix], dates[end_ix],
                       models, errors_, magnitudes_)
             results += (result,)
 
