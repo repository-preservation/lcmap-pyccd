@@ -35,7 +35,9 @@ DETECTION_BANDS:
 QA_FILL: 255
 QA_CLEAR: 0
 QA_WATER: 1
+QA_SHADOW: 2
 QA_SNOW: 3
+QA_CLOUD: 4
 
 ############################
 # Threshold values used

@@ -8,8 +8,7 @@ be looked at from a higher level
 """
 
 import numpy as np
-import ccd.tmask as tmask
-from ccd import app, fit_procedures, filter
+from ccd import app, qa, tmask
 
 log = app.logging.getLogger(__name__)
 config = app.config
@@ -345,23 +344,3 @@ def extend(times, observations, coefficients,
     log.debug("extension complete, meow_ix: {0}, end_ix: {1}".format(meow_ix,
                                                                      end_ix))
     return end_ix, models, magnitudes_
-
-
-def determine_fit_procedure(quality):
-    """Determine which curve fitting function to use
-
-    This is based on information from the QA band
-
-    Args:
-        quality: QA information for each observation
-
-    Returns:
-        method: the corresponding method that will be use to generate the curves
-    """
-    if not filter.enough_clear(quality):
-        if filter.enough_snow(quality):
-            return fit_procedures.permanent_snow_procedure
-        else:
-            return fit_procedures.fmask_fail_procedure
-    else:
-        return fit_procedures.standard_fit_procedure

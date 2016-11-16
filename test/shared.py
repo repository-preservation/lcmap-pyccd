@@ -1,7 +1,7 @@
 import numpy as np
 import datetime
 import aniso8601
-import ccd.app as app
+from ccd import app
 
 
 log = app.logging.getLogger(__name__)

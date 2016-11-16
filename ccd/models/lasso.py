@@ -11,7 +11,7 @@ def __coefficient_cache_key(observation_dates):
 
 
 @cached(cache=cache, key=__coefficient_cache_key)
-def coefficient_matrix(observation_dates, df):
+def coefficient_matrix(observation_dates, df=4):
     """
     Args:
         observation_dates: list of ordinal dates

@@ -1,6 +1,5 @@
-from ccd.change import detect as __detect
-from ccd.change import determine_fit_procedure as __determine_fit_procedure
-from ccd.filter import preprocess as __preprocess
+from ccd.procedures import determine_fit_procedure as __determine_fit_procedure
+from ccd.qa import preprocess as __preprocess
 import numpy as np
 from ccd import app
 import importlib

@@ -25,13 +25,33 @@ For more information please refer to the `CCDC Algorithm Description Document`.
 
 import numpy as np
 
-from ccd import tmask
+from ccd import tmask, qa
 from ccd.models import lasso
 from ccd.app import logging, config
 from ccd.change import initialize, extend
 
 
 log = logging.getLogger(__name__)
+
+
+def determine_fit_procedure(quality):
+    """Determine which curve fitting function to use
+
+    This is based on information from the QA band
+
+    Args:
+        quality: QA information for each observation
+
+    Returns:
+        method: the corresponding method that will be use to generate the curves
+    """
+    if not qa.enough_clear(quality):
+        if qa.enough_snow(quality):
+            return permanent_snow_procedure
+        else:
+            return fmask_fail_procedure
+    else:
+        return standard_fit_procedure
 
 
 def permanent_snow_procedure():

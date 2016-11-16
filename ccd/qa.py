@@ -13,7 +13,7 @@ This module currently uses explicit values from the Landsat CFMask:
 from ccd.app import config
 
 
-def count_clear_or_water(quality):
+def count_clear_or_water(quality, clear=config.QA_CLEAR, water=config.QA_WATER):
     """Count clear or water data.
 
     Arguments:
@@ -22,7 +22,7 @@ def count_clear_or_water(quality):
     Returns:
         integer: number of clear or water observation implied by QA data.
     """
-    return quality[(quality == config.QA_CLEAR) | (quality == config.QA_WATER)].shape[0]
+    return quality[(quality == clear) | (quality == water)].shape[0]
 
 
 def count_fill(quality):
