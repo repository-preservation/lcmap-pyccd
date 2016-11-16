@@ -26,30 +26,22 @@ def tmask_coefficient_matrix(dates):
     return matrix
 
 
-# TODO (jmorton) have a set of constants for array
-# indexes based on what is passed in.
-
-def tmask(dates, observations, tmask_matrix, adjusted_rmse, idx_slice=None, bands=(config.GREEN_IDX, config.SWIR_1_IDX)):
+def tmask(dates, observations, tmask_matrix, adjusted_rmse, bands=(config.GREEN_IDX, config.SWIR1_IDX)):
     """Produce an index for filtering outliers.
 
     Arguments:
-        observations: time/spectra/qa major nd-array, assumed to be
-            shaped as (9,n-moments) of unscaled data.
+        dates: ordinal date values associated to each n-moment in the observations
+        observations: spectral values, assumed to be shaped as (n-bands,n-moments)
+        tmask_matrix: input matrix for the linear regression
         bands: list of band indices used for outlier detection, by default
             bands 2 and 5.
-        thresholds: list of values corresponding to bands
-            used for outlier deterction.
+        adjusted_rmse: list of values corresponding to bands
+            used for outlier detection.
 
     Return: indexed array, excluding outlier observations.
     """
-    if idx_slice is None:
-        idx_slice = slice(0, -1)
-
     # Time and expected values using a four-part matrix of coefficients.
     regression = lm.LinearRegression()
-
-    relevent_obs = observations[idx_slice, :]
-    relevent_matrix = tmask_matrix[idx_slice, :]
 
     # Accumulator for outliers. This starts off as a list of False values
     # because we don't assume anything is an outlier.
@@ -58,10 +50,10 @@ def tmask(dates, observations, tmask_matrix, adjusted_rmse, idx_slice=None, band
 
     # For each band, determine if the delta between predeicted and actual
     # values exceeds the threshold. If it does, then it is an outlier.
-    for band_ix, armse in zip(bands, adjusted_rmse):
-        fit = regression.fit(relevent_matrix, relevent_obs[:, band_ix])
-        predicted = fit.predict(relevent_matrix)
-        outliers += np.abs(predicted-relevent_obs) > armse
+    for band_ix in bands:
+        fit = regression.fit(tmask_matrix, observations[band_ix])
+        predicted = fit.predict(tmask_matrix)
+        outliers += np.abs(predicted - observations[band_ix]) > adjusted_rmse[band_ix]
 
     # Keep all observations that aren't outliers.
-    return np.array(dates)[~outliers], observations[:, ~outliers]
+    return dates[~outliers], observations[:, ~outliers]

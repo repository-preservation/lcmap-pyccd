@@ -26,9 +26,9 @@ For more information please refer to the `CCDC Algorithm Description Document`.
 import numpy as np
 
 from ccd import tmask, qa
-from ccd.models import lasso
 from ccd.app import logging, config
 from ccd.change import initialize, extend
+from ccd.models import lasso, tmask
 
 
 log = logging.getLogger(__name__)
@@ -97,11 +97,10 @@ def standard_fit_procedure(dates, observations, fitter_fn,
     # The starting point for initialization. Used to as reference point for
     # taking a range of times and spectral values.
     meow_ix = 0
+    window = slice(0, meow_size)
 
     # calculate a modified first-order variogram/madogram
-    adjusted_rmse = np.median(np.abs(np.diff(observations, n=1, axis=1)), axis=1)
-    # ...or is this correct?
-    # adjusted_rmse = np.median(np.absolute(observations), 1) * app.T_CONST
+    adjusted_rmse = np.median(np.abs(np.diff(observations)), axis=1)
 
     # pre-calculate coefficient matrix for all time values; this calculation
     # needs to be performed only once, but the lasso and tmask matrices are
@@ -114,14 +113,14 @@ def standard_fit_procedure(dates, observations, fitter_fn,
     # fits new observations, i.e. a change is detected. The meow_ix updated
     # at the end of each iteration using an end index, so it is possible
     # it will become None.
-    while (meow_ix is not None) and (meow_ix + meow_size) <= len(dates):
+    while (window.start is not None) and window.stop <= dates.shape[0]:
 
         # Step 1: Initialize -- find an initial stable time-frame.
         log.debug("initialize change model")
         meow_ix, end_ix, models, errors_ = initialize(dates, observations,
                                                       fitter_fn, model_matrix,
                                                       tmask_matrix,
-                                                      meow_ix, meow_size,
+                                                      window, meow_size,
                                                       adjusted_rmse)
 
         # Step 2: Extension -- expand time-frame until a change is detected.

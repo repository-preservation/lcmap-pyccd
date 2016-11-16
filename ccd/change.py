@@ -8,7 +8,9 @@ be looked at from a higher level
 """
 
 import numpy as np
-from ccd import app, qa, tmask
+
+from ccd import app
+from ccd.models import tmask
 
 log = app.logging.getLogger(__name__)
 config = app.config
@@ -116,12 +118,12 @@ def end_index(meow_ix, meow_size):
     return meow_ix + meow_size - 1
 
 
-def find_time_index(times, meow_ix, meow_size, day_delta=365):
+def find_time_index(dates, window, meow_size=config.MEOW_SIZE, day_delta=config.DAY_DELTA):
     """Find index in times at least one year from time at meow_ix.
     Args:
-        times: list of ordinal day numbers relative to some epoch,
+        dates: list of ordinal day numbers relative to some epoch,
             the particular epoch does not matter.
-        meow_ix: index into times, used to get day number for comparing
+        window: index into times, used to get day number for comparing
             times for
         meow_size: relative number of observations after meow_ix to
             begin searching for a time index
@@ -134,49 +136,51 @@ def find_time_index(times, meow_ix, meow_size, day_delta=365):
 
     # If the last time is less than a year, then iterating through
     # times to find an index is futile.
-    if not enough_time(times, meow_ix, day_delta=365):
+    if not enough_time(dates, window, day_delta=day_delta):
         log.debug("insufficient time ({0} days) after \
-                   times[{1}]:{2}".format(day_delta, meow_ix, times[meow_ix]))
+                   times[{1}]:{2}".format(day_delta, window.start, dates[window.start]))
         return None
 
-    end_ix = end_index(meow_ix, meow_size)
+    if window.stop:
+        end_ix = window.stop
+    else:
+        end_ix = window.start + meow_size
 
     # This seems pretty naive, if you can think of something more
     # performant and elegant, have at it!
-    while end_ix < len(times):
-        if (times[end_ix]-times[meow_ix]) >= day_delta:
+    while end_ix < dates.shape[0]:
+        if (dates[end_ix]-dates[window.start]) >= day_delta:
             break
         else:
             end_ix += 1
 
     log.debug("sufficient time from times[{0}..{1}] \
-               (day #{2} to #{3})".format(meow_ix, end_ix,
-                                          times[meow_ix], times[end_ix]))
+               (day #{2} to #{3})".format(window.start, end_ix,
+                                          dates[window.start], dates[end_ix]))
 
     return end_ix
 
 
-def enough_samples(times, meow_ix, meow_size):
+def enough_samples(dates, window, meow_size=config.MEOW_SIZE):
     """Change detection requires a minimum number of samples (as specified
     by meow size).
 
     This function improves readability of logic that performs this check.
 
     Args:
-        times: list of ordinal day numbers relative to some epoch,
+        dates: list of ordinal day numbers relative to some epoch,
             the particular epoch does not matter.
-        meow_ix: start index of time/observation window, used with meow_size
-            determine if sufficient observations exist.
+        window: slice object representing the indices that we want to look at
         meow_size: offset of last time from meow_ix
 
     Returns:
         bool: True if times contains enough samples after meow_ix,
         False otherwise.
     """
-    return (meow_ix+meow_size) <= len(times)
+    return window.stop <= dates.shape[0]
 
 
-def enough_time(times, meow_ix, day_delta=365):
+def enough_time(dates, window, day_delta=config.DAY_DELTA):
     """Change detection requires a minimum amount of time (as specified by
     day_delta).
 
@@ -184,30 +188,29 @@ def enough_time(times, meow_ix, day_delta=365):
     that performs this check.
 
     Args:
-        times: list of ordinal day numbers relative to some epoch,
+        dates: list of ordinal day numbers relative to some epoch,
             the particular epoch does not matter.
-        meow_ix: start index of time/observation window, used to
-            get a value from time for comparison.
+        window: slice object representing the indices that we want to look at
         day_delta: minimum difference between time at meow_ix and most
             recent observation.
 
     Returns:
-        list: RMSE for each model.
+        list: True if the represented time span is greater than day_delta
     """
-    return (times[-1]-times[meow_ix]) >= day_delta
+    return (dates[-1] - dates[window.start]) >= day_delta
 
 
-def initialize(times, observations, fitter_fn,  model_matrix, tmask_matrix,
-               meow_ix, meow_size, adjusted_rmse, day_delta=365):
+def initialize(dates, observations, fitter_fn, model_matrix, tmask_matrix,
+               window, meow_size, adjusted_rmse):
     """Determine the window indices, models, and errors for observations.
 
     Args:
-        times: list of ordinal day numbers relative to some epoch,
+        dates: list of ordinal day numbers relative to some epoch,
             the particular epoch does not matter.
         observations: spectral values, list of spectra -> values
         model_matrix: TODO
         tmask_matrix: TODO
-        meow_ix: start index of time/observation window
+        window: start index of time/observation window
         meow_size: offset from meow_ix, determines initial window size
         day_delta: minimum difference between time at meow_ix and most
             recent observation
@@ -217,46 +220,44 @@ def initialize(times, observations, fitter_fn,  model_matrix, tmask_matrix,
     """
 
     # Guard...
-    if not enough_samples(times, meow_ix, meow_size):
+    if not enough_samples(dates, window):
         log.debug("failed, insufficient clear observations")
-        return meow_ix, None, None, None
+        return window, None, None, None
 
-    if not enough_time(times, meow_ix, day_delta):
+    if not enough_time(dates, window):
         log.debug("failed, insufficient time range")
-        return meow_ix, None, None, None
+        return window, None, None, None
 
-    while (meow_ix+meow_size) <= len(times):
-        log.debug("initialize from {0}..{1}".format(meow_ix,
-                                                    meow_ix+meow_size))
+    while window.stop <= dates.shape[0]:
+        log.debug("initialize from {0}..{1}".format(window.start,
+                                                    window.stop))
 
         # Finding a sufficient window of time needs must run
-        # each iteration because the starting point (meow_ix)
+        # each iteration because the starting point
         # will increment if the model isn't stable, incrementing
         # the window of in lock-step does not guarantee a 1-year+
         # time-range.
-        end_ix = find_time_index(times, meow_ix, meow_size, day_delta)
-        if end_ix is None:
-            break
+        window.stop = find_time_index(dates, window, meow_size)
 
         # Count outliers in the window, if there are too many outliers then
         # try again.
-        times_, observations_ = tmask.tmask(times[meow_ix:end_ix+1],
-                                            observations[:, meow_ix:end_ix+1],
-                                            tmask_matrix[meow_ix:end_ix+1, :],
+        times_, observations_ = tmask.tmask(dates[window],
+                                            observations[:, window],
+                                            tmask_matrix[window, :],
                                             adjusted_rmse)
 
         if (len(times_) < meow_size) or ((times_[-1] - times_[0]) < day_delta):
             log.debug("continue, not enough observations \
                        ({0}) after tmask".format(len(times_)))
-            meow_ix += 1
+            window += 1
             continue
 
         # Each spectra, although analyzed independently, all share
         # a common time-frame. Consequently, it doesn't make sense
         # to analyze one spectrum in it's entirety.
-        period = times[meow_ix:end_ix+1]
-        matrix = model_matrix[meow_ix:end_ix+1]
-        spectra = observations[:, meow_ix:end_ix+1]
+        period = dates[window:end_ix + 1]
+        matrix = model_matrix[window:end_ix + 1]
+        spectra = observations[:, window:end_ix + 1]
         models = [fitter_fn(period, spectrum) for spectrum in spectra]
         log.debug("update change models")
 
@@ -270,15 +271,15 @@ def initialize(times, observations, fitter_fn,  model_matrix, tmask_matrix,
         # forward in time, and begins initialization again.
         if not stable(errors_):
             log.debug("unstable model, shift start time and retry")
-            meow_ix += 1
+            window += 1
             continue
         else:
             log.debug("stable model, done.")
             break
 
-    log.debug("initialize complete, meow_ix: {0}, end_ix: {1}".format(meow_ix,
+    log.debug("initialize complete, meow_ix: {0}, end_ix: {1}".format(window,
                                                                       end_ix))
-    return meow_ix, end_ix, models, errors_
+    return window, end_ix, models, errors_
 
 
 def extend(times, observations, coefficients,

@@ -17,8 +17,8 @@ BLUE_IDX: 0
 GREEN_IDX: 1
 RED_IDX: 2
 NIR_IDX: 3
-SWIR_1_IDX: 4
-SWIR_2_IDX: 5
+SWIR1_IDX: 4
+SWIR2_IDX: 5
 THERMAL_IDX: 6
 QA_IDX: 7
 
@@ -57,4 +57,5 @@ CHANGE_PROBABILITY: 1
 ############################
 MEOW_SIZE: 16
 PEEK_SIZE: 3
+DAY_DELTA: 365
 FITTER_FN: 'ccd.models.lasso.fitted_model'
