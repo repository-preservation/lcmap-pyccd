@@ -39,11 +39,11 @@ def coefficient_matrix(observation_dates, df=4):
     return matrix
 
 
-def fitted_model(observation_dates, observations):
+def fitted_model(coef_matrix, observations):
     """Create a fully fitted lasso model.
 
     Args:
-        observation_dates: list or ordinal observation dates
+        coef_matrix: list or ordinal observation dates
         observations: list of values corresponding to observation_dates
 
     Returns:
@@ -54,4 +54,4 @@ def fitted_model(observation_dates, observations):
     """
     # pmodel = partial_model(observation_dates)
     lasso = linear_model.Lasso(alpha=0.1)
-    return lasso.fit(coefficient_matrix(observation_dates), observations)
+    return lasso.fit(coef_matrix, observations)

@@ -8,6 +8,7 @@ be looked at from a higher level
 """
 
 import numpy as np
+from sklearn.metrics import mean_squared_error
 
 from ccd import app
 from ccd.models import tmask
@@ -31,12 +32,25 @@ def rmse(models, coefficient_matrix, observations):
     errors = []
     for model, observed in zip(models, observations):
         predictions = model.predict(coefficient_matrix)
-        # TODO (jmorton): VERIFY CORRECTNESS
-        error = (np.linalg.norm(predictions - observed) /
-                 np.sqrt(len(predictions)))
+        error = np.sqrt(mean_squared_error(observed, predictions))
         errors.append(error)
     log.debug("calculate RMSE")
     return errors
+
+
+def detect_change(observation, model, start_date, end_date, model_rmse, adjusted_rmse, t_cg=config.CHANGE_THRESHOLD):
+    """Determine if the
+
+    Args:
+        observation:
+        model:
+        dates:
+        adjusted_rmse:
+        t_cg:
+
+    Returns:
+
+    """
 
 
 def stable(errors, threshold=config.STABILITY_THRESHOLD):
@@ -201,7 +215,7 @@ def enough_time(dates, window, day_delta=config.DAY_DELTA):
 
 
 def initialize(dates, observations, fitter_fn, model_matrix, tmask_matrix,
-               window, meow_size, adjusted_rmse):
+               window, meow_size, adjusted_rmse, day_delta=config.DAY_DELTA):
     """Determine the window indices, models, and errors for observations.
 
     Args:
@@ -224,9 +238,12 @@ def initialize(dates, observations, fitter_fn, model_matrix, tmask_matrix,
         log.debug("failed, insufficient clear observations")
         return window, None, None, None
 
-    if not enough_time(dates, window):
+    if not enough_time(dates, window, day_delta):
         log.debug("failed, insufficient time range")
         return window, None, None, None
+
+    models = None
+    errors_ = None
 
     while window.stop <= dates.shape[0]:
         log.debug("initialize from {0}..{1}".format(window.start,
@@ -239,26 +256,28 @@ def initialize(dates, observations, fitter_fn, model_matrix, tmask_matrix,
         # time-range.
         window.stop = find_time_index(dates, window, meow_size)
 
+        period = dates[window]
+        matrix = model_matrix[window]
+        spectra = observations[:, window]
+
         # Count outliers in the window, if there are too many outliers then
         # try again.
-        times_, observations_ = tmask.tmask(dates[window],
-                                            observations[:, window],
+        dates_, observations_ = tmask.tmask(period,
+                                            spectra,
                                             tmask_matrix[window, :],
                                             adjusted_rmse)
 
-        if (len(times_) < meow_size) or ((times_[-1] - times_[0]) < day_delta):
+        # Make sure we still have enough observations and enough time
+        if (dates_.shape[0] < meow_size) or ((dates_[-1] - dates_[0]) < day_delta):
             log.debug("continue, not enough observations \
-                       ({0}) after tmask".format(len(times_)))
-            window += 1
+                       ({0}) after tmask".format(len(dates_)))
+            window.stop += 1
             continue
 
         # Each spectra, although analyzed independently, all share
         # a common time-frame. Consequently, it doesn't make sense
         # to analyze one spectrum in it's entirety.
-        period = dates[window:end_ix + 1]
-        matrix = model_matrix[window:end_ix + 1]
-        spectra = observations[:, window:end_ix + 1]
-        models = [fitter_fn(period, spectrum) for spectrum in spectra]
+        models = [fitter_fn(matrix, spectrum) for spectrum in spectra]
         log.debug("update change models")
 
         # TODO (jmorton): The error of a model is calculated during
@@ -271,15 +290,17 @@ def initialize(dates, observations, fitter_fn, model_matrix, tmask_matrix,
         # forward in time, and begins initialization again.
         if not stable(errors_):
             log.debug("unstable model, shift start time and retry")
-            window += 1
+            window.start += 1
+            window.stop += 1
             continue
         else:
             log.debug("stable model, done.")
             break
 
-    log.debug("initialize complete, meow_ix: {0}, end_ix: {1}".format(window,
-                                                                      end_ix))
-    return window, end_ix, models, errors_
+    log.debug("initialize complete, start: {0}, stop: {1}".format(window.start,
+                                                                  window.stop))
+
+    return window, models, errors_
 
 
 def extend(times, observations, coefficients,

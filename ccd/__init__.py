@@ -134,6 +134,8 @@ def detect(dates, reds, greens, blues, nirs,
     Returns:
         Tuple of ccd.detections namedtuples
     """
+    if not isinstance(dates, np.ndarray):
+        dates = np.array(dates)
 
     spectra = np.stack((reds, greens,
                         blues, nirs, swir1s,
