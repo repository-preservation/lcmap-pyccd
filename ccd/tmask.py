@@ -29,7 +29,7 @@ def tmask_coefficient_matrix(dates):
 # TODO (jmorton) have a set of constants for array
 # indexes based on what is passed in.
 
-def tmask(dates, observations, tmask_matrix, adjusted_rmse, idx_slice, bands=(config.GREEN_IDX, config.SWIR_1_IDX)):
+def tmask(dates, observations, tmask_matrix, adjusted_rmse, idx_slice=None, bands=(config.GREEN_IDX, config.SWIR_1_IDX)):
     """Produce an index for filtering outliers.
 
     Arguments:
@@ -42,6 +42,9 @@ def tmask(dates, observations, tmask_matrix, adjusted_rmse, idx_slice, bands=(co
 
     Return: indexed array, excluding outlier observations.
     """
+    if idx_slice is None:
+        idx_slice = slice(0, -1)
+
     # Time and expected values using a four-part matrix of coefficients.
     regression = lm.LinearRegression()
 
