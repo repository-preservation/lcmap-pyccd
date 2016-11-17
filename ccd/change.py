@@ -1,4 +1,4 @@
-"""Functions used by the change detection procedures
+"""Functions and classes used by the change detection procedures
 
 This includes things such as a calculating RMSE, bounds checking,
 and other methods that are used outside of the main detection loop
@@ -17,50 +17,55 @@ log = app.logging.getLogger(__name__)
 config = app.config
 
 
-def rmse(models, coefficient_matrix, observations):
-    """Calculate RMSE for all models; used to determine if models are stable.
+# def rmse(models, coefficient_matrix, observations):
+#     """Calculate RMSE for all models; used to determine if models are stable.
+#
+#     Args:
+#         models: fitted models, used to predict values, corresponds to
+#             observation spectra.
+#         coefficient_matrix: TODO
+#         observations: list of spectra corresponding to models
+#
+#     Returns:
+#         list: RMSE for each model.
+#     """
+#     errors = []
+#     for model, observed in zip(models, observations):
+#         predictions = model.predict(coefficient_matrix)
+#         error = np.sqrt(mean_squared_error(observed, predictions))
+#         errors.append(error)
+#     log.debug("calculate RMSE")
+#     return errors
 
-    Args:
-        models: fitted models, used to predict values, corresponds to
-            observation spectra.
-        coefficient_matrix: TODO
-        observations: list of spectra corresponding to models
 
-    Returns:
-        list: RMSE for each model.
-    """
-    errors = []
-    for model, observed in zip(models, observations):
-        predictions = model.predict(coefficient_matrix)
-        error = np.sqrt(mean_squared_error(observed, predictions))
-        errors.append(error)
-    log.debug("calculate RMSE")
-    return errors
-
-
-def detect_change(observations, models, dates, model_rmse,
+def detect_change(observations, models, dates,
                   adjusted_rmse, t_cg=config.CHANGE_THRESHOLD):
     """Determine change has happened at a given moment in time in a
     given spectral value
 
     Args:
-        observations:
-        models:
-        dates:
-        model_rmse:
-        adjusted_rmse:
-        t_cg:
+        observations: spectral observations
+        models: current representative models
+        dates: date values that is covered by the models
+        adjusted_rmse: median variogram values
+        t_cg: change threshold
 
-    Returns:
+    Returns: Boolean on whether change has been detected or not
     """
-    rmse_thresh = np.maximum(adjusted_rmse, model_rmse)
+    rmse_thresh = [max(adjusted_rmse, model.rmse)
+                   for model, adj_rmse
+                   in zip(models, adjusted_rmse)]
 
     check_vals = []
-    for spectra, model in zip(observations, models):
-        slope = model.coef_[0] * (dates[-1] - dates[0])
-        check_val = (abs(slope) + abs)
-        check_vals.append()
+    for spectra, spectra_model, rmse in zip(observations, models, rmse_thresh):
+        slope = spectra_model.model.coef_[0] * (dates[-1] - dates[0])
+        check_val = (abs(slope) + abs(spectra_model.residual[0]) + abs(spectra_model.residual[-1])) / rmse
+        check_vals.append(check_val)
 
+    if np.linalg.norm(check_vals, ord=2) > t_cg:
+        return True
+    else:
+        return False
 
 
 def stable(errors, threshold=config.STABILITY_THRESHOLD):
@@ -290,15 +295,10 @@ def initialize(dates, observations, fitter_fn, model_matrix, tmask_matrix,
         models = [fitter_fn(matrix, spectrum) for spectrum in spectra]
         log.debug("update change models")
 
-        # TODO (jmorton): The error of a model is calculated during
-        # initialization, but isn't subsequently updated. Determine
-        # if this is correct.
-        errors_ = rmse(models, matrix, spectra)
-
         # If a model is not stable, then it is possible that a disturbance
         # exists somewhere in the observation window. The window shifts
         # forward in time, and begins initialization again.
-        if not stable(errors_):
+        if detect_change(spectra, models, period, adjusted_rmse):
             log.debug("unstable model, shift start time and retry")
             window.start += 1
             window.stop += 1
@@ -310,7 +310,7 @@ def initialize(dates, observations, fitter_fn, model_matrix, tmask_matrix,
     log.debug("initialize complete, start: {0}, stop: {1}".format(window.start,
                                                                   window.stop))
 
-    return window, models, errors_
+    return window, models
 
 
 def extend(times, observations, coefficients,

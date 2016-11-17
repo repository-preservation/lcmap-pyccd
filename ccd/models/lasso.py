@@ -1,7 +1,8 @@
 from sklearn import linear_model, metrics
 import numpy as np
-from cachetools import cached
-from cachetools import LRUCache
+from cachetools import cached, LRUCache
+
+from ccd.models import Model
 
 cache = LRUCache(maxsize=1000)
 
@@ -60,4 +61,4 @@ def fitted_model(coef_matrix, observations):
     residuals = observations - predictions
     rmse = np.sqrt(metrics.mean_squared_error(observations, predictions))
 
-    return model, rmse, residuals
+    return Model(model=model, rmse=rmse, residual=residuals)

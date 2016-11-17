@@ -25,7 +25,7 @@ For more information please refer to the `CCDC Algorithm Description Document`.
 
 import numpy as np
 
-from ccd import tmask, qa
+from ccd import qa
 from ccd.app import logging, config
 from ccd.change import initialize, extend
 from ccd.models import lasso, tmask
