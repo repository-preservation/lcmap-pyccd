@@ -8,7 +8,6 @@ be looked at from a higher level
 """
 
 import numpy as np
-from sklearn.metrics import mean_squared_error
 
 from ccd import app
 from ccd.models import tmask
@@ -59,7 +58,8 @@ def detect_change(observations, models, dates,
     check_vals = []
     for spectra, spectra_model, rmse in zip(observations, models, rmse_thresh):
         slope = spectra_model.model.coef_[0] * (dates[-1] - dates[0])
-        check_val = (abs(slope) + abs(spectra_model.residual[0]) + abs(spectra_model.residual[-1])) / rmse
+        check_val = (abs(slope) + abs(spectra_model.residual[0]) +
+                     abs(spectra_model.residual[-1])) / rmse
         check_vals.append(check_val)
 
     if np.linalg.norm(check_vals, ord=2) > t_cg:
@@ -88,7 +88,7 @@ def stable(errors, threshold=config.STABILITY_THRESHOLD):
     return all(below)
 
 
-def magnitudes(models, coefficient_matrix, observations):
+def change_magnitudes(models, coefficient_matrix, observations):
     """Calculate change magnitudes for each model and spectra.
 
     Magnitude is the 2-norm of the difference between predicted
@@ -258,7 +258,6 @@ def initialize(dates, observations, fitter_fn, model_matrix, tmask_matrix,
         return window, None, None, None
 
     models = None
-    errors_ = None
 
     while window.stop <= dates.shape[0]:
         log.debug("initialize from {0}..{1}".format(window.start,
@@ -285,7 +284,7 @@ def initialize(dates, observations, fitter_fn, model_matrix, tmask_matrix,
         # Make sure we still have enough observations and enough time
         if (dates_.shape[0] < meow_size) or ((dates_[-1] - dates_[0]) < day_delta):
             log.debug("continue, not enough observations \
-                       ({0}) after tmask".format(len(dates_)))
+                       ({0}) after tmask".format(dates_.shape[0]))
             window.stop += 1
             continue
 
@@ -313,12 +312,13 @@ def initialize(dates, observations, fitter_fn, model_matrix, tmask_matrix,
     return window, models
 
 
-def extend(times, observations, coefficients,
-           meow_ix, end_ix, peek_size, fitter_fn, models):
-    """Increase observation window until change is detected.
+def extend(dates, observations, coefficients,
+           window, peek_size, fitter_fn, models):
+    """Increase observation window until change is detected or
+    we are out of observations
 
     Args:
-        times: list of ordinal day numbers relative to some epoch,
+        dates: list of ordinal day numbers relative to some epoch,
             the particular epoch does not matter.
         observations: spectral values, list of spectra -> values
         coefficients: pre-calculated model coefficients
@@ -337,38 +337,39 @@ def extend(times, observations, coefficients,
     # The second step is to update a model until observations that do not
     # fit the model are found.
 
-    log.debug("change detection started {0}..{1}".format(meow_ix, end_ix))
+    log.debug("change detection started {0}..{1}".format(window.start,
+                                                         window.stop))
 
-    if end_ix is None:
+    if window.stop is None:
         log.debug("failed, end_ix is None... initialize must have failed")
-        return end_ix, models, None
+        return window, models, None
 
-    if (end_ix+peek_size) > len(times):
+    if (window.stop + peek_size) > dates.shape[0]:
         log.debug("failed, end_index+peek_size {0}+{1} \
-                   exceed available data ({2})".format(end_ix,
+                   exceed available data ({2})".format(window.stop,
                                                        peek_size,
-                                                       len(times)))
-        return end_ix, models, None
+                                                       dates.shape[0]))
+        return window, models, None
 
-    while (end_ix+peek_size) <= len(times):
+    while (window.stop + peek_size) <= dates.shape[0]:
+        peek_window = slice(window.start, window.stop + peek_size)
+
         log.debug("detecting change in \
-                   times[{0}..{1}]".format(end_ix, end_ix+peek_size))
-        peek_ix = end_ix + peek_size
+                   times[{0}..{1}]".format(peek_window.stop,
+                                           peek_window.stop))
 
-        # TODO (jmorton): Should this be prior and peeked period and spectra
-        #      or should this be only the peeked period and spectra?
-        time_slice = times[meow_ix:peek_ix]
-        coefficient_slice = coefficients[meow_ix:peek_ix]
-        spectra_slice = observations[:, meow_ix:peek_ix]
+        time_slice = dates[peek_window]
+        coefficient_slice = coefficients[peek_window]
+        spectra_slice = observations[:, peek_window]
 
-        magnitudes_ = magnitudes(models, coefficient_slice, spectra_slice)
+        magnitudes_ = change_magnitudes(models, coefficient_slice, spectra_slice)
         if accurate(magnitudes_):
             log.debug("errors below threshold {0}..{1}+{2}".format(meow_ix,
                                                                    end_ix,
                                                                    peek_size))
             models = [fitter_fn(time_slice, spectrum) for spectrum in spectra_slice]
             log.debug("change model updated")
-            end_ix += 1
+            window.stop += 1
         else:
             log.debug("errors above threshold – change detected {0}..{1}+{2}".format(meow_ix, end_ix, peek_size))
             break

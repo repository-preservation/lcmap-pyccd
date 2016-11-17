@@ -96,8 +96,8 @@ def standard_fit_procedure(dates, observations, fitter_fn,
 
     # The starting point for initialization. Used to as reference point for
     # taking a range of times and spectral values.
-    meow_ix = 0
-    window = slice(0, meow_size)
+    start_ix = 0
+    window = slice(start_ix, meow_size)
 
     # calculate a modified first-order variogram/madogram
     adjusted_rmse = np.median(np.abs(np.diff(observations)), axis=1)
@@ -117,16 +117,14 @@ def standard_fit_procedure(dates, observations, fitter_fn,
 
         # Step 1: Initialize -- find an initial stable time-frame.
         log.debug("initialize change model")
-        meow_ix, end_ix, models, errors_ = initialize(dates, observations,
-                                                      fitter_fn, model_matrix,
-                                                      tmask_matrix,
-                                                      window, meow_size,
-                                                      adjusted_rmse)
+        window, models = initialize(dates, observations, fitter_fn,
+                                    model_matrix, tmask_matrix, window,
+                                    meow_size, adjusted_rmse)
 
         # Step 2: Extension -- expand time-frame until a change is detected.
         log.debug("extend change model")
         end_ix, models, magnitudes_ = extend(dates, observations, model_matrix,
-                                             meow_ix, end_ix, peek_size,
+                                             window, peek_size,
                                              fitter_fn, models)
 
         # After initialization and extension, the change models for each
@@ -135,7 +133,7 @@ def standard_fit_procedure(dates, observations, fitter_fn,
         # model to be produced, so nothing is appened to results.
         if (meow_ix is not None) and (end_ix is not None):
             result = (dates[meow_ix], dates[end_ix],
-                      models, errors_, magnitudes_)
+                      models, magnitudes_)
             results += (result,)
 
         log.debug("accumulate results, {} so far".format(len(results)))
