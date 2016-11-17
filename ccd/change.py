@@ -38,19 +38,29 @@ def rmse(models, coefficient_matrix, observations):
     return errors
 
 
-def detect_change(observation, model, start_date, end_date, model_rmse, adjusted_rmse, t_cg=config.CHANGE_THRESHOLD):
-    """Determine if the
+def detect_change(observations, models, dates, model_rmse,
+                  adjusted_rmse, t_cg=config.CHANGE_THRESHOLD):
+    """Determine change has happened at a given moment in time in a
+    given spectral value
 
     Args:
-        observation:
-        model:
+        observations:
+        models:
         dates:
+        model_rmse:
         adjusted_rmse:
         t_cg:
 
     Returns:
-
     """
+    rmse_thresh = np.maximum(adjusted_rmse, model_rmse)
+
+    check_vals = []
+    for spectra, model in zip(observations, models):
+        slope = model.coef_[0] * (dates[-1] - dates[0])
+        check_val = (abs(slope) + abs)
+        check_vals.append()
+
 
 
 def stable(errors, threshold=config.STABILITY_THRESHOLD):

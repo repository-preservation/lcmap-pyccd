@@ -1,4 +1,4 @@
-from sklearn import linear_model
+from sklearn import linear_model, metrics
 import numpy as np
 from cachetools import cached
 from cachetools import LRUCache
@@ -54,4 +54,10 @@ def fitted_model(coef_matrix, observations):
     """
     # pmodel = partial_model(observation_dates)
     lasso = linear_model.Lasso(alpha=0.1)
-    return lasso.fit(coef_matrix, observations)
+    model = lasso.fit(coef_matrix, observations)
+
+    predictions = model.predict(coefficient_matrix)
+    residuals = observations - predictions
+    rmse = np.sqrt(metrics.mean_squared_error(observations, predictions))
+
+    return model, rmse, residuals
