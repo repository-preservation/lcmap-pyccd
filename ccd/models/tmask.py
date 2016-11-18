@@ -1,6 +1,6 @@
 import numpy as np
 import sklearn.linear_model as lm
-from ccd.app import logging, config
+from ccd.app import logging, defaults
 
 log = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ def tmask_coefficient_matrix(dates):
     return matrix
 
 
-def tmask(dates, observations, tmask_matrix, adjusted_rmse, bands=(config.GREEN_IDX, config.SWIR1_IDX)):
+def tmask(dates, observations, tmask_matrix, adjusted_rmse, bands=(defaults.GREEN_IDX, defaults.SWIR1_IDX)):
     """Produce an index for filtering outliers.
 
     Arguments:

@@ -11,15 +11,16 @@ Module level constructs are only evaluated once in a Python application's
 lifecycle, usually at the time of first import. This pattern is borrowed
 from Flask.
 """
-import logging, sys, yaml, os
+import logging, sys, yaml, os, hashlib
+
 from cachetools import LRUCache
 
 
 # Simplify parameter setting and make it easier for adjustment
-class Config(dict):
+class Defaults(dict):
     def __init__(self, config_path='parameters.yaml'):
         with open(config_path, 'r') as f:
-            super(Config, self).__init__(yaml.load(f.read()))
+            super(Defaults, self).__init__(yaml.load(f.read()))
 
     def __getattr__(self, name):
         if name in self:
@@ -36,10 +37,16 @@ class Config(dict):
         else:
             raise AttributeError('No such attribute: ' + name)
 
+
+# Don't need to be going down this rabbit hole just yet
+# mainly here as reference
+def numpy_hashkey(array):
+    return hashlib.sha1(array).hexdigest()
+
 ############################
 # Configuration/parameter defaults
 ############################
-config = Config(os.path.join(os.path.dirname(__file__), 'parameters.yaml'))
+defaults = Defaults(os.path.join(os.path.dirname(__file__), 'parameters.yaml'))
 
 
 ############################

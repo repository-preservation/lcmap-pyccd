@@ -8,7 +8,7 @@ from .version import __algorithm__
 from .version import __name
 
 logger = app.logging.getLogger(__name)
-config = app.config
+config = app.defaults
 
 
 def attr_from_str(value):

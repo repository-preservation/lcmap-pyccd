@@ -26,7 +26,7 @@ For more information please refer to the `CCDC Algorithm Description Document`.
 import numpy as np
 
 from ccd import qa
-from ccd.app import logging, config
+from ccd.app import logging, defaults
 from ccd.change import initialize, extend
 from ccd.models import lasso, tmask
 
@@ -63,7 +63,7 @@ def fmask_fail_procedure():
 
 
 def standard_fit_procedure(dates, observations, fitter_fn,
-                           meow_size=config.MEOW_SIZE, peek_size=config.PEEK_SIZE):
+                           meow_size=defaults.MEOW_SIZE, peek_size=defaults.PEEK_SIZE):
     """Runs the core change detection algorithm.
 
         The algorithm assumes all pre-processing has been performed on

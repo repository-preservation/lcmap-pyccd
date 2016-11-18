@@ -3,6 +3,7 @@ import numpy as np
 from cachetools import cached, LRUCache
 
 from ccd.models import Model
+from ccd.math_utils import calc_rmse
 
 cache = LRUCache(maxsize=1000)
 
@@ -58,7 +59,6 @@ def fitted_model(coef_matrix, observations):
     model = lasso.fit(coef_matrix, observations)
 
     predictions = model.predict(coefficient_matrix)
-    residuals = observations - predictions
-    rmse = np.sqrt(metrics.mean_squared_error(observations, predictions))
+    rmse, residuals = calc_rmse(observations, predictions)
 
     return Model(model=model, rmse=rmse, residual=residuals)

@@ -11,36 +11,15 @@ import numpy as np
 
 from ccd import app
 from ccd.models import tmask
+from ccd.math_utils import euclidean_norm, euclidean_norm_sq
 
 log = app.logging.getLogger(__name__)
-config = app.config
+defaults = app.defaults
 
 
-# def rmse(models, coefficient_matrix, observations):
-#     """Calculate RMSE for all models; used to determine if models are stable.
-#
-#     Args:
-#         models: fitted models, used to predict values, corresponds to
-#             observation spectra.
-#         coefficient_matrix: TODO
-#         observations: list of spectra corresponding to models
-#
-#     Returns:
-#         list: RMSE for each model.
-#     """
-#     errors = []
-#     for model, observed in zip(models, observations):
-#         predictions = model.predict(coefficient_matrix)
-#         error = np.sqrt(mean_squared_error(observed, predictions))
-#         errors.append(error)
-#     log.debug("calculate RMSE")
-#     return errors
-
-
-def detect_change(observations, models, dates,
-                  adjusted_rmse, t_cg=config.CHANGE_THRESHOLD):
-    """Determine change has happened at a given moment in time in a
-    given spectral value
+def stable(observations, models, dates,
+           adjusted_rmse, t_cg=defaults.CHANGE_THRESHOLD):
+    """Determine if we have a stable model to start building with
 
     Args:
         observations: spectral observations
@@ -49,43 +28,52 @@ def detect_change(observations, models, dates,
         adjusted_rmse: median variogram values
         t_cg: change threshold
 
-    Returns: Boolean on whether change has been detected or not
+    Returns: Boolean on whether stable or not
     """
-    rmse_thresh = [max(adjusted_rmse, model.rmse)
-                   for model, adj_rmse
-                   in zip(models, adjusted_rmse)]
+    rmse = [max(adjusted_rmse, model.rmse)
+            for model, adj_rmse
+            in zip(models, adjusted_rmse)]
 
     check_vals = []
-    for spectra, spectra_model, rmse in zip(observations, models, rmse_thresh):
+    for spectra, spectra_model, rmse in zip(observations, models, rmse):
         slope = spectra_model.model.coef_[0] * (dates[-1] - dates[0])
         check_val = (abs(slope) + abs(spectra_model.residual[0]) +
                      abs(spectra_model.residual[-1])) / rmse
         check_vals.append(check_val)
 
-    if np.linalg.norm(check_vals, ord=2) > t_cg:
-        return True
-    else:
-        return False
+    return not euclidean_norm(check_vals) > t_cg
 
 
-def stable(errors, threshold=config.STABILITY_THRESHOLD):
-    """Determine if all models RMSE are below threshold.
-
-    Convenience function used to improve readability of code.
+def detect_change(observations, models, dates,
+                  adjusted_rmse, t_cg=defaults.CHANGE_THRESHOLD,
+                  b_detect=defaults.DETECTION_BANDS):
+    """Used to determine if a change has occurred during a time series
 
     Args:
-        errors: list of error values corresponding to observation
-            spectra.
-        threshold: tolerance for error, all errors must be strictly
-            below this value.
+        observations: spectral observations
+        models: named tuple containing the scipy model class, rmse,
+            and residuals
+        dates: ordinal dates associated with the observations
+        adjusted_rmse: median variogram values across the spectral bands
+        t_cg: threshold value to determine if change has occurred
+        b_detect: spectral band index values that are used
+            for detecting change
 
     Returns:
-        bool: True, if all models RMSE is below threshold, False otherwise.
+        bool: True if change has been detected, else False
     """
-    below = ([e < threshold for e in errors])
-    log.debug("check model stability, all errors \
-               below {0}? {1}".format(threshold, below))
-    return all(below)
+
+    rmse = [max(adjusted_rmse, model.rmse)
+            for model, adj_rmse
+            in zip(models[b_detect], adjusted_rmse[b_detect])]
+
+    magnitudes = []
+    for idx in b_detect:
+        mag = (observations[idx] - models[idx].model.fit(dates))
+        mag /= rmse[idx]
+        magnitudes.append(mag)
+
+    return np.min(euclidean_norm_sq(magnitudes)) > t_cg
 
 
 def change_magnitudes(models, coefficient_matrix, observations):
@@ -110,7 +98,7 @@ def change_magnitudes(models, coefficient_matrix, observations):
         predicted = model.predict(coefficient_matrix)
         # TODO (jmorton): VERIFY CORRECTNESS
         # This approach matches what is done if 2-norm (largest sing. value)
-        magnitude = np.linalg.norm((predicted-observed), ord=2)
+        magnitude = euclidean_norm((predicted-observed))
         magnitudes.append(magnitude)
     log.debug("calculate magnitudes".format(magnitudes))
     return magnitudes
@@ -147,7 +135,7 @@ def end_index(meow_ix, meow_size):
     return meow_ix + meow_size - 1
 
 
-def find_time_index(dates, window, meow_size=config.MEOW_SIZE, day_delta=config.DAY_DELTA):
+def find_time_index(dates, window, meow_size=defaults.MEOW_SIZE, day_delta=defaults.DAY_DELTA):
     """Find index in times at least one year from time at meow_ix.
     Args:
         dates: list of ordinal day numbers relative to some epoch,
@@ -190,7 +178,7 @@ def find_time_index(dates, window, meow_size=config.MEOW_SIZE, day_delta=config.
     return end_ix
 
 
-def enough_samples(dates, window, meow_size=config.MEOW_SIZE):
+def enough_samples(dates, window, meow_size=defaults.MEOW_SIZE):
     """Change detection requires a minimum number of samples (as specified
     by meow size).
 
@@ -209,7 +197,7 @@ def enough_samples(dates, window, meow_size=config.MEOW_SIZE):
     return window.stop <= dates.shape[0]
 
 
-def enough_time(dates, window, day_delta=config.DAY_DELTA):
+def enough_time(dates, window, day_delta=defaults.DAY_DELTA):
     """Change detection requires a minimum amount of time (as specified by
     day_delta).
 
@@ -230,7 +218,7 @@ def enough_time(dates, window, day_delta=config.DAY_DELTA):
 
 
 def initialize(dates, observations, fitter_fn, model_matrix, tmask_matrix,
-               window, meow_size, adjusted_rmse, day_delta=config.DAY_DELTA):
+               window, meow_size, adjusted_rmse, day_delta=defaults.DAY_DELTA):
     """Determine the window indices, models, and errors for observations.
 
     Args:
@@ -297,7 +285,7 @@ def initialize(dates, observations, fitter_fn, model_matrix, tmask_matrix,
         # If a model is not stable, then it is possible that a disturbance
         # exists somewhere in the observation window. The window shifts
         # forward in time, and begins initialization again.
-        if detect_change(spectra, models, period, adjusted_rmse):
+        if stable(spectra, models, period, adjusted_rmse):
             log.debug("unstable model, shift start time and retry")
             window.start += 1
             window.stop += 1
