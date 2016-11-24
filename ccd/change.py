@@ -67,11 +67,11 @@ def detect_change(observations, models, dates,
             for model, adj_rmse
             in zip(models[b_detect], adjusted_rmse[b_detect])]
 
-    magnitudes = []
+    magnitudes = np.array(shape=(len(b_detect,)))
     for idx in b_detect:
-        mag = (observations[idx] - models[idx].model.fit(dates))
+        mag = (observations[idx] - models[idx].model.predict(dates))
         mag /= rmse[idx]
-        magnitudes.append(mag)
+        magnitudes[idx] = mag
 
     return np.min(euclidean_norm_sq(magnitudes)) > t_cg
 
@@ -104,35 +104,35 @@ def change_magnitudes(models, coefficient_matrix, observations):
     return magnitudes
 
 
-def accurate(magnitudes, threshold=0.99):
-    """Are observed spectral values within the predicted values' threshold.
-
-    Convenience function used to improve readability of code.
-
-    Args:
-        magnitudes: list of magnitudes for spectra
-        threshold: tolerance between detected values and predicted ones
-
-    Returns:
-        bool: True if each model's predicted and observed values are
-            below the threshold, False otherwise.
-    """
-    below = [m < threshold for m in magnitudes]
-    log.debug("change magnitued within {0}? {1}".format(threshold, below))
-    return all(below)
-
-
-def end_index(meow_ix, meow_size):
-    """Find end index for minimum expected observation window.
-
-    Args:
-        meow_ix: starting index
-        meow_size: offset from start
-
-    Returns:
-        integer: index of last observation
-    """
-    return meow_ix + meow_size - 1
+# def accurate(magnitudes, threshold=0.99):
+#     """Are observed spectral values within the predicted values' threshold.
+#
+#     Convenience function used to improve readability of code.
+#
+#     Args:
+#         magnitudes: list of magnitudes for spectra
+#         threshold: tolerance between detected values and predicted ones
+#
+#     Returns:
+#         bool: True if each model's predicted and observed values are
+#             below the threshold, False otherwise.
+#     """
+#     below = [m < threshold for m in magnitudes]
+#     log.debug("change magnitued within {0}? {1}".format(threshold, below))
+#     return all(below)
+#
+#
+# def end_index(meow_ix, meow_size):
+#     """Find end index for minimum expected observation window.
+#
+#     Args:
+#         meow_ix: starting index
+#         meow_size: offset from start
+#
+#     Returns:
+#         integer: index of last observation
+#     """
+#     return meow_ix + meow_size - 1
 
 
 def find_time_index(dates, window, meow_size=defaults.MEOW_SIZE, day_delta=defaults.DAY_DELTA):
@@ -312,7 +312,7 @@ def extend(dates, observations, coefficients,
         coefficients: pre-calculated model coefficients
         meow_ix: start index of time/observation window
         end_ix: end index of time/observation window
-        peek_size: looked ahead for detecting change
+        peek_size: look ahead for detecting change
         fitter_fn: function used to model observations
         models: previously generated models, used to calculate magnitude
         day_delta: minimum difference between time at meow_ix and most
@@ -350,8 +350,8 @@ def extend(dates, observations, coefficients,
         coefficient_slice = coefficients[peek_window]
         spectra_slice = observations[:, peek_window]
 
-        magnitudes_ = change_magnitudes(models, coefficient_slice, spectra_slice)
-        if accurate(magnitudes_):
+        magnitudes = change_magnitudes(models, coefficient_slice, spectra_slice)
+        if accurate(magnitudes):
             log.debug("errors below threshold {0}..{1}+{2}".format(meow_ix,
                                                                    end_ix,
                                                                    peek_size))
@@ -364,4 +364,4 @@ def extend(dates, observations, coefficients,
 
     log.debug("extension complete, meow_ix: {0}, end_ix: {1}".format(meow_ix,
                                                                      end_ix))
-    return end_ix, models, magnitudes_
+    return end_ix, models, magnitudes

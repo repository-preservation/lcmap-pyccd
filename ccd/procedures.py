@@ -94,10 +94,11 @@ def standard_fit_procedure(dates, observations, fitter_fn,
     # corresponds to a particular spectra.
     results = ()
 
-    # The starting point for initialization. Used to as reference point for
-    # taking a range of times and spectral values.
+    # Initialize the view window, this gets changed through initialization and
+    # extend methods, start_ix is different in that is signifies the begining
+    # of the change period
+    window = slice(0, meow_size)
     start_ix = 0
-    window = slice(start_ix, meow_size)
 
     # calculate a modified first-order variogram/madogram
     adjusted_rmse = np.median(np.abs(np.diff(observations)), axis=1)
@@ -121,9 +122,14 @@ def standard_fit_procedure(dates, observations, fitter_fn,
                                     model_matrix, tmask_matrix, window,
                                     meow_size, adjusted_rmse)
 
+        if window.start > start_ix:
+            # TODO look at past the difference in indicies to see if they
+            # fall into the initialized model
+            pass
+
         # Step 2: Extension -- expand time-frame until a change is detected.
         log.debug("extend change model")
-        end_ix, models, magnitudes_ = extend(dates, observations, model_matrix,
+        window, models, magnitudes_ = extend(dates, observations, model_matrix,
                                              window, peek_size,
                                              fitter_fn, models)
 
@@ -131,8 +137,8 @@ def standard_fit_procedure(dates, observations, fitter_fn,
         # spectra are complete for a period of time. If meow_ix and end_ix
         # are not present, then not enough observations exist for a useful
         # model to be produced, so nothing is appened to results.
-        if (meow_ix is not None) and (end_ix is not None):
-            result = (dates[meow_ix], dates[end_ix],
+        if (window.start is not None) and (window.stop is not None):
+            result = (dates[window.start], dates[window.stop],
                       models, magnitudes_)
             results += (result,)
 
@@ -140,7 +146,8 @@ def standard_fit_procedure(dates, observations, fitter_fn,
         # Step 4: Iterate. The meow_ix is moved to the end of the current
         # timeframe and a new model is generated. It is possible for end_ix
         # to be None, in which case iteration stops.
-        meow_ix = end_ix
+        start_ix = window.stop
+        window = slice(window.stop, window.stop + meow_size)
 
     log.debug("change detection complete")
     return results
