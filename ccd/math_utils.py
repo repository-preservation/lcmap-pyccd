@@ -18,8 +18,7 @@ def ensure_ndarray_input(func):
     """
     @wraps(func)
     def f(*args):
-        args = (np.asarray(_) for _ in args)
-        return func(*args)
+        return func(*(np.asarray(_) for _ in args))
     return f
 
 
@@ -70,6 +69,36 @@ def calc_rmse(actual, predicted):
         float: root mean square value
         1-d ndarray: residuals
     """
-    residuals = actual - predicted
+    residuals = calc_residuals(actual, predicted)
 
     return (residuals ** 2).mean() ** 0.5, residuals
+
+
+@ensure_ndarray_input
+def calc_residuals(actual, predicted):
+    """
+    Helper method to make other code portions clearer
+
+    Args:
+        actual: 1-d array of observed values
+        predicted: 1-d array of predicted values
+
+    Returns:
+        ndarray: 1-d array of residual values
+    """
+    return actual - predicted
+
+
+@ensure_ndarray_input
+def kelvin_to_celsius(thermals, scale=10):
+    """
+    Convert kelvin values to celsius
+
+    Args:
+        thermals:
+        scale:
+
+    Returns:
+
+    """
+    return thermals * scale - 27315

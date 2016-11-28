@@ -56,6 +56,6 @@ CHANGE_PROBABILITY: 1
 # Affects how
 ############################
 MEOW_SIZE: 16
-PEEK_SIZE: 3
+PEEK_SIZE: 6
 DAY_DELTA: 365
 FITTER_FN: 'ccd.models.lasso.fitted_model'

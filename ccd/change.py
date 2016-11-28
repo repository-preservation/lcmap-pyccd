@@ -41,7 +41,7 @@ def stable(observations, models, dates,
                      abs(spectra_model.residual[-1])) / rmse
         check_vals.append(check_val)
 
-    return not euclidean_norm(check_vals) > t_cg
+    return euclidean_norm(check_vals) < t_cg
 
 
 def detect_change(observations, models, dates,
@@ -51,8 +51,7 @@ def detect_change(observations, models, dates,
 
     Args:
         observations: spectral observations
-        models: named tuple containing the scipy model class, rmse,
-            and residuals
+        models: named tuple with the scipy model, rmse, and residuals
         dates: ordinal dates associated with the observations
         adjusted_rmse: median variogram values across the spectral bands
         t_cg: threshold value to determine if change has occurred
@@ -218,7 +217,7 @@ def enough_time(dates, window, day_delta=defaults.DAY_DELTA):
 
 
 def initialize(dates, observations, fitter_fn, model_matrix, tmask_matrix,
-               window, meow_size, adjusted_rmse, day_delta=defaults.DAY_DELTA):
+               model_window, meow_size, adjusted_rmse, day_delta=defaults.DAY_DELTA):
     """Determine the window indices, models, and errors for observations.
 
     Args:
@@ -227,7 +226,7 @@ def initialize(dates, observations, fitter_fn, model_matrix, tmask_matrix,
         observations: spectral values, list of spectra -> values
         model_matrix: TODO
         tmask_matrix: TODO
-        window: start index of time/observation window
+        model_window: start index of time/observation window
         meow_size: offset from meow_ix, determines initial window size
         day_delta: minimum difference between time at meow_ix and most
             recent observation
@@ -237,49 +236,49 @@ def initialize(dates, observations, fitter_fn, model_matrix, tmask_matrix,
     """
 
     # Guard...
-    if not enough_samples(dates, window):
+    if not enough_samples(dates, model_window):
         log.debug("failed, insufficient clear observations")
-        return window, None, None, None
+        return model_window, None, None, None
 
-    if not enough_time(dates, window, day_delta):
+    if not enough_time(dates, model_window, day_delta):
         log.debug("failed, insufficient time range")
-        return window, None, None, None
+        return model_window, None, None, None
 
     models = None
 
-    while window.stop <= dates.shape[0]:
-        log.debug("initialize from {0}..{1}".format(window.start,
-                                                    window.stop))
+    while model_window.stop <= dates.shape[0]:
+        log.debug("initialize from {0}..{1}".format(model_window.start,
+                                                    model_window.stop))
 
         # Finding a sufficient window of time needs must run
         # each iteration because the starting point
         # will increment if the model isn't stable, incrementing
         # the window of in lock-step does not guarantee a 1-year+
         # time-range.
-        window.stop = find_time_index(dates, window, meow_size)
+        model_window.stop = find_time_index(dates, model_window, meow_size)
 
-        period = dates[window]
-        matrix = model_matrix[window]
-        spectra = observations[:, window]
+        period = dates[model_window]
+        matrix = model_matrix[model_window]
+        spectra = observations[:, model_window]
 
         # Count outliers in the window, if there are too many outliers then
         # try again.
-        dates_, observations_ = tmask.tmask(period,
-                                            spectra,
-                                            tmask_matrix[window, :],
-                                            adjusted_rmse)
+        outliers = tmask.tmask(period,
+                               spectra,
+                               tmask_matrix[model_window],
+                               adjusted_rmse)
 
         # Make sure we still have enough observations and enough time
-        if (dates_.shape[0] < meow_size) or ((dates_[-1] - dates_[0]) < day_delta):
+        if not enough_time(period[~outliers], model_window, day_delta):
             log.debug("continue, not enough observations \
-                       ({0}) after tmask".format(dates_.shape[0]))
-            window.stop += 1
+                       ({0}) after tmask".format(period[~outliers].shape[0]))
+            model_window.stop += 1
             continue
 
         # Each spectra, although analyzed independently, all share
         # a common time-frame. Consequently, it doesn't make sense
         # to analyze one spectrum in it's entirety.
-        models = [fitter_fn(matrix, spectrum) for spectrum in spectra]
+        models = [fitter_fn(matrix, spectrum) for spectrum in spectra[~outliers]]
         log.debug("update change models")
 
         # If a model is not stable, then it is possible that a disturbance
@@ -287,17 +286,17 @@ def initialize(dates, observations, fitter_fn, model_matrix, tmask_matrix,
         # forward in time, and begins initialization again.
         if stable(spectra, models, period, adjusted_rmse):
             log.debug("unstable model, shift start time and retry")
-            window.start += 1
-            window.stop += 1
+            model_window.start += 1
+            model_window.stop += 1
             continue
         else:
             log.debug("stable model, done.")
             break
 
-    log.debug("initialize complete, start: {0}, stop: {1}".format(window.start,
-                                                                  window.stop))
+    log.debug("initialize complete, start: {0}, stop: {1}".format(model_window.start,
+                                                                  model_window.stop))
 
-    return window, models
+    return model_window, models
 
 
 def extend(dates, observations, coefficients,
@@ -340,10 +339,10 @@ def extend(dates, observations, coefficients,
         return window, models, None
 
     while (window.stop + peek_size) <= dates.shape[0]:
-        peek_window = slice(window.start, window.stop + peek_size)
+        peek_window = slice(window.stop, window.stop + peek_size)
 
         log.debug("detecting change in \
-                   times[{0}..{1}]".format(peek_window.stop,
+                   times[{0}..{1}]".format(peek_window.start,
                                            peek_window.stop))
 
         time_slice = dates[peek_window]

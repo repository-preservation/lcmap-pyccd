@@ -1,5 +1,4 @@
 from ccd.procedures import determine_fit_procedure as __determine_fit_procedure
-from ccd.qa import preprocess as __preprocess
 import numpy as np
 from ccd import app
 import importlib
@@ -120,6 +119,9 @@ def detect(dates, reds, greens, blues, nirs,
            swir1s, swir2s, thermals, quality):
     """Entry point call to detect change
 
+    No filtering up-front as different procedures may do things
+    differently
+
     Args:
         dates:    1d-array or list of ordinal date values
         reds:     1d-array or list of red band values
@@ -139,7 +141,7 @@ def detect(dates, reds, greens, blues, nirs,
 
     spectra = np.stack((reds, greens,
                         blues, nirs, swir1s,
-                        swir2s, thermals, quality))
+                        swir2s, thermals))
 
     # load the fitter_fn from app.FITTER_FN
     fitter_fn = attr_from_str(config.FITTER_FN)
@@ -148,5 +150,4 @@ def detect(dates, reds, greens, blues, nirs,
     procedure = __determine_fit_procedure(quality)
 
     # call detect and return results as the detections namedtuple
-    return __as_detections(procedure(dates, spectra, fitter_fn,
-                                     config.MEOW_SIZE, config.PEEK_SIZE))
+    return __as_detections(procedure(dates, spectra, fitter_fn, quality))

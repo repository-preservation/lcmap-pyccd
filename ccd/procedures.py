@@ -29,6 +29,7 @@ from ccd import qa
 from ccd.app import logging, defaults
 from ccd.change import initialize, extend
 from ccd.models import lasso, tmask
+from ccd.math_utils import kelvin_to_celsius
 
 
 log = logging.getLogger(__name__)
@@ -54,16 +55,17 @@ def determine_fit_procedure(quality):
         return standard_fit_procedure
 
 
-def permanent_snow_procedure():
+def permanent_snow_procedure(dates, observations, fitter_fn, quality):
     pass
 
 
-def fmask_fail_procedure():
+def fmask_fail_procedure(dates, observations, fitter_fn, quality):
     pass
 
 
-def standard_fit_procedure(dates, observations, fitter_fn,
-                           meow_size=defaults.MEOW_SIZE, peek_size=defaults.PEEK_SIZE):
+def standard_fit_procedure(dates, observations, fitter_fn, quality,
+                           meow_size=defaults.MEOW_SIZE, peek_size=defaults.PEEK_SIZE,
+                           thermal_idx=defaults.THERMAL_IDX):
     """Runs the core change detection algorithm.
 
         The algorithm assumes all pre-processing has been performed on
@@ -90,14 +92,27 @@ def standard_fit_procedure(dates, observations, fitter_fn,
         dates.shape, observations.shape,
         fitter_fn, meow_size, peek_size))
 
+    # First we need to filter the observations based on the spectra values
+    # and qa information
+    filter_idxs = qa.standard_filter(observations, quality)
+
+    # All we care about now is stuff that passed the filtering and we
+    # need to convert the thermal values
+    dates = dates[filter_idxs]
+    observations = observations[:, filter_idxs]
+    quality = quality[filter_idxs]
+
+    observations[thermal_idx] = kelvin_to_celsius(observations[thermal_idx])
+
     # Accumulator for models. This is a list of lists; each top-level list
     # corresponds to a particular spectra.
     results = ()
 
-    # Initialize the view window, this gets changed through initialization and
-    # extend methods, start_ix is different in that is signifies the begining
-    # of the change period
-    window = slice(0, meow_size)
+    # Initialize the window which is used for building the models
+    # this can actually different than the start and ending indices
+    # that are used for the time-span that the model covers
+    # thus we need to initialize a starting index value as well
+    model_window = slice(0, meow_size)
     start_ix = 0
 
     # calculate a modified first-order variogram/madogram
@@ -114,31 +129,31 @@ def standard_fit_procedure(dates, observations, fitter_fn,
     # fits new observations, i.e. a change is detected. The meow_ix updated
     # at the end of each iteration using an end index, so it is possible
     # it will become None.
-    while (window.start is not None) and window.stop <= dates.shape[0]:
+    while (model_window.start is not None) and model_window.stop <= dates.shape[0]:
 
         # Step 1: Initialize -- find an initial stable time-frame.
         log.debug("initialize change model")
-        window, models = initialize(dates, observations, fitter_fn,
-                                    model_matrix, tmask_matrix, window,
+        model_window, models = initialize(dates, observations, fitter_fn,
+                                    model_matrix, tmask_matrix, model_window,
                                     meow_size, adjusted_rmse)
 
-        if window.start > start_ix:
+        if model_window.start > start_ix:
             # TODO look at past the difference in indicies to see if they
             # fall into the initialized model
             pass
 
         # Step 2: Extension -- expand time-frame until a change is detected.
         log.debug("extend change model")
-        window, models, magnitudes_ = extend(dates, observations, model_matrix,
-                                             window, peek_size,
+        model_window, models, magnitudes_ = extend(dates, observations, model_matrix,
+                                             model_window, peek_size,
                                              fitter_fn, models)
 
         # After initialization and extension, the change models for each
         # spectra are complete for a period of time. If meow_ix and end_ix
         # are not present, then not enough observations exist for a useful
         # model to be produced, so nothing is appened to results.
-        if (window.start is not None) and (window.stop is not None):
-            result = (dates[window.start], dates[window.stop],
+        if (model_window.start is not None) and (model_window.stop is not None):
+            result = (dates[model_window.start], dates[model_window.stop],
                       models, magnitudes_)
             results += (result,)
 
@@ -146,8 +161,8 @@ def standard_fit_procedure(dates, observations, fitter_fn,
         # Step 4: Iterate. The meow_ix is moved to the end of the current
         # timeframe and a new model is generated. It is possible for end_ix
         # to be None, in which case iteration stops.
-        start_ix = window.stop
-        window = slice(window.stop, window.stop + meow_size)
+        start_ix = model_window.stop
+        model_window = slice(model_window.stop, model_window.stop + meow_size)
 
     log.debug("change detection complete")
     return results
