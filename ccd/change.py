@@ -257,7 +257,6 @@ def initialize(dates, observations, fitter_fn, tmask_matrix,
         dates: list of ordinal day numbers relative to some epoch,
             the particular epoch does not matter.
         observations: spectral values, list of spectra -> values
-        model_matrix: TODO
         tmask_matrix: TODO
         model_window: start index of time/observation window
         meow_size: offset from meow_ix, determines initial window size
@@ -311,7 +310,8 @@ def initialize(dates, observations, fitter_fn, tmask_matrix,
         # Each spectra, although analyzed independently, all share
         # a common time-frame. Consequently, it doesn't make sense
         # to analyze one spectrum in it's entirety.
-        models = [fitter_fn(period, spectrum) for spectrum in spectra[~outliers]]
+        models = [fitter_fn(period[~outliers], spectrum)
+                  for spectrum in spectra[~outliers]]
         log.debug("update change models")
 
         # If a model is not stable, then it is possible that a disturbance
@@ -333,7 +333,7 @@ def initialize(dates, observations, fitter_fn, tmask_matrix,
 
 
 def extend(dates, observations,
-           window, peek_size, fitter_fn, models):
+           model_window, peek_size, fitter_fn, models):
     """Increase observation window until change is detected or
     we are out of observations
 
@@ -341,9 +341,6 @@ def extend(dates, observations,
         dates: list of ordinal day numbers relative to some epoch,
             the particular epoch does not matter.
         observations: spectral values, list of spectra -> values
-        coefficients: pre-calculated model coefficients
-        meow_ix: start index of time/observation window
-        end_ix: end index of time/observation window
         peek_size: look ahead for detecting change
         fitter_fn: function used to model observations
         models: previously generated models, used to calculate magnitude
@@ -357,22 +354,22 @@ def extend(dates, observations,
     # The second step is to update a model until observations that do not
     # fit the model are found.
 
-    log.debug("change detection started {0}..{1}".format(window.start,
-                                                         window.stop))
+    log.debug("change detection started {0}..{1}".format(model_window.start,
+                                                         model_window.stop))
 
-    if window.stop is None:
+    if model_window.stop is None:
         log.debug("failed, end_ix is None... initialize must have failed")
-        return window, models, None
+        return model_window, models, None
 
-    if (window.stop + peek_size) > dates.shape[0]:
+    if (model_window.stop + peek_size) > dates.shape[0]:
         log.debug("failed, end_index+peek_size {0}+{1} \
-                   exceed available data ({2})".format(window.stop,
+                   exceed available data ({2})".format(model_window.stop,
                                                        peek_size,
                                                        dates.shape[0]))
-        return window, models, None
+        return model_window, models, None
 
-    while (window.stop + peek_size) <= dates.shape[0]:
-        peek_window = slice(window.stop, window.stop + peek_size)
+    while (model_window.stop + peek_size) <= dates.shape[0]:
+        peek_window = slice(model_window.stop, model_window.stop + peek_size)
 
         log.debug("detecting change in \
                    times[{0}..{1}]".format(peek_window.start,
@@ -382,7 +379,7 @@ def extend(dates, observations,
         # coefficient_slice = coefficients[peek_window]
         spectra_slice = observations[:, peek_window]
 
-        df = determine_df(period)
+        df = determine_df(dates[model_window])
 
         magnitudes = change_magnitudes(models, coefficient_slice, spectra_slice)
         if accurate(magnitudes):
@@ -392,7 +389,7 @@ def extend(dates, observations,
             models = [fitter_fn(period, spectrum, df)
                       for spectrum in spectra_slice]
             log.debug("change model updated")
-            window.stop += 1
+            model_window.stop += 1
         else:
             log.debug("errors above threshold – change detected {0}..{1}+{2}".format(meow_ix, end_ix, peek_size))
             break
