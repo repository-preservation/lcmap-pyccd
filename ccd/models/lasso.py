@@ -41,12 +41,13 @@ def coefficient_matrix(observation_dates, df=4):
     return matrix
 
 
-def fitted_model(coef_matrix, observations):
+def fitted_model(dates, observations, df=4):
     """Create a fully fitted lasso model.
 
     Args:
-        coef_matrix: list or ordinal observation dates
+        dates: list or ordinal observation dates
         observations: list of values corresponding to observation_dates
+        df: degrees of freedom, how many coefficients to use
 
     Returns:
         sklearn.linear_model.Lasso().fit(observation_dates, observations)
@@ -54,6 +55,8 @@ def fitted_model(coef_matrix, observations):
     Example:
         fitted_model(dates, obs).predict(...)
     """
+    coef_matrix = coefficient_matrix(dates, df)
+
     # pmodel = partial_model(observation_dates)
     lasso = linear_model.Lasso(alpha=0.1)
     model = lasso.fit(coef_matrix, observations)

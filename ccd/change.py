@@ -216,7 +216,40 @@ def enough_time(dates, window, day_delta=defaults.DAY_DELTA):
     return (dates[-1] - dates[window.start]) >= day_delta
 
 
-def initialize(dates, observations, fitter_fn, model_matrix, tmask_matrix,
+def determine_df(dates,
+                 min_coef=defaults.COEFFICIENT_MIN,
+                 mid_coef=defaults.COEFFICIENT_MID,
+                 max_coef=defaults.COEFFICIENT_MAX,
+                 time_scalar=defaults.TIME_SCALAR):
+    """
+    Determine the number of coefficients to use for the main fit procedure
+
+    This is based mostly on the amount of time (in ordinal days) that is being
+    going to be covered by the model
+
+    This is referred to as df (degrees of freedom) in the model section
+
+    Args:
+        dates: 1-d array of representative ordinal dates
+        min_coef: minimum number of coefficients
+        mid_coef: mid number of coefficients
+        max_coef: maximum number of coefficients
+        time_scalar: used to scale the time span
+
+    Returns:
+
+    """
+    span = (dates[-1] - dates[0]) / time_scalar
+
+    if span < mid_coef:
+        return min_coef
+    elif span < max_coef:
+        return mid_coef
+    else:
+        return max_coef
+
+
+def initialize(dates, observations, fitter_fn, tmask_matrix,
                model_window, meow_size, adjusted_rmse, day_delta=defaults.DAY_DELTA):
     """Determine the window indices, models, and errors for observations.
 
@@ -258,7 +291,7 @@ def initialize(dates, observations, fitter_fn, model_matrix, tmask_matrix,
         model_window.stop = find_time_index(dates, model_window, meow_size)
 
         period = dates[model_window]
-        matrix = model_matrix[model_window]
+        # matrix = model_matrix[model_window]
         spectra = observations[:, model_window]
 
         # Count outliers in the window, if there are too many outliers then
@@ -278,7 +311,7 @@ def initialize(dates, observations, fitter_fn, model_matrix, tmask_matrix,
         # Each spectra, although analyzed independently, all share
         # a common time-frame. Consequently, it doesn't make sense
         # to analyze one spectrum in it's entirety.
-        models = [fitter_fn(matrix, spectrum) for spectrum in spectra[~outliers]]
+        models = [fitter_fn(period, spectrum) for spectrum in spectra[~outliers]]
         log.debug("update change models")
 
         # If a model is not stable, then it is possible that a disturbance
@@ -299,7 +332,7 @@ def initialize(dates, observations, fitter_fn, model_matrix, tmask_matrix,
     return model_window, models
 
 
-def extend(dates, observations, coefficients,
+def extend(dates, observations,
            window, peek_size, fitter_fn, models):
     """Increase observation window until change is detected or
     we are out of observations
@@ -345,16 +378,19 @@ def extend(dates, observations, coefficients,
                    times[{0}..{1}]".format(peek_window.start,
                                            peek_window.stop))
 
-        time_slice = dates[peek_window]
-        coefficient_slice = coefficients[peek_window]
+        period = dates[peek_window]
+        # coefficient_slice = coefficients[peek_window]
         spectra_slice = observations[:, peek_window]
+
+        df = determine_df(period)
 
         magnitudes = change_magnitudes(models, coefficient_slice, spectra_slice)
         if accurate(magnitudes):
             log.debug("errors below threshold {0}..{1}+{2}".format(meow_ix,
                                                                    end_ix,
                                                                    peek_size))
-            models = [fitter_fn(time_slice, spectrum) for spectrum in spectra_slice]
+            models = [fitter_fn(period, spectrum, df)
+                      for spectrum in spectra_slice]
             log.debug("change model updated")
             window.stop += 1
         else:
