@@ -121,7 +121,7 @@ def standard_fit_procedure(dates, observations, fitter_fn, quality,
     # pre-calculate coefficient matrix for all time values; this calculation
     # needs to be performed only once, but the lasso and tmask matrices are
     # different.
-    model_matrix = lasso.coefficient_matrix(dates)
+    # model_matrix = lasso.coefficient_matrix(dates)
     tmask_matrix = tmask.tmask_coefficient_matrix(dates)
 
     # Only build models as long as sufficient data exists. The observation
@@ -134,8 +134,8 @@ def standard_fit_procedure(dates, observations, fitter_fn, quality,
         # Step 1: Initialize -- find an initial stable time-frame.
         log.debug("initialize change model")
         model_window, models = initialize(dates, observations, fitter_fn,
-                                    model_matrix, tmask_matrix, model_window,
-                                    meow_size, adjusted_rmse)
+                                          tmask_matrix, model_window,
+                                          meow_size, adjusted_rmse)
 
         if model_window.start > start_ix:
             # TODO look at past the difference in indicies to see if they
@@ -144,9 +144,9 @@ def standard_fit_procedure(dates, observations, fitter_fn, quality,
 
         # Step 2: Extension -- expand time-frame until a change is detected.
         log.debug("extend change model")
-        model_window, models, magnitudes_ = extend(dates, observations, model_matrix,
-                                             model_window, peek_size,
-                                             fitter_fn, models)
+        model_window, models, magnitudes_ = extend(dates, observations,
+                                                   model_window, peek_size,
+                                                   fitter_fn, models)
 
         # After initialization and extension, the change models for each
         # spectra are complete for a period of time. If meow_ix and end_ix

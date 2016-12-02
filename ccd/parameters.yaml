@@ -7,10 +7,11 @@ DAY_DELTA: 365
 FITTER_FN: 'ccd.models.lasso.fitted_model'
 
 # 2 for tri-modal; 2 for bi-modal; 2 for seasonality; 2 for linear
-COEFFICIENT_CATEGORIES:
-  'min': 4
-  'mid': 6
-  'max': 8
+COEFFICIENT_MIN: 4
+COEFFICIENT_MID: 6
+COEFFICIENT_MAX: 8
+
+TIME_SCALAR: 3
 
 ############################
 # Define spectral band indices on input observations array
