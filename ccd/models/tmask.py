@@ -26,7 +26,8 @@ def tmask_coefficient_matrix(dates, avg_days_yr=defaults.AVG_DAYS_YR):
     return matrix
 
 
-def tmask(dates, observations, tmask_matrix, adjusted_rmse, bands=(defaults.GREEN_IDX, defaults.SWIR1_IDX)):
+def tmask(dates, observations, tmask_matrix, adjusted_rmse,
+          bands=(defaults.GREEN_IDX, defaults.SWIR1_IDX)):
     """Produce an index for filtering outliers.
 
     Arguments:

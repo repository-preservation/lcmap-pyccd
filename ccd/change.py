@@ -46,63 +46,96 @@ def stable(observations, models, dates,
     return euclidean_norm(check_vals) < t_cg
 
 
-def detect_change(observations, models, dates,
-                  adjusted_rmse, t_cg=defaults.CHANGE_THRESHOLD,
-                  b_detect=defaults.DETECTION_BANDS):
-    """Used to determine if a change has occurred during a time series
+def change_magnitudes(dates, observations, models,
+                      variogram, detect_bands=defaults.DETECTION_BANDS):
+    """
+    Calculate the magnitude of change of a single point in time across
+    all the spectra
 
     Args:
         observations: spectral observations
         models: named tuple with the scipy model, rmse, and residuals
         dates: ordinal dates associated with the observations
-        adjusted_rmse: median variogram values across the spectral bands
-        t_cg: threshold value to determine if change has occurred
-        b_detect: spectral band index values that are used
+        variogram: median variogram values across the spectral bands
+        detect_bands: spectral band index values that are used
             for detecting change
 
     Returns:
-        bool: True if change has been detected, else False
+        1-d ndarray of values representing change magnitudes across all bands
     """
 
-    rmse = [max(adjusted_rmse, model.rmse)
+    rmse = [max(variogram, model.rmse)
             for model, adj_rmse
-            in zip(models[b_detect], adjusted_rmse[b_detect])]
+            in zip(models[detect_bands], variogram[detect_bands])]
 
-    magnitudes = np.array(shape=(len(b_detect,)))
-    for idx in b_detect:
+    # TODO Redo and move into math_utils where appropriate
+    magnitudes = np.array(shape=(len(detect_bands, )))
+    for idx in detect_bands:
         mag = (observations[idx] - models[idx].model.predict(dates))
         mag /= rmse[idx]
         magnitudes[idx] = mag
 
-    return np.min(euclidean_norm_sq(magnitudes)) > t_cg
+    return euclidean_norm_sq(magnitudes)
 
 
-def change_magnitudes(models, coefficient_matrix, observations):
-    """Calculate change magnitudes for each model and spectra.
-
-    Magnitude is the 2-norm of the difference between predicted
-    and observed values.
+def detect_change(magnitudes, change_threshold=defaults.CHANGE_THRESHOLD):
+    """
+    Convenience function to check if the minimum magnitude surpasses the
+    threshold required to determine if it is change
 
     Args:
-        models: fitted models, used to predict values.
-        coefficients: pre-calculated model coefficient matrix.
-        observations: spectral values, list of spectra -> values
-        threshold: tolerance between detected values and
-            predicted ones.
+        magnitudes: magnitude values across the spectral bands
+        change_threshold: threshold value to determine if change has occurred
 
     Returns:
-        list: magnitude of change for each model.
+        bool: True if change has been detected, else False
     """
-    magnitudes = []
+    return np.min(magnitudes) > change_threshold
 
-    for model, observed in zip(models, observations):
-        predicted = model.predict(coefficient_matrix)
-        # TODO (jmorton): VERIFY CORRECTNESS
-        # This approach matches what is done if 2-norm (largest sing. value)
-        magnitude = euclidean_norm((predicted-observed))
-        magnitudes.append(magnitude)
-    log.debug("calculate magnitudes".format(magnitudes))
-    return magnitudes
+
+def detect_outlier(magnitudes, outlier_threshold=defaults.OUTLIER_THRESHOLD):
+    """
+    Convenience function to check if any of the magnitudes surpass the
+    threshold to mark this date as being an outlier
+
+    This is used to mask out values from current or future processing
+
+    Args:
+        magnitudes: 1-d ndarray of magnitude values across the spectral bands
+        outlier_threshold: threshold value
+
+    Returns:
+        bool: True if these spectral values should be omitted
+    """
+    return any(magnitudes > outlier_threshold)
+
+
+# def change_magnitudes(models, coefficient_matrix, observations):
+#     """Calculate change magnitudes for each model and spectra.
+#
+#     Magnitude is the 2-norm of the difference between predicted
+#     and observed values.
+#
+#     Args:
+#         models: fitted models, used to predict values.
+#         coefficients: pre-calculated model coefficient matrix.
+#         observations: spectral values, list of spectra -> values
+#         threshold: tolerance between detected values and
+#             predicted ones.
+#
+#     Returns:
+#         list: magnitude of change for each model.
+#     """
+#     magnitudes = []
+#
+#     for model, observed in zip(models, observations):
+#         predicted = model.predict(coefficient_matrix)
+#         # TODO (jmorton): VERIFY CORRECTNESS
+#         # This approach matches what is done if 2-norm (largest sing. value)
+#         magnitude = euclidean_norm((predicted-observed))
+#         magnitudes.append(magnitude)
+#     log.debug("calculate magnitudes".format(magnitudes))
+#     return magnitudes
 
 
 # def accurate(magnitudes, threshold=0.99):
@@ -352,8 +385,7 @@ def initialize(dates, observations, fitter_fn, tmask_matrix,
     return model_window, models
 
 
-def extend(dates, observations,
-           model_window, peek_size, fitter_fn, models):
+def extend(dates, observations, model_window, peek_size, fitter_fn, models):
     """Increase observation window until change is detected or
     we are out of observations
 
@@ -417,3 +449,55 @@ def extend(dates, observations,
     log.debug("extension complete, meow_ix: {0}, end_ix: {1}".format(meow_ix,
                                                                      end_ix))
     return end_ix, models, magnitudes
+
+
+def lookback(dates, observations, model_window, peek_size, models, variogram,
+             previous_break, outlier_mask):
+    """
+    Special case when there is a gap between the start of a time series model
+    and the previous model break point, this can include values that were
+    excluded during the initialization step
+
+    Args:
+        dates: list of ordinal days
+        observations: spectral values across bands
+        model_window: current window of values that is being considered
+        peek_size: number of values to look at
+        models: currently fitted models for the model_window
+        previous_break: index value of the previous break point, or the start
+            of the time series if there wasn't one
+        outlier_mask: index values that are currently being masked out from
+            processing
+
+    Returns:
+        slice: window of indices to be used
+        ndarray: outlier indicies
+    """
+    for idx in range(model_window.start, previous_break, -1):
+        if model_window.start - previous_break > peek_size:
+            lb_size = model_window.start - previous_break
+        else:
+            lb_size = peek_size
+
+        magnitudes = [change_magnitudes(dates[lb], observations[:, lb], models, variogram)
+                      for lb in range(model_window.start - lb_size,
+                                      model_window.start - 1, -1)]
+
+        if detect_change(magnitudes):
+            # change was detected, return to parent method
+            break
+        elif detect_outlier(magnitudes):
+            # mask the outlier from consideration
+            # update the outlier_mask
+            pass
+
+        model_window.start -= 1
+
+    return model_window, outlier_mask
+
+        # peek_window = (model_window.start - lb_size, model_window.start - 1)
+        #
+        # period = dates[peek_window]
+        # spectra = observations[:, peek_window]
+        #
+        # magnitudes = change_magnitudes(period, spectra, models, variogram)
