@@ -116,11 +116,12 @@ def standard_fit_procedure(dates, observations, fitter_fn, quality,
     start_ix = 0
 
     # calculate a modified first-order variogram/madogram
-    adjusted_rmse = np.median(np.abs(np.diff(observations)), axis=1)
+    # adjusted_rmse = np.median(np.abs(np.diff(observations)), axis=1)
 
     # pre-calculate coefficient matrix for all time values; this calculation
-    # needs to be performed only once, but the lasso and tmask matrices are
-    # different.
+    # needs to be performed only once, we can not do this for the
+    # lasso regression coefficients as the number of coefficients changes
+    # based on the number of observations that are fed into it increases.
     # model_matrix = lasso.coefficient_matrix(dates)
     tmask_matrix = tmask.tmask_coefficient_matrix(dates)
 
@@ -129,13 +130,13 @@ def standard_fit_procedure(dates, observations, fitter_fn, quality,
     # fits new observations, i.e. a change is detected. The meow_ix updated
     # at the end of each iteration using an end index, so it is possible
     # it will become None.
-    while (model_window.start is not None) and model_window.stop <= dates.shape[0]:
+    while model_window.stop <= dates.shape[0] - meow_size:
 
         # Step 1: Initialize -- find an initial stable time-frame.
         log.debug("initialize change model")
         model_window, models = initialize(dates, observations, fitter_fn,
                                           tmask_matrix, model_window,
-                                          meow_size, adjusted_rmse)
+                                          meow_size)
 
         if model_window.start > start_ix:
             # TODO look at past the difference in indicies to see if they

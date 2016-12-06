@@ -18,27 +18,29 @@ defaults = app.defaults
 
 
 def stable(observations, models, dates,
-           adjusted_rmse, t_cg=defaults.CHANGE_THRESHOLD):
+           variogram, t_cg=defaults.CHANGE_THRESHOLD):
     """Determine if we have a stable model to start building with
 
     Args:
         observations: spectral observations
         models: current representative models
         dates: date values that is covered by the models
-        adjusted_rmse: median variogram values
+        variogram: median variogram values
         t_cg: change threshold
 
     Returns: Boolean on whether stable or not
     """
-    rmse = [max(adjusted_rmse, model.rmse)
+    rmse = [max(variogram, model.rmse)
             for model, adj_rmse
-            in zip(models, adjusted_rmse)]
+            in zip(models, variogram)]
 
     check_vals = []
-    for spectra, spectra_model, rmse in zip(observations, models, rmse):
-        slope = spectra_model.model.coef_[0] * (dates[-1] - dates[0])
+    for spectra, spectra_model, b_rmse in zip(observations, models, rmse):
+        slope = spectra_model.model.coef_[1] * (dates[-1] - dates[0])
+
         check_val = (abs(slope) + abs(spectra_model.residual[0]) +
-                     abs(spectra_model.residual[-1])) / rmse
+                     abs(spectra_model.residual[-1])) / b_rmse
+
         check_vals.append(check_val)
 
     return euclidean_norm(check_vals) < t_cg
@@ -143,8 +145,8 @@ def find_time_index(dates, window, meow_size=defaults.MEOW_SIZE, day_delta=defau
             times for
         meow_size: relative number of observations after meow_ix to
             begin searching for a time index
-        day_delta: number of days difference between meow_ix and
-            time index
+        day_delta: number of days required for a years worth of data,
+            defined to be 365
     Returns:
         integer: array index of time at least one year from meow_ix,
             or None if it can't be found.
@@ -164,7 +166,7 @@ def find_time_index(dates, window, meow_size=defaults.MEOW_SIZE, day_delta=defau
 
     # This seems pretty naive, if you can think of something more
     # performant and elegant, have at it!
-    while end_ix < dates.shape[0]:
+    while end_ix < dates.shape[0] - meow_size:
         if (dates[end_ix]-dates[window.start]) >= day_delta:
             break
         else:
@@ -216,11 +218,11 @@ def enough_time(dates, window, day_delta=defaults.DAY_DELTA):
     return (dates[-1] - dates[window.start]) >= day_delta
 
 
-def determine_df(dates,
-                 min_coef=defaults.COEFFICIENT_MIN,
-                 mid_coef=defaults.COEFFICIENT_MID,
-                 max_coef=defaults.COEFFICIENT_MAX,
-                 time_scalar=defaults.TIME_SCALAR):
+def determine_num_coefs(dates,
+                        min_coef=defaults.COEFFICIENT_MIN,
+                        mid_coef=defaults.COEFFICIENT_MID,
+                        max_coef=defaults.COEFFICIENT_MAX,
+                        time_scalar=defaults.TIME_SCALAR):
     """
     Determine the number of coefficients to use for the main fit procedure
 
@@ -249,15 +251,31 @@ def determine_df(dates,
         return max_coef
 
 
+def calculate_variogram(observations):
+    """
+    Calculate the first order variogram/madogram across all bands
+
+    Helper method to make subsequent code clearer
+
+    Args:
+        observations: spectral band values
+
+    Returns:
+        1-d ndarray representing the variogram values
+    """
+    # eventually should call the method defined in math_utils.py
+    return np.median(np.abs(np.diff(observations)), axis=1)
+
+
 def initialize(dates, observations, fitter_fn, tmask_matrix,
-               model_window, meow_size, adjusted_rmse, day_delta=defaults.DAY_DELTA):
+               model_window, meow_size, day_delta=defaults.DAY_DELTA):
     """Determine the window indices, models, and errors for observations.
 
     Args:
         dates: list of ordinal day numbers relative to some epoch,
             the particular epoch does not matter.
         observations: spectral values, list of spectra -> values
-        tmask_matrix: TODO
+        tmask_matrix: predifined matrix of coefficients used for Tmask
         model_window: start index of time/observation window
         meow_size: offset from meow_ix, determines initial window size
         day_delta: minimum difference between time at meow_ix and most
@@ -267,7 +285,7 @@ def initialize(dates, observations, fitter_fn, tmask_matrix,
         tuple: start, end, models, errors
     """
 
-    # Guard...
+    # Guard against insufficent data...
     if not enough_samples(dates, model_window):
         log.debug("failed, insufficient clear observations")
         return model_window, None, None, None
@@ -278,30 +296,32 @@ def initialize(dates, observations, fitter_fn, tmask_matrix,
 
     models = None
 
-    while model_window.stop <= dates.shape[0]:
+    while model_window.stop <= dates.shape[0] - meow_size:
         log.debug("initialize from {0}..{1}".format(model_window.start,
                                                     model_window.stop))
 
-        # Finding a sufficient window of time needs must run
+        # Finding a sufficient window of time needs to run
         # each iteration because the starting point
         # will increment if the model isn't stable, incrementing
-        # the window of in lock-step does not guarantee a 1-year+
+        # the window stop in lock-step does not guarantee a 1-year+
         # time-range.
         model_window.stop = find_time_index(dates, model_window, meow_size)
 
+        # Subset the data based on the current model window
         period = dates[model_window]
-        # matrix = model_matrix[model_window]
         spectra = observations[:, model_window]
+        variogram = calculate_variogram(spectra)
 
         # Count outliers in the window, if there are too many outliers then
         # try again.
         outliers = tmask.tmask(period,
                                spectra,
                                tmask_matrix[model_window],
-                               adjusted_rmse)
+                               variogram)
 
         # Make sure we still have enough observations and enough time
-        if not enough_time(period[~outliers], model_window, day_delta):
+        if not enough_time(period[~outliers], model_window, day_delta)\
+                or not enough_samples(period[~outliers], model_window):
             log.debug("continue, not enough observations \
                        ({0}) after tmask".format(period[~outliers].shape[0]))
             model_window.stop += 1
@@ -317,7 +337,7 @@ def initialize(dates, observations, fitter_fn, tmask_matrix,
         # If a model is not stable, then it is possible that a disturbance
         # exists somewhere in the observation window. The window shifts
         # forward in time, and begins initialization again.
-        if stable(spectra, models, period, adjusted_rmse):
+        if not stable(spectra, models, period, variogram):
             log.debug("unstable model, shift start time and retry")
             model_window.start += 1
             model_window.stop += 1
@@ -379,7 +399,7 @@ def extend(dates, observations,
         # coefficient_slice = coefficients[peek_window]
         spectra_slice = observations[:, peek_window]
 
-        df = determine_df(dates[model_window])
+        df = determine_num_coefs(dates[model_window])
 
         magnitudes = change_magnitudes(models, coefficient_slice, spectra_slice)
         if accurate(magnitudes):

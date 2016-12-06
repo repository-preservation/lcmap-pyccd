@@ -23,6 +23,20 @@ def ensure_ndarray_input(func):
 
 
 @ensure_ndarray_input
+def adjusted_variogram(vector):
+    """
+    Calculate a modified first order variogram/madogram
+
+    Args:
+        vector: 1-d array of values
+
+    Returns:
+        float
+    """
+    return np.median(np.abs(np.diff(vector)))
+
+
+@ensure_ndarray_input
 def euclidean_norm(vector):
     """
     Calculate the euclidean norm across a vector

@@ -5,7 +5,7 @@ from ccd.app import logging, defaults
 log = logging.getLogger(__name__)
 
 
-def tmask_coefficient_matrix(dates):
+def tmask_coefficient_matrix(dates, avg_days_yr=defaults.AVG_DAYS_YR):
     """Coefficient matrix that is used for Tmask modeling
 
     Args:
@@ -14,8 +14,8 @@ def tmask_coefficient_matrix(dates):
     Returns:
         Populated numpy array with coefficient values
     """
-    annual_cycle = 2*np.pi/365.25
-    observation_cycle = annual_cycle / np.ceil((dates[-1] - dates[0]) / 365.25)
+    annual_cycle = 2*np.pi/avg_days_yr
+    observation_cycle = annual_cycle / np.ceil((dates[-1] - dates[0]) / avg_days_yr)
 
     matrix = np.zeros(shape=(len(dates), 4), order='F')
     matrix[:, 0] = [np.cos(annual_cycle*t) for t in dates]
