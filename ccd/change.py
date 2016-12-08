@@ -355,7 +355,7 @@ def extend(times, observations, coefficients,
             log.debug("change model updated")
             end_ix += 1
         else:
-            log.debug("errors above threshold – change detected {0}..{1}+{2}".format(meow_ix, end_ix, peek_size))
+            log.debug("errors above threshold - change detected {0}..{1}+{2}".format(meow_ix, end_ix, peek_size))
             break
 
     log.debug("extension complete, meow_ix: {0}, end_ix: {1}".format(meow_ix,
@@ -386,7 +386,7 @@ def detect(times, observations, fitter_fn,
         list: Change models for each observation of each spectra.
     """
 
-    log.debug("build change model – time: {0}, obs: {1}, {2}, \
+    log.debug("build change model - time: {0}, obs: {1}, {2}, \
                meow_size: {3}, peek_size: {4}".format(
               times.shape, observations.shape,
               fitter_fn, meow_size, peek_size))
