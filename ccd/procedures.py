@@ -27,7 +27,7 @@ import numpy as np
 
 from ccd import qa
 from ccd.app import logging, defaults
-from ccd.change import initialize, extend
+from ccd.change import initialize, extend, lookback, change_magnitudes
 from ccd.models import lasso, tmask
 from ccd.math_utils import kelvin_to_celsius
 
@@ -93,23 +93,25 @@ def standard_fit_procedure(dates, observations, fitter_fn, quality,
         fitter_fn, meow_size, peek_size))
 
     # First we need to filter the observations based on the spectra values
-    # and qa information
-    filter_idxs = qa.standard_filter(observations, quality)
+    # and qa information and convert kelvin to celsius
+    # We then persist the processing mask through subsequent operations as
+    # additional data points get identified to be excluded from processing
+    observations[thermal_idx] = kelvin_to_celsius(observations[thermal_idx])
+    processing_mask = qa.standard_filter(observations, quality)
 
     # All we care about now is stuff that passed the filtering and we
     # need to convert the thermal values
-    dates = dates[filter_idxs]
-    observations = observations[:, filter_idxs]
-    quality = quality[filter_idxs]
+    # dates = dates[filter_idxs]
+    # observations = observations[:, filter_idxs]
+    # quality = quality[filter_idxs]
 
-    observations[thermal_idx] = kelvin_to_celsius(observations[thermal_idx])
 
     # Accumulator for models. This is a list of lists; each top-level list
     # corresponds to a particular spectra.
-    results = ()
+    results = tuple()
 
     # Initialize the window which is used for building the models
-    # this can actually different than the start and ending indices
+    # this can actually be different than the start and ending indices
     # that are used for the time-span that the model covers
     # thus we need to initialize a starting index value as well
     model_window = slice(0, meow_size)
@@ -134,16 +136,43 @@ def standard_fit_procedure(dates, observations, fitter_fn, quality,
 
         # Step 1: Initialize -- find an initial stable time-frame.
         log.debug("initialize change model")
-        model_window, models = initialize(dates, observations, fitter_fn,
-                                          tmask_matrix, model_window,
-                                          meow_size)
+        model_window = initialize(dates, observations, fitter_fn,
+                                  tmask_matrix, model_window,
+                                  meow_size, processing_mask)
 
         if model_window.start > start_ix:
             # TODO look at past the difference in indicies to see if they
             # fall into the initialized model
-            pass
+            model_window, outliers = lookback(dates, observations,
+                                              model_window, peek_size, models,
+                                              start_ix, processing_mask)
+
+        # TODO update the processing mask after the look back method
+
+        # If we are at the beginning of the time series and if initialize
+        # has moved forward the start of the first curve by more than the
+        # peek size, then we should fit a general curve to those first
+        # spectral values
+        if not results and model_window.start - peek_size > start_ix:
+            # TODO make uniform method for fitting models and returning the
+            # appropriate information
+            # Maybe define a namedtuple for model storage
+            models_tmp = [fitter_fn(dates[~processing_mask][start_ix:model_window.start],
+                                spectrum)
+                      for spectrum
+                      in observations[:, ~processing_mask][:, start_ix:model_window.start]]
+
+            mag_tmp = change_magnitudes(dates[~processing_mask][start_ix:model_window.start],
+                                        observations[~processing_mask][start_ix:model_window.start],
+                                        models_tmp)
+
+            results += (dates[model_window.start], dates[model_window.stop],
+                        models_tmp, mag_tmp)
 
         # Step 2: Extension -- expand time-frame until a change is detected.
+        # initialized models from Step 1 cannot be passed along due to how
+        # Tmask can throw out some values used in that model, but are
+        # subsequently used in follow on methods
         log.debug("extend change model")
         model_window, models, magnitudes_ = extend(dates, observations,
                                                    model_window, peek_size,

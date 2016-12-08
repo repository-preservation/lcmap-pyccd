@@ -116,3 +116,20 @@ def kelvin_to_celsius(thermals, scale=10):
 
     """
     return thermals * scale - 27315
+
+
+@ensure_ndarray_input
+def calculate_variogram(observations):
+    """
+    Calculate the first order variogram/madogram across all bands
+
+    Helper method to make subsequent code clearer
+
+    Args:
+        observations: spectral band values
+
+    Returns:
+        1-d ndarray representing the variogram values
+    """
+    # eventually should call the method defined in math_utils.py
+    return np.median(np.abs(np.diff(observations)), axis=1)

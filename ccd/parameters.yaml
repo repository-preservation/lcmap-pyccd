@@ -12,7 +12,7 @@ COEFFICIENT_MAX: 8
 # Value used to determine the minimum number of observations required for a
 # defined number of coefficients
 # e.g. COEFFICIENT_MIN * TIME_SCALAR = 12
-TIME_SCALAR: 3
+NUM_OBS_FACTOR: 3
 
 ############################
 # Define spectral band indices on input observations array

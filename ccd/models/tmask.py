@@ -1,6 +1,8 @@
 import numpy as np
 import sklearn.linear_model as lm
 from ccd.app import logging, defaults
+from ccd.math_utils import calculate_variogram
+
 
 log = logging.getLogger(__name__)
 
@@ -26,7 +28,7 @@ def tmask_coefficient_matrix(dates, avg_days_yr=defaults.AVG_DAYS_YR):
     return matrix
 
 
-def tmask(dates, observations, tmask_matrix, adjusted_rmse,
+def tmask(dates, observations, tmask_matrix,
           bands=(defaults.GREEN_IDX, defaults.SWIR1_IDX)):
     """Produce an index for filtering outliers.
 
@@ -36,11 +38,10 @@ def tmask(dates, observations, tmask_matrix, adjusted_rmse,
         tmask_matrix: input matrix for the linear regression
         bands: list of band indices used for outlier detection, by default
             bands 2 and 5.
-        adjusted_rmse: list of values corresponding to bands
-            used for outlier detection.
 
     Return: indexed array, excluding outlier observations.
     """
+    variogram = calculate_variogram(observations)
     # Time and expected values using a four-part matrix of coefficients.
     regression = lm.LinearRegression()
 
@@ -54,7 +55,7 @@ def tmask(dates, observations, tmask_matrix, adjusted_rmse,
     for band_ix in bands:
         fit = regression.fit(tmask_matrix, observations[band_ix])
         predicted = fit.predict(tmask_matrix)
-        outliers += np.abs(predicted - observations[band_ix]) > adjusted_rmse[band_ix]
+        outliers += np.abs(predicted - observations[band_ix]) > variogram[band_ix]
 
     # Keep all observations that aren't outliers.
     return outliers
