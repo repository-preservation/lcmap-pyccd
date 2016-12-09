@@ -47,7 +47,8 @@ def stable(observations, models, dates, t_cg=defaults.CHANGE_THRESHOLD):
 
 
 def change_magnitudes(dates, observations, models,
-                      detect_bands=defaults.DETECTION_BANDS):
+                      detection_bands=defaults.DETECTION_BANDS,
+                      comparison_rmse=None):
     """
     Calculate the magnitude of change of a single point in time across
     all the spectra
@@ -56,7 +57,7 @@ def change_magnitudes(dates, observations, models,
         observations: spectral observations
         models: named tuple with the scipy model, rmse, and residuals
         dates: ordinal dates associated with the observations
-        detect_bands: spectral band index values that are used
+        detection_bands: spectral band index values that are used
             for detecting change
 
     Returns:
@@ -64,13 +65,18 @@ def change_magnitudes(dates, observations, models,
     """
     variogram = calculate_variogram(observations)
 
-    rmse = [max(variogram, model.rmse)
-            for model, adj_rmse
-            in zip(models[detect_bands], variogram[detect_bands])]
+    if comparison_rmse:
+        rmse = [max(adj_rmse, comp_rmse)
+                for comp_rmse, adj_rmse
+                in zip(comparison_rmse, variogram[detection_bands])]
+    else:
+        rmse = [max(adj_rmse, model.rmse)
+                for model, adj_rmse
+                in zip(models[detection_bands], variogram[detection_bands])]
 
     # TODO Redo and move into math_utils where appropriate
-    magnitudes = np.array(shape=(len(detect_bands, )))
-    for idx in detect_bands:
+    magnitudes = np.array(shape=(len(detection_bands, )))
+    for idx in detection_bands:
         mag = (observations[idx] - models[idx].model.predict(dates))
         mag /= rmse[idx]
         magnitudes[idx] = mag
@@ -371,7 +377,8 @@ def initialize(dates, observations, fitter_fn, tmask_matrix,
 
 
 def extend(dates, observations, model_window, peek_size, fitter_fn,
-           processing_mask):
+           processing_mask, day_delta=defaults.DAY_DELTA,
+           detection_bands=defaults.DETECTION_BANDS):
     """Increase observation window until change is detected or
     we are out of observations
 
@@ -413,6 +420,8 @@ def extend(dates, observations, model_window, peek_size, fitter_fn,
 
     while (model_window.stop + peek_size) <= dates.shape[0]:
         num_coefs = determine_num_coefs(dates[model_window])
+        tmpcg_rmse = []
+        peek_window = slice(model_window.stop, model_window.stop + peek_size)
 
         # The models generated during initialization cannot be used as they
         # have values that could've been masked by Tmask. Models are
@@ -423,24 +432,40 @@ def extend(dates, observations, model_window, peek_size, fitter_fn,
                       for spectrum in observations[:, fit_window]]
 
             time_span = dates[model_window.stop] - dates[model_window.start]
+
+            magnitudes = [change_magnitudes(dates[processing_mask][idx],
+                                            observations[processing_mask][:, idx],
+                                            models)
+                          for idx in range(peek_window.start,
+                                           peek_window.stop)]
         # More than 24 points
         else:
-            pass
+            # TODO FIX ME! Need a retrain decision method to determine if we
+            # should retrain a model or not
+            if dates[model_window.stop] - dates[model_window.start] >= 1.33 * dates[fit_window.stop] - dates[fit_window.start]:
+                fit_window.stop = model_window.stop
 
-        peek_window = slice(model_window.stop, model_window.stop + peek_size)
+                models = [fitter_fn(dates[fit_window], spectrum, num_coefs)
+                          for spectrum in observations[:, fit_window]]
+
+            # We need the last 24 residual values that were generated during
+            # the model building step. These are temporally the closest values
+            # that will be associated with value that is under scrutiny
+            # TODO Make better! and paramaterize
+            for band in detection_bands:
+                tmp_rmse = euclidean_norm(models[band].residual[24:])
+                tmp_rmse /= 4
+                tmpcg_rmse.append(tmp_rmse)
+
+            magnitudes = [change_magnitudes(dates[processing_mask][idx],
+                                            observations[processing_mask][:, idx],
+                                            models, comparison_rmse=tmpcg_rmse)
+                          for idx in range(peek_window.start,
+                                           peek_window.stop)]
 
         log.debug("detecting change in \
                    times[{0}..{1}]".format(peek_window.start,
                                            peek_window.stop))
-
-        magnitudes = [change_magnitudes(dates[processing_mask][idx],
-                                        observations[processing_mask][:, idx],
-                                        models)
-                      for idx in range(peek_window.start,
-                                      peek_window.stop)]
-
-
-
 
         if detect_change(magnitudes):
             # change was detected, return to parent method
@@ -452,21 +477,7 @@ def extend(dates, observations, model_window, peek_size, fitter_fn,
 
         model_window.stop += 1
 
-        if accurate(magnitudes):
-            log.debug("errors below threshold {0}..{1}+{2}".format(meow_ix,
-                                                                   end_ix,
-                                                                   peek_size))
-            models = [fitter_fn(period, spectrum, num_coefs)
-                      for spectrum in spectra_slice]
-            log.debug("change model updated")
-            model_window.stop += 1
-        else:
-            log.debug("errors above threshold – change detected {0}..{1}+{2}".format(meow_ix, end_ix, peek_size))
-            break
-
-    log.debug("extension complete, meow_ix: {0}, end_ix: {1}".format(meow_ix,
-                                                                     end_ix))
-    return end_ix, models, magnitudes
+    return model_window, models, magnitudes
 
 
 def lookback(dates, observations, model_window, peek_size, models,
