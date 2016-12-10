@@ -116,65 +116,6 @@ def detect_outlier(magnitudes, outlier_threshold=defaults.OUTLIER_THRESHOLD):
     return any(magnitudes > outlier_threshold)
 
 
-# def change_magnitudes(models, coefficient_matrix, observations):
-#     """Calculate change magnitudes for each model and spectra.
-#
-#     Magnitude is the 2-norm of the difference between predicted
-#     and observed values.
-#
-#     Args:
-#         models: fitted models, used to predict values.
-#         coefficients: pre-calculated model coefficient matrix.
-#         observations: spectral values, list of spectra -> values
-#         threshold: tolerance between detected values and
-#             predicted ones.
-#
-#     Returns:
-#         list: magnitude of change for each model.
-#     """
-#     magnitudes = []
-#
-#     for model, observed in zip(models, observations):
-#         predicted = model.predict(coefficient_matrix)
-#         # TODO (jmorton): VERIFY CORRECTNESS
-#         # This approach matches what is done if 2-norm (largest sing. value)
-#         magnitude = euclidean_norm((predicted-observed))
-#         magnitudes.append(magnitude)
-#     log.debug("calculate magnitudes".format(magnitudes))
-#     return magnitudes
-
-
-# def accurate(magnitudes, threshold=0.99):
-#     """Are observed spectral values within the predicted values' threshold.
-#
-#     Convenience function used to improve readability of code.
-#
-#     Args:
-#         magnitudes: list of magnitudes for spectra
-#         threshold: tolerance between detected values and predicted ones
-#
-#     Returns:
-#         bool: True if each model's predicted and observed values are
-#             below the threshold, False otherwise.
-#     """
-#     below = [m < threshold for m in magnitudes]
-#     log.debug("change magnitued within {0}? {1}".format(threshold, below))
-#     return all(below)
-#
-#
-# def end_index(meow_ix, meow_size):
-#     """Find end index for minimum expected observation window.
-#
-#     Args:
-#         meow_ix: starting index
-#         meow_size: offset from start
-#
-#     Returns:
-#         integer: index of last observation
-#     """
-#     return meow_ix + meow_size - 1
-
-
 def find_time_index(dates, window, meow_size=defaults.MEOW_SIZE, day_delta=defaults.DAY_DELTA):
     """Find index in times at least one year from time at meow_ix.
     Args:
@@ -417,6 +358,7 @@ def extend(dates, observations, model_window, peek_size, fitter_fn,
     time_span = 0
     outliers = []
     fit_window = model_window
+    magnitudes = None
 
     while (model_window.stop + peek_size) <= dates.shape[0]:
         num_coefs = determine_num_coefs(dates[model_window])
@@ -528,9 +470,3 @@ def lookback(dates, observations, model_window, peek_size, models,
 
     return model_window, outlier_indices
 
-        # peek_window = (model_window.start - lb_size, model_window.start - 1)
-        #
-        # period = dates[peek_window]
-        # spectra = observations[:, peek_window]
-        #
-        # magnitudes = change_magnitudes(period, spectra, models, variogram)

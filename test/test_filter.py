@@ -92,5 +92,5 @@ def test_sample_2_exercise_temperature_index():
     # are outside the threshold... this test still serves
     # a purpose though.
     data = shared.read_data("test/resources/sample_2.csv")
-    index = temperature_index(data)
+    index = filter_thermal(data)
     assert data[:,index].shape == (9, 724)

@@ -10,11 +10,87 @@ This module currently uses explicit values from the Landsat CFMask:
     - 4: cloud
     - 255: fill
 """
+import numpy as np
 
 from ccd.app import defaults
 
 
-def count_clear_or_water(quality, clear=defaults.QA_CLEAR, water=defaults.QA_WATER):
+def filter_snow(quality, snow=defaults.QA_SNOW):
+    """
+    Filter all indices that are not snow
+
+    Args:
+        quality: 1-d ndarray of values representing the quality of the
+            associated spectral observations
+        snow: int value that denotes snow
+
+    Returns:
+        1-d boolean ndarray showing which values are snow
+    """
+    return quality == snow
+
+
+def filter_clear(quality, clear=defaults.QA_CLEAR):
+    """
+    Filter all indices that are not clear
+
+    Args:
+        quality: 1-d ndarray of values representing the quality of the
+            associated spectral observations
+        clear: int value that denotes clear
+
+    Returns:
+        1-d boolean ndarray showing which values are clear
+    """
+    return quality == clear
+
+
+def filter_water(quality, water=defaults.QA_WATER):
+    """
+    Filter all indices that are not water
+
+    Args:
+        quality: 1-d ndarray of values representing the quality of the
+            associated spectral observations
+        water: int value that denotes water
+
+    Returns:
+        1-d boolean ndarray showing which values are water
+    """
+    return quality == water
+
+
+def filter_fill(quality, fill=defaults.QA_FILL):
+    """
+    Filter all indices that are not fill
+
+    Args:
+        quality: 1-d ndarray of values representing the quality of the
+            associated spectral observations
+        fill: int value that denotes fill
+
+    Returns:
+        1-d boolean ndarray showing which values are fill
+    """
+    return quality == fill
+
+
+def filter_clear_or_water(quality):
+    """
+    Filter all indices that are not fill
+
+    Args:
+        quality: 1-d ndarray of values representing the quality of the
+            associated spectral observations
+        fill: int value that denotes fill
+
+    Returns:
+        1-d boolean ndarray showing which values are fill
+    """
+    return filter_clear(quality) | filter_water(quality)
+
+
+def count_clear_or_water(quality):
     """Count clear or water data.
 
     Arguments:
@@ -23,7 +99,7 @@ def count_clear_or_water(quality, clear=defaults.QA_CLEAR, water=defaults.QA_WAT
     Returns:
         integer: number of clear or water observation implied by QA data.
     """
-    return quality[(quality == clear) | (quality == water)].shape[0]
+    return np.sum([filter_clear(quality), filter_water(quality)])
 
 
 def count_fill(quality):
@@ -35,7 +111,7 @@ def count_fill(quality):
     Returns:
         integer: number of filled observation implied by QA data.
     """
-    return quality[quality == defaults.QA_FILL].shape[0]
+    return np.sum(filter_fill(quality))
 
 
 def count_snow(quality):
@@ -49,7 +125,7 @@ def count_snow(quality):
     Returns:
         integer: number of snow pixels implied by QA data
     """
-    return quality[quality == defaults.QA_SNOW].shape[0]
+    return np.sum(filter_snow(quality))
 
 
 def count_total(quality):
@@ -63,7 +139,7 @@ def count_total(quality):
     Returns:
         integer: number of non-fill pixels implied by QA data.
     """
-    return quality[quality != defaults.QA_FILL].shape[0]
+    return np.sum(~filter_fill(quality))
 
 
 def ratio_clear(quality):
@@ -77,9 +153,7 @@ def ratio_clear(quality):
     Returns:
         integer: number of non-fill pixels implied by QA data.
     """
-    clear_count = count_clear_or_water(quality)
-    total_count = count_total(quality)
-    return clear_count / total_count
+    return count_clear_or_water(quality) / count_total(quality)
 
 
 def ratio_snow(quality):
@@ -96,7 +170,7 @@ def ratio_snow(quality):
     """
     snowy_count = count_snow(quality)
     clear_count = count_clear_or_water(quality)
-    return snowy_count / (clear_count + snowy_count + 0.01)
+    return count_snow(quality) / (clear_count + snowy_count + 0.01)
 
 
 def enough_clear(quality, threshold=defaults.CLEAR_PCT_THREHOLD):
@@ -130,7 +204,7 @@ def enough_snow(quality, threshold=defaults.SNOW_PCT_THRESHOLD):
     return ratio_snow(quality) >= threshold
 
 
-def unsaturated_index(observations):
+def filter_saturated(observations):
     """bool index for unsaturated obserervations between 0..10,000
 
     Useful for efficiently filtering noisy-data from arrays.
@@ -149,7 +223,7 @@ def unsaturated_index(observations):
     return unsaturated
 
 
-def temperature_index(thermal, min_kelvin=179.95, max_kelvin=343.85):
+def filter_thermal(thermal, min_kelvin=179.95, max_kelvin=343.85):
     """Provide an index of observations within a brightness temperature range.
 
     Thermal min/max must be provided as an unscaled value in Kelvin, the same
@@ -193,6 +267,6 @@ def standard_filter(observations, quality, thermal_idx=defaults.THERMAL_IDX):
     Temperatures are expected to be in celsius
     """
     indices = (clear_index(quality)
-               & temperature_index(observations[thermal_idx])
-               & unsaturated_index(observations))
+               & filter_thermal(observations[thermal_idx])
+               & filter_saturated(observations))
     return indices
