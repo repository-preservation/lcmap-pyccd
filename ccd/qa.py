@@ -15,7 +15,7 @@ import numpy as np
 from ccd.app import defaults
 
 
-def filter_snow(quality, snow=defaults.QA_SNOW):
+def mask_snow(quality, snow=defaults.QA_SNOW):
     """
     Filter all indices that are not snow
 
@@ -30,7 +30,7 @@ def filter_snow(quality, snow=defaults.QA_SNOW):
     return quality == snow
 
 
-def filter_clear(quality, clear=defaults.QA_CLEAR):
+def mask_clear(quality, clear=defaults.QA_CLEAR):
     """
     Filter all indices that are not clear
 
@@ -45,7 +45,7 @@ def filter_clear(quality, clear=defaults.QA_CLEAR):
     return quality == clear
 
 
-def filter_water(quality, water=defaults.QA_WATER):
+def mask_water(quality, water=defaults.QA_WATER):
     """
     Filter all indices that are not water
 
@@ -60,7 +60,7 @@ def filter_water(quality, water=defaults.QA_WATER):
     return quality == water
 
 
-def filter_fill(quality, fill=defaults.QA_FILL):
+def mask_fill(quality, fill=defaults.QA_FILL):
     """
     Filter all indices that are not fill
 
@@ -75,7 +75,7 @@ def filter_fill(quality, fill=defaults.QA_FILL):
     return quality == fill
 
 
-def filter_clear_or_water(quality):
+def mask_clear_or_water(quality):
     """
     Filter all indices that are not fill
 
@@ -87,7 +87,7 @@ def filter_clear_or_water(quality):
     Returns:
         1-d boolean ndarray showing which values are fill
     """
-    return filter_clear(quality) | filter_water(quality)
+    return mask_clear(quality) | mask_water(quality)
 
 
 def count_clear_or_water(quality):
@@ -99,7 +99,7 @@ def count_clear_or_water(quality):
     Returns:
         integer: number of clear or water observation implied by QA data.
     """
-    return np.sum([filter_clear(quality), filter_water(quality)])
+    return np.sum([mask_clear(quality), mask_water(quality)])
 
 
 def count_fill(quality):
@@ -111,7 +111,7 @@ def count_fill(quality):
     Returns:
         integer: number of filled observation implied by QA data.
     """
-    return np.sum(filter_fill(quality))
+    return np.sum(mask_fill(quality))
 
 
 def count_snow(quality):
@@ -125,7 +125,7 @@ def count_snow(quality):
     Returns:
         integer: number of snow pixels implied by QA data
     """
-    return np.sum(filter_snow(quality))
+    return np.sum(mask_snow(quality))
 
 
 def count_total(quality):
@@ -139,7 +139,7 @@ def count_total(quality):
     Returns:
         integer: number of non-fill pixels implied by QA data.
     """
-    return np.sum(~filter_fill(quality))
+    return np.sum(~mask_fill(quality))
 
 
 def ratio_clear(quality):
@@ -242,8 +242,8 @@ def filter_thermal(thermal, min_kelvin=179.95, max_kelvin=343.85):
     # needs to be scaled...
     min_kelvin *= 10
     max_kelvin *= 10
-    return ((min_kelvin < thermal[7, :]) &
-            (thermal[7, :] < max_kelvin))
+    return ((thermal > min_kelvin) &
+            (thermal < max_kelvin))
 
 
 def clear_index(quality, clear=defaults.QA_CLEAR, water=defaults.QA_WATER):

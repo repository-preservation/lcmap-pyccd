@@ -1,6 +1,12 @@
+"""
+Tests for the basic masking and filtering operations
+
+This also serves as a check for the expected sample data sets
+"""
 import shared
 import pytest
 from ccd.qa import *
+from ccd.app import defaults
 
 #
 # Sample 1 (test/resources/sample_1.csva)

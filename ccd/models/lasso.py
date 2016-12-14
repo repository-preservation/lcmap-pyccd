@@ -2,7 +2,7 @@ from sklearn import linear_model, metrics
 import numpy as np
 from cachetools import cached, LRUCache
 
-from ccd.models import Model
+from ccd.models import FittedModel
 from ccd.math_utils import calc_rmse
 from ccd.app import defaults
 
@@ -66,4 +66,4 @@ def fitted_model(dates, observations, df=4):
     predictions = model.predict(coefficient_matrix)
     rmse, residuals = calc_rmse(observations, predictions)
 
-    return Model(model=model, rmse=rmse, residual=residuals)
+    return FittedModel(model=model, rmse=rmse, residual=residuals)
