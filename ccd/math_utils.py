@@ -23,6 +23,20 @@ def ensure_ndarray_input(func):
 
 
 @ensure_ndarray_input
+def adjusted_variogram(vector):
+    """
+    Calculate a modified first order variogram/madogram
+
+    Args:
+        vector: 1-d array of values
+
+    Returns:
+        float
+    """
+    return np.median(np.abs(np.diff(vector)))
+
+
+@ensure_ndarray_input
 def euclidean_norm(vector):
     """
     Calculate the euclidean norm across a vector
@@ -102,3 +116,20 @@ def kelvin_to_celsius(thermals, scale=10):
 
     """
     return thermals * scale - 27315
+
+
+@ensure_ndarray_input
+def calculate_variogram(observations):
+    """
+    Calculate the first order variogram/madogram across all bands
+
+    Helper method to make subsequent code clearer
+
+    Args:
+        observations: spectral band values
+
+    Returns:
+        1-d ndarray representing the variogram values
+    """
+    # eventually should call the method defined in math_utils.py
+    return np.median(np.abs(np.diff(observations)), axis=1)

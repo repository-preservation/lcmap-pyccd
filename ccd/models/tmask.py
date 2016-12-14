@@ -1,11 +1,13 @@
 import numpy as np
 import sklearn.linear_model as lm
 from ccd.app import logging, defaults
+from ccd.math_utils import calculate_variogram
+
 
 log = logging.getLogger(__name__)
 
 
-def tmask_coefficient_matrix(dates):
+def tmask_coefficient_matrix(dates, avg_days_yr=defaults.AVG_DAYS_YR):
     """Coefficient matrix that is used for Tmask modeling
 
     Args:
@@ -14,8 +16,8 @@ def tmask_coefficient_matrix(dates):
     Returns:
         Populated numpy array with coefficient values
     """
-    annual_cycle = 2*np.pi/365.25
-    observation_cycle = annual_cycle / np.ceil((dates[-1] - dates[0]) / 365.25)
+    annual_cycle = 2*np.pi/avg_days_yr
+    observation_cycle = annual_cycle / np.ceil((dates[-1] - dates[0]) / avg_days_yr)
 
     matrix = np.zeros(shape=(len(dates), 4), order='F')
     matrix[:, 0] = [np.cos(annual_cycle*t) for t in dates]
@@ -26,7 +28,8 @@ def tmask_coefficient_matrix(dates):
     return matrix
 
 
-def tmask(dates, observations, tmask_matrix, adjusted_rmse, bands=(defaults.GREEN_IDX, defaults.SWIR1_IDX)):
+def tmask(dates, observations, tmask_matrix,
+          bands=(defaults.GREEN_IDX, defaults.SWIR1_IDX)):
     """Produce an index for filtering outliers.
 
     Arguments:
@@ -35,11 +38,10 @@ def tmask(dates, observations, tmask_matrix, adjusted_rmse, bands=(defaults.GREE
         tmask_matrix: input matrix for the linear regression
         bands: list of band indices used for outlier detection, by default
             bands 2 and 5.
-        adjusted_rmse: list of values corresponding to bands
-            used for outlier detection.
 
     Return: indexed array, excluding outlier observations.
     """
+    variogram = calculate_variogram(observations)
     # Time and expected values using a four-part matrix of coefficients.
     regression = lm.LinearRegression()
 
@@ -53,7 +55,7 @@ def tmask(dates, observations, tmask_matrix, adjusted_rmse, bands=(defaults.GREE
     for band_ix in bands:
         fit = regression.fit(tmask_matrix, observations[band_ix])
         predicted = fit.predict(tmask_matrix)
-        outliers += np.abs(predicted - observations[band_ix]) > adjusted_rmse[band_ix]
+        outliers += np.abs(predicted - observations[band_ix]) > variogram[band_ix]
 
     # Keep all observations that aren't outliers.
     return outliers

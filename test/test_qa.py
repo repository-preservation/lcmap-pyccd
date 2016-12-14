@@ -1,6 +1,12 @@
+"""
+Tests for the basic masking and filtering operations
+
+This also serves as a check for the expected sample data sets
+"""
 import shared
 import pytest
 from ccd.qa import *
+from ccd.app import defaults
 
 #
 # Sample 1 (test/resources/sample_1.csva)
@@ -92,5 +98,5 @@ def test_sample_2_exercise_temperature_index():
     # are outside the threshold... this test still serves
     # a purpose though.
     data = shared.read_data("test/resources/sample_2.csv")
-    index = temperature_index(data)
+    index = filter_thermal(data)
     assert data[:,index].shape == (9, 724)
