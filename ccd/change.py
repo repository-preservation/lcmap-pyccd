@@ -231,6 +231,24 @@ def determine_num_coefs(dates,
         return max_coef
 
 
+def update_processing_mask(mask, index):
+    """
+    Update the persistent processing mask
+
+    This method will create a new view object as to avoid mutability issues
+
+    Args:
+        mask: 1-d boolean ndarray, current mask being used
+        indexes: int/list/tuple of index(es) to be excluded from processing
+
+    Returns:
+        1-d boolean ndarry
+    """
+    m = mask[:]
+    m[index] = 0
+    return m
+
+
 def initialize(dates, observations, fitter_fn, tmask_matrix,
                model_window, meow_size, processing_mask,
                day_delta=defaults.DAY_DELTA):
@@ -240,28 +258,31 @@ def initialize(dates, observations, fitter_fn, tmask_matrix,
         dates: list of ordinal day numbers relative to some epoch,
             the particular epoch does not matter.
         observations: spectral values, list of spectra -> values
+        fitter_fn: function used for the regression portion of the algorithm
         tmask_matrix: predifined matrix of coefficients used for Tmask
         model_window: start index of time/observation window
         meow_size: offset from meow_ix, determines initial window size
+        processing_mask: 1-d boolean array identifying which values to consider for processing
         day_delta: minimum difference between time at meow_ix and most
             recent observation
 
     Returns:
-        tuple: start, end, models, errors
+        slice object representing the start and end of a stable time segment to start with
     """
 
+    period = dates[processing_mask]
+    spectral_obs = observations[:, processing_mask]
+
     # Guard against insufficent data...
-    if not enough_samples(dates, model_window):
+    if not enough_samples(period, model_window):
         log.debug("failed, insufficient clear observations")
         return model_window
 
-    if not enough_time(dates, model_window, day_delta):
+    if not enough_time(period, model_window, day_delta):
         log.debug("failed, insufficient time range")
         return model_window
 
-    models = None
-
-    while model_window.stop <= dates.shape[0] - meow_size:
+    while model_window.stop <= period.shape[0] - meow_size:
         log.debug("initialize from {0}..{1}".format(model_window.start,
                                                     model_window.stop))
 
@@ -273,36 +294,36 @@ def initialize(dates, observations, fitter_fn, tmask_matrix,
         model_window.stop = find_time_index(dates, model_window, meow_size)
 
         # Subset the data based on the current model window
-        period = dates[model_window]
-        spectra = observations[:, model_window]
-        variogram = calculate_variogram(spectra)
+        model_period = period[model_window]
+        model_spectral = spectral_obs[:, model_window]
+        variogram = calculate_variogram(model_spectral)
 
         # Count outliers in the window, if there are too many outliers then
         # try again.
-        outliers = tmask.tmask(period,
-                               spectra,
+        outliers = tmask.tmask(model_period,
+                               model_spectral,
                                tmask_matrix[model_window],
                                variogram)
 
         # Make sure we still have enough observations and enough time
-        if not enough_time(period[~outliers], model_window, day_delta)\
-                or not enough_samples(period[~outliers], model_window):
+        if not enough_time(model_period[~outliers], model_window, day_delta)\
+                or not enough_samples(model_period[~outliers], model_window):
             log.debug("continue, not enough observations \
-                       ({0}) after tmask".format(period[~outliers].shape[0]))
+                       ({0}) after tmask".format(model_period[~outliers].shape[0]))
             model_window.stop += 1
             continue
 
         # Each spectra, although analyzed independently, all share
         # a common time-frame. Consequently, it doesn't make sense
         # to analyze one spectrum in it's entirety.
-        models = [fitter_fn(period[~outliers], spectrum)
-                  for spectrum in spectra[~outliers]]
+        models = [fitter_fn(model_period[~outliers], spectrum)
+                  for spectrum in model_spectral[~outliers]]
         log.debug("update change models")
 
         # If a model is not stable, then it is possible that a disturbance
         # exists somewhere in the observation window. The window shifts
         # forward in time, and begins initialization again.
-        if not stable(spectra, models, period, variogram):
+        if not stable(model_spectral, models, model_period, variogram):
             log.debug("unstable model, shift start time and retry")
             model_window.start += 1
             model_window.stop += 1
@@ -314,12 +335,11 @@ def initialize(dates, observations, fitter_fn, tmask_matrix,
     log.debug("initialize complete, start: {0}, stop: {1}".format(model_window.start,
                                                                   model_window.stop))
 
-    return model_window
+    return model_window, models
 
 
 def extend(dates, observations, model_window, peek_size, fitter_fn,
-           processing_mask, day_delta=defaults.DAY_DELTA,
-           detection_bands=defaults.DETECTION_BANDS):
+           processing_mask, detection_bands=defaults.DETECTION_BANDS):
     """Increase observation window until change is detected or
     we are out of observations
 
@@ -331,8 +351,8 @@ def extend(dates, observations, model_window, peek_size, fitter_fn,
             process
         peek_size: look ahead for detecting change
         fitter_fn: function used to model observations
-        day_delta: minimum difference between time at meow_ix and most
-            recent observation
+        processing_mask: 1-d boolean array identifying which values to consider for processing
+        detection_bands: spectral band indicies that are used in the detect change portion
 
     Returns:
         tuple: end index, models, and change magnitude.
@@ -344,9 +364,9 @@ def extend(dates, observations, model_window, peek_size, fitter_fn,
     log.debug("change detection started {0}..{1}".format(model_window.start,
                                                          model_window.stop))
 
-    if model_window.stop is None:
-        log.debug("failed, end_ix is None... initialize must have failed")
-        return model_window, None, None
+    # if model_window.stop is None:
+    #     log.debug("failed, end_ix is None... initialize must have failed")
+    #     return model_window, None, None
 
     if (model_window.stop + peek_size) > dates.shape[0]:
         log.debug("failed, end_index+peek_size {0}+{1} \
@@ -361,7 +381,10 @@ def extend(dates, observations, model_window, peek_size, fitter_fn,
     magnitudes = None
 
     while (model_window.stop + peek_size) <= dates.shape[0]:
-        num_coefs = determine_num_coefs(dates[model_window])
+        period = dates[processing_mask]
+        spectral_obs = observations[:, processing_mask]
+
+        num_coefs = determine_num_coefs(period[model_window])
         tmpcg_rmse = []
         peek_window = slice(model_window.stop, model_window.stop + peek_size)
 
@@ -370,13 +393,13 @@ def extend(dates, observations, model_window, peek_size, fitter_fn,
         # additionally only updated during certain time frames, in this case
         # if we have < than 24 data points
         if not time_span or model_window.stop - model_window.start < 24:
-            models = [fitter_fn(dates[fit_window], spectrum, num_coefs)
-                      for spectrum in observations[:, fit_window]]
+            models = [fitter_fn(period[fit_window], spectrum, num_coefs)
+                      for spectrum in spectral_obs[:, fit_window]]
 
-            time_span = dates[model_window.stop] - dates[model_window.start]
+            time_span = period[model_window.stop] - period[model_window.start]
 
-            magnitudes = [change_magnitudes(dates[processing_mask][idx],
-                                            observations[processing_mask][:, idx],
+            magnitudes = [change_magnitudes(period[idx],
+                                            spectral_obs[:, idx],
                                             models)
                           for idx in range(peek_window.start,
                                            peek_window.stop)]
@@ -384,11 +407,11 @@ def extend(dates, observations, model_window, peek_size, fitter_fn,
         else:
             # TODO FIX ME! Need a retrain decision method to determine if we
             # should retrain a model or not
-            if dates[model_window.stop] - dates[model_window.start] >= 1.33 * dates[fit_window.stop] - dates[fit_window.start]:
+            if period[model_window.stop] - period[model_window.start] >= 1.33 * period[fit_window.stop] - period[fit_window.start]:
                 fit_window.stop = model_window.stop
 
-                models = [fitter_fn(dates[fit_window], spectrum, num_coefs)
-                          for spectrum in observations[:, fit_window]]
+                models = [fitter_fn(period[fit_window], spectrum, num_coefs)
+                          for spectrum in spectral_obs[:, fit_window]]
 
             # We need the last 24 residual values that were generated during
             # the model building step. These are temporally the closest values
@@ -399,8 +422,8 @@ def extend(dates, observations, model_window, peek_size, fitter_fn,
                 tmp_rmse /= 4
                 tmpcg_rmse.append(tmp_rmse)
 
-            magnitudes = [change_magnitudes(dates[processing_mask][idx],
-                                            observations[processing_mask][:, idx],
+            magnitudes = [change_magnitudes(period[idx],
+                                            spectral_obs[:, idx],
                                             models, comparison_rmse=tmpcg_rmse)
                           for idx in range(peek_window.start,
                                            peek_window.stop)]
@@ -416,10 +439,11 @@ def extend(dates, observations, model_window, peek_size, fitter_fn,
             # keep track of any outliers as they will be excluded from future
             # processing steps
             outliers.append(peek_window.start)
+            processing_mask = update_processing_mask(processing_mask, peek_window.start)
 
         model_window.stop += 1
 
-    return model_window, models, magnitudes
+    return model_window, models, magnitudes, outliers
 
 
 def lookback(dates, observations, model_window, peek_size, models,
@@ -444,6 +468,9 @@ def lookback(dates, observations, model_window, peek_size, models,
         slice: window of indices to be used
         array: indices of data that have been flagged as outliers
     """
+    period = dates[processing_mask]
+    spectral_obs = observations[:, processing_mask]
+
     outlier_indices = []
     for idx in range(model_window.start, previous_break, -1):
         if model_window.start - previous_break > peek_size:
@@ -451,8 +478,8 @@ def lookback(dates, observations, model_window, peek_size, models,
         else:
             lb_size = peek_size
 
-        magnitudes = [change_magnitudes(dates[processing_mask][lb],
-                                        observations[processing_mask][:, lb],
+        magnitudes = [change_magnitudes(period[lb],
+                                        spectral_obs[:, lb],
                                         models)
                       for lb in range(model_window.start - lb_size,
                                       model_window.start - 1, -1)]

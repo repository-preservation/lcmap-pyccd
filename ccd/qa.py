@@ -223,42 +223,21 @@ def filter_saturated(observations):
     return unsaturated
 
 
-def filter_thermal(thermal, min_kelvin=179.95, max_kelvin=343.85):
+def filter_thermal_celsius(thermal, min_celsius=-9320, max_celsius=7070):
     """Provide an index of observations within a brightness temperature range.
 
-    Thermal min/max must be provided as an unscaled value in Kelvin, the same
-    units as observed data.
+    Thermal min/max must be provided as a scaled value in degrees celsius.
 
-    The range in degrees celsius is [-93.2C,70.7C]
+    The range in unscaled degrees celsius is (-93.2C,70.7C)
+    The range in scaled degrees celsius is (-9320, 7070)
 
     Arguments:
         thermal: 1-d array of thermal values
-        min_kelvin: minimum temperature in degrees kelvin, by default 179.95K,
-            -93.2C.
-        max_kelvin: maximum temperature in degrees kelvin, by default 3438.5K,
-            70.7C.
+        min_celsius: minimum temperature in degrees celsius
+        max_celsius: maximum temperature in degrees celsius
     """
-    # threshold parameters are unscaled, observations are scaled so the former
-    # needs to be scaled...
-    min_kelvin *= 10
-    max_kelvin *= 10
-    return ((thermal > min_kelvin) &
-            (thermal < max_kelvin))
-
-
-def clear_index(quality, clear=defaults.QA_CLEAR, water=defaults.QA_WATER):
-    """
-    Return the array indices that are considered clear or water
-
-    Args:
-        quality:
-        clear:
-        water:
-
-    Returns:
-        ndarray: bool
-    """
-    return (quality == clear) & (quality == water)
+    return ((thermal > min_celsius) &
+            (thermal < max_celsius))
 
 
 def standard_filter(observations, quality, thermal_idx=defaults.THERMAL_IDX):
@@ -266,7 +245,7 @@ def standard_filter(observations, quality, thermal_idx=defaults.THERMAL_IDX):
 
     Temperatures are expected to be in celsius
     """
-    indices = (clear_index(quality)
-               & filter_thermal(observations[thermal_idx])
+    indices = (mask_clear_or_water(quality)
+               & filter_thermal_celsius(observations[thermal_idx])
                & filter_saturated(observations))
     return indices

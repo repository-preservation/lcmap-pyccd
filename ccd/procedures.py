@@ -27,7 +27,7 @@ import numpy as np
 
 from ccd import qa
 from ccd.app import logging, defaults
-from ccd.change import initialize, extend, lookback, change_magnitudes
+from ccd.change import initialize, extend, lookback, change_magnitudes, update_processing_mask
 from ccd.models import lasso, tmask
 from ccd.math_utils import kelvin_to_celsius
 
@@ -136,9 +136,9 @@ def standard_fit_procedure(dates, observations, fitter_fn, quality,
 
         # Step 1: Initialize -- find an initial stable time-frame.
         log.debug("initialize change model")
-        model_window = initialize(dates, observations, fitter_fn,
-                                  tmask_matrix, model_window,
-                                  meow_size, processing_mask)
+        model_window, models = initialize(dates, observations, fitter_fn,
+                                          tmask_matrix, model_window,
+                                          meow_size, processing_mask)
 
         if model_window.start > start_ix:
             # TODO look at past the difference in indicies to see if they
@@ -146,8 +146,7 @@ def standard_fit_procedure(dates, observations, fitter_fn, quality,
             model_window, outliers = lookback(dates, observations,
                                               model_window, peek_size, models,
                                               start_ix, processing_mask)
-
-        # TODO update the processing mask after the look back method
+            processing_mask = update_processing_mask(processing_mask, outliers)
 
         # If we are at the beginning of the time series and if initialize
         # has moved forward the start of the first curve by more than the
@@ -157,33 +156,36 @@ def standard_fit_procedure(dates, observations, fitter_fn, quality,
             # TODO make uniform method for fitting models and returning the
             # appropriate information
             # Maybe define a namedtuple for model storage
-            models_tmp = [fitter_fn(dates[~processing_mask][start_ix:model_window.start],
-                                spectrum)
-                      for spectrum
-                      in observations[:, ~processing_mask][:, start_ix:model_window.start]]
+            models_tmp = [fitter_fn(dates[processing_mask][start_ix:model_window.start],
+                                    spectrum)
+                          for spectrum
+                          in observations[:, processing_mask][:, start_ix:model_window.start]]
 
-            mag_tmp = change_magnitudes(dates[~processing_mask][start_ix:model_window.start],
-                                        observations[~processing_mask][start_ix:model_window.start],
+            mag_tmp = change_magnitudes(dates[processing_mask][start_ix:model_window.start],
+                                        observations[processing_mask][start_ix:model_window.start],
                                         models_tmp)
 
             results += (dates[model_window.start], dates[model_window.stop],
                         models_tmp, mag_tmp)
 
         # Step 2: Extension -- expand time-frame until a change is detected.
-        # initialized models from Step 1 cannot be passed along due to how
+        # initialized models from Step 1 and the lookback
+        # cannot be passed along due to how
         # Tmask can throw out some values used in that model, but are
         # subsequently used in follow on methods
         log.debug("extend change model")
-        model_window, models, magnitudes_ = extend(dates, observations,
-                                                   model_window, peek_size,
-                                                   fitter_fn, models)
+        model_window, models, magnitudes_, outliers = extend(dates, observations,
+                                                             model_window, peek_size,
+                                                             fitter_fn, processing_mask)
+        processing_mask = update_processing_mask(processing_mask, outliers)
 
         # After initialization and extension, the change models for each
         # spectra are complete for a period of time. If meow_ix and end_ix
         # are not present, then not enough observations exist for a useful
         # model to be produced, so nothing is appened to results.
         if (model_window.start is not None) and (model_window.stop is not None):
-            result = (dates[model_window.start], dates[model_window.stop],
+            result = (dates[processing_mask][model_window.start],
+                      dates[processing_mask][model_window.stop],
                       models, magnitudes_)
             results += (result,)
 
