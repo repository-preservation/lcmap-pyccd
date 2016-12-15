@@ -63,4 +63,9 @@ MEOW_SIZE: 16
 PEEK_SIZE: 6
 DAY_DELTA: 365
 AVG_DAYS_YR: 365.25
+
+############################
+# Values related to model fitting
+############################
 FITTER_FN: 'ccd.models.lasso.fitted_model'
+LASSO_MAX_ITER: 5

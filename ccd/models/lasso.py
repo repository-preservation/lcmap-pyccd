@@ -13,43 +13,50 @@ def __coefficient_cache_key(observation_dates):
     return tuple(observation_dates)
 
 
-@cached(cache=cache, key=__coefficient_cache_key)
-def coefficient_matrix(observation_dates, num_coeffs=4,
+# @cached(cache=cache, key=__coefficient_cache_key)
+def coefficient_matrix(dates, num_coefficients=4,
                        avg_days_yr=defaults.AVG_DAYS_YR):
     """
+    Fourier transform function to be used for the matrix of inputs for
+    model fitting
+
     Args:
-        observation_dates: list of ordinal dates
-        num_coeffs: how many coefficients to use to build the matrix
+        dates: list of ordinal dates
+        num_coefficients: how many coefficients to use to build the matrix
 
     Returns:
         Populated numpy array with coefficient values
     """
     w = 2 * np.pi / avg_days_yr
 
-    matrix = np.zeros(shape=(len(observation_dates), 8), order='F')
+    matrix = np.zeros(shape=(len(dates), 7), order='F')
 
-    matrix[:, 0] = [t for t in observation_dates]
-    matrix[:, 1] = [np.cos(w*t) for t in observation_dates]
-    matrix[:, 2] = [np.sin(w*t) for t in observation_dates]
+    matrix[:, 0] = [t for t in dates]
+    matrix[:, 1] = [np.cos(w*t) for t in dates]
+    matrix[:, 2] = [np.sin(w*t) for t in dates]
 
-    if num_coeffs == 6:
-        matrix[:, 3] = [np.cos(2 * w * t) for t in observation_dates]
-        matrix[:, 4] = [np.sin(2 * w * t) for t in observation_dates]
+    if num_coefficients == 6:
+        matrix[:, 3] = [np.cos(2 * w * t) for t in dates]
+        matrix[:, 4] = [np.sin(2 * w * t) for t in dates]
 
-    if num_coeffs == 8:
-        matrix[:, 5] = [np.cos(3 * w * t) for t in observation_dates]
-        matrix[:, 6] = [np.sin(3 * w * t) for t in observation_dates]
+    if num_coefficients == 8:
+        matrix[:, 5] = [np.cos(3 * w * t) for t in dates]
+        matrix[:, 6] = [np.sin(3 * w * t) for t in dates]
 
     return matrix
 
 
-def fitted_model(dates, observations, df=4):
+def fitted_model(dates, spectra_obs, num_coefficients=4,
+                 max_iter=defaults.LASSO_MAX_ITER):
     """Create a fully fitted lasso model.
 
     Args:
         dates: list or ordinal observation dates
-        observations: list of values corresponding to observation_dates
-        df: degrees of freedom, how many coefficients to use
+        spectra_obs: list of values corresponding to the observation dates for
+            a single spectral band
+        num_coefficients: how many coefficients to use for the fit
+        max_iter: maximum number of iterations that the coefficients
+            undergo to find the convergence point.
 
     Returns:
         sklearn.linear_model.Lasso().fit(observation_dates, observations)
@@ -57,13 +64,12 @@ def fitted_model(dates, observations, df=4):
     Example:
         fitted_model(dates, obs).predict(...)
     """
-    coef_matrix = coefficient_matrix(dates, df)
+    coef_matrix = coefficient_matrix(dates, num_coefficients)
 
-    # pmodel = partial_model(observation_dates)
-    lasso = linear_model.Lasso(alpha=0.1)
-    model = lasso.fit(coef_matrix, observations)
+    lasso = linear_model.Lasso(max_iter=max_iter)
+    model = lasso.fit(coef_matrix, spectra_obs)
 
-    predictions = model.predict(coefficient_matrix)
-    rmse, residuals = calc_rmse(observations, predictions)
+    predictions = [model.predict(c.reshape(1, -1)) for c in coef_matrix]
+    rmse, residuals = calc_rmse(spectra_obs, predictions)
 
     return FittedModel(model=model, rmse=rmse, residual=residuals)
