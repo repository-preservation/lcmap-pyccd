@@ -240,12 +240,32 @@ def filter_thermal_celsius(thermal, min_celsius=-9320, max_celsius=7070):
             (thermal < max_celsius))
 
 
-def standard_filter(observations, quality, thermal_idx=defaults.THERMAL_IDX):
-    """Filter matrix for clear pixels within temp/saturation range.
+def standard_procedure_filter(observations, quality, thermal_idx=defaults.THERMAL_IDX):
+    """
+    Filter for the initial stages of the standard procedure.
+
+    Clear or Water
+    and Unsaturated
 
     Temperatures are expected to be in celsius
     """
-    indices = (mask_clear_or_water(quality)
-               & filter_thermal_celsius(observations[thermal_idx])
-               & filter_saturated(observations))
-    return indices
+    return (mask_clear_or_water(quality) &
+            filter_thermal_celsius(observations[thermal_idx]) &
+            filter_saturated(observations))
+
+
+def snow_procedure_filter(observations, quality, thermal_idx=defaults.THERMAL_IDX):
+    """
+    Filter for initial stages of the snow procedure
+
+    Clear or Water
+    and Snow
+
+    Args:
+        quality: 1-d ndarray
+
+    Returns:
+        1-d boolean ndarray
+    """
+    return (standard_procedure_filter(observations, quality, thermal_idx) |
+            mask_snow(quality))

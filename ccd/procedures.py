@@ -54,9 +54,51 @@ def determine_fit_procedure(quality):
     else:
         return standard_fit_procedure
 
+# TODO Standardize return values for the procedures with the
+# named tuple class
 
-def permanent_snow_procedure(dates, observations, fitter_fn, quality):
-    pass
+
+def permanent_snow_procedure(dates, observations, fitter_fn, quality,
+                             meow_size=defaults.MEOW_SIZE,
+                             peek_size=defaults.PEEK_SIZE,
+                             thermal_idx=defaults.THERMAL_IDX):
+    """
+    Snow procedure for when there is a significant amount snow represented
+    in the quality information
+
+    This method essentially fits a 4 coefficient model across all the
+    observations
+
+    Args:
+        dates: list of ordinal day numbers relative to some epoch,
+            the particular epoch does not matter.
+        observations: values for one or more spectra corresponding
+            to each time.
+        fitter_fn: a function used to fit observation values and
+            acquisition dates for each spectra.
+        meow_size: minimum expected observation window needed to
+            produce a fit.
+        peek_size: number of observations to consider when detecting
+            a change.
+
+    Returns:
+
+    """
+
+    processing_mask = qa.snow_procedure_filter(quality)
+
+    period = dates[processing_mask]
+    spectral_obs = observations[:, processing_mask]
+
+    if np.sum(processing_mask) < meow_size:
+        log.debug('insufficient snow/water/clear observations for '
+                  'the snow procedure')
+        return None
+
+    models = [fitter_fn(period, spectrum, 4)
+              for spectrum in spectral_obs]
+
+    return models
 
 
 def fmask_fail_procedure(dates, observations, fitter_fn, quality):
@@ -67,9 +109,6 @@ def standard_fit_procedure(dates, observations, fitter_fn, quality,
                            meow_size=defaults.MEOW_SIZE, peek_size=defaults.PEEK_SIZE,
                            thermal_idx=defaults.THERMAL_IDX):
     """Runs the core change detection algorithm.
-
-        The algorithm assumes all pre-processing has been performed on
-        observations.
 
         Args:
             dates: list of ordinal day numbers relative to some epoch,
@@ -97,7 +136,7 @@ def standard_fit_procedure(dates, observations, fitter_fn, quality,
     # We then persist the processing mask through subsequent operations as
     # additional data points get identified to be excluded from processing
     observations[thermal_idx] = kelvin_to_celsius(observations[thermal_idx])
-    processing_mask = qa.standard_filter(observations, quality)
+    processing_mask = qa.standard_procedure_filter(observations, quality)
 
     # All we care about now is stuff that passed the filtering and we
     # need to convert the thermal values
