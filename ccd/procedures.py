@@ -237,12 +237,12 @@ def standard_fit_procedure(dates, observations, fitter_fn, quality,
                           for spectrum
                           in observations[:, processing_mask][:, start_ix:model_window.start]]
 
-            mag_tmp = change_magnitudes(dates[processing_mask][start_ix:model_window.start],
-                                        observations[processing_mask][start_ix:model_window.start],
-                                        models_tmp)
+            magnitudes_ = change_magnitudes(dates[processing_mask][start_ix:model_window.start],
+                                            observations[processing_mask][start_ix:model_window.start],
+                                            models_tmp)
 
             results += (dates[model_window.start], dates[model_window.stop],
-                        models_tmp, mag_tmp)
+                        models_tmp, magnitudes_)
 
         # Step 2: Extension -- expand time-frame until a change is detected.
         # initialized models from Step 1 and the lookback

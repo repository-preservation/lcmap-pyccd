@@ -7,7 +7,7 @@ from .version import __algorithm__
 from .version import __name
 
 logger = app.logging.getLogger(__name)
-config = app.defaults
+defaults = app.defaults
 
 
 def attr_from_str(value):
@@ -28,53 +28,67 @@ def attr_from_str(value):
         return None
 
 
-def __result_to_detection(change_tuple):
+def __result_to_detection(change_tuple, processing_mask, procedure):
     """Transforms results of change.detect to the detections dict.
 
-    Args: A tuple as returned from change.detect
-            (start_day, end_day, models, errors_, magnitudes_)
+    Args:
+        change_tuple: A tuple as returned from change.detect
+            (start_day, end_day, models, errors, magnitudes_)
+        processing_mask: boolean array showing which values were included in the fitting
+            of the change models
+        procedure: method that was used to generate the change models
 
     Returns: A dict representing a change detection
 
-        {algorithm:'pyccd:x.x.x',
-         start_day:int,
-         end_day:int, observation_count:int,
-         red:      {magnitudes:float,
-                    rmse:float,
-                    coefficients:(float, float, ...),
-                    intercept:float},
-         green:    {magnitudes:float,
-                    rmse:float,
-                    coefficients:(float, float, ...),
-                    intercept:float},
-         blue:     {magnitudes:float,
-                    rmse:float,
-                    coefficients:(float, float, ...),
-                    intercept:float},
-         nir:     {magnitudes:float,
-                    rmse:float,
-                    coefficients:(float, float, ...),
-                    intercept:float},
-         swir1:   {magnitudes:float,
-                    rmse:float,
-                    coefficients:(float, float, ...),
-                    intercept:float},
-         swir2:    {magnitudes:float,
-                    rmse:float,
-                    coefficients:(float, float, ...),
-                    intercept:float},
+        {algorithm: 'pyccd:x.x.x',
+         processing_mask: (bool, bool, ...),
+         procedure: string,
+         change_models: [
+             {start_day: int,
+              end_day: int,
+              break_day: int,
+              observation_count: int,
+              change_probability: float,
+              num_coefficients: int,
+              red:      {magnitude: float,
+                         rmse: float,
+                         coefficients: (float, float, ...),
+                         intercept: float},
+              green:    {magnitude: float,
+                         rmse: float,
+                         coefficients: (float, float, ...),
+                         intercept: float},
+              blue:     {magnitude: float,
+                         rmse: float,
+                         coefficients: (float, float, ...),
+                         intercept: float},
+              nir:      {magnitude: float,
+                         rmse: float,
+                         coefficients: (float, float, ...),
+                         intercept: float},
+              swir1:    {magnitude: float,
+                         rmse: float,
+                         coefficients: (float, float, ...),
+                         intercept: float},
+              swir2:    {magnitude: float,
+                         rmse: float,
+                         coefficients: (float, float, ...),
+                         intercept: float},
+              thermal:  {magnitude: float,
+                         rmse: float,
+                         coefficients: (float, float, ...),
+                         intercept: float}}
+                        ]
         }
     """
-    spectra = ((0, 'red'), (1, 'green'), (2, 'blue'), (3, 'nir'),
-               (4, 'swir1'), (5, 'swir2'))
+    spectra = ((defaults.RED_IDX, 'red'), (defaults.GREEN_IDX, 'green'), (defaults.BLUE_IDX, 'blue'),
+               (defaults.NIR_IDX, 'nir'), (defaults.SWIR1_IDX, 'swir1'), (defaults.SWIR2_IDX, 'swir2'),
+               (defaults.THERMAL_IDX, 'thermal'))
 
     # get the start and end time for each detection period
     detection = {'algorithm': __algorithm__,
-                 'start_day': int(change_tuple[0]),
-                 'end_day': int(change_tuple[1]),
-                 'observation_count': None,  # dummy value for now
-                 'category': None}           # dummy value for now
-
+                 'processing_mask': processing_mask,
+                 'procedure': procedure.__name__}
     # gather the results for each spectra
     for ix, name in spectra:
         model, error, mags = change_tuple[2], change_tuple[3], change_tuple[4]
@@ -143,7 +157,7 @@ def detect(dates, reds, greens, blues, nirs,
                         swir2s, thermals))
 
     # load the fitter_fn from app.FITTER_FN
-    fitter_fn = attr_from_str(config.FITTER_FN)
+    fitter_fn = attr_from_str(defaults.FITTER_FN)
 
     # Determine which procedure to use for the detection
     procedure = __determine_fit_procedure(quality)

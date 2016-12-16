@@ -8,6 +8,6 @@ FittedModel = namedtuple('FittedModel', ['model', 'residual', 'rmse'])
 
 # Structure to store the results, this works better than a simple
 # list or tuple as it clearly states what is what
-ChangeModel = namedtuple('ChangeModel', ['start', 'end', 'coefficients',
+ChangeModel = namedtuple('ChangeModel', ['start', 'end', 'break', 'coefficients',
                                          'rmse', 'magnitude', 'probability',
-                                         'num_observations', 'procedure'])
+                                         'num_observations'])
