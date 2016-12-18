@@ -28,7 +28,7 @@ import numpy as np
 from ccd import qa
 from ccd.app import logging, defaults
 from ccd.change import initialize, extend, lookback, change_magnitudes, update_processing_mask
-from ccd.models import lasso, tmask
+from ccd.models import lasso, tmask, SpectralModel, ChangeModel
 from ccd.math_utils import kelvin_to_celsius
 
 
@@ -52,7 +52,7 @@ def determine_fit_procedure(quality):
         else:
             return fmask_fail_procedure
     else:
-        return standard_fit_procedure
+        return standard_procedure
 
 # TODO Standardize return values for the procedures with the
 # named tuple class
@@ -142,7 +142,7 @@ def fmask_fail_procedure(dates, observations, fitter_fn, quality,
     return models
 
 
-def standard_fit_procedure(dates, observations, fitter_fn, quality,
+def standard_procedure(dates, observations, fitter_fn, quality,
                            meow_size=defaults.MEOW_SIZE, peek_size=defaults.PEEK_SIZE,
                            thermal_idx=defaults.THERMAL_IDX):
     """Runs the core change detection algorithm.
@@ -237,12 +237,12 @@ def standard_fit_procedure(dates, observations, fitter_fn, quality,
                           for spectrum
                           in observations[:, processing_mask][:, start_ix:model_window.start]]
 
-            magnitudes_ = change_magnitudes(dates[processing_mask][start_ix:model_window.start],
+            magnitudes = change_magnitudes(dates[processing_mask][start_ix:model_window.start],
                                             observations[processing_mask][start_ix:model_window.start],
                                             models_tmp)
 
             results += (dates[model_window.start], dates[model_window.stop],
-                        models_tmp, magnitudes_)
+                        models_tmp, magnitudes)
 
         # Step 2: Extension -- expand time-frame until a change is detected.
         # initialized models from Step 1 and the lookback
@@ -250,20 +250,17 @@ def standard_fit_procedure(dates, observations, fitter_fn, quality,
         # Tmask can throw out some values used in that model, but are
         # subsequently used in follow on methods
         log.debug("extend change model")
-        model_window, models, magnitudes_, outliers = extend(dates, observations,
+        model_window, models, magnitudes, outliers = extend(dates, observations,
                                                              model_window, peek_size,
                                                              fitter_fn, processing_mask)
         processing_mask = update_processing_mask(processing_mask, outliers)
 
         # After initialization and extension, the change models for each
-        # spectra are complete for a period of time. If meow_ix and end_ix
-        # are not present, then not enough observations exist for a useful
-        # model to be produced, so nothing is appened to results.
-        if (model_window.start is not None) and (model_window.stop is not None):
-            result = (dates[processing_mask][model_window.start],
-                      dates[processing_mask][model_window.stop],
-                      models, magnitudes_)
-            results += (result,)
+        # spectra are complete for a period of time.
+        result = (dates[processing_mask][model_window.start],
+                  dates[processing_mask][model_window.stop],
+                  models, magnitudes)
+        results += (result,)
 
         log.debug("accumulate results, {} so far".format(len(results)))
         # Step 4: Iterate. The meow_ix is moved to the end of the current
@@ -271,6 +268,11 @@ def standard_fit_procedure(dates, observations, fitter_fn, quality,
         # to be None, in which case iteration stops.
         start_ix = model_window.stop
         model_window = slice(model_window.stop, model_window.stop + meow_size)
+
+    # TODO write method for the end of the series, there are two different
+    # approaches from the matlab version, based on if there is a current model
+    # or not. If the last model stopped due to change, then we fit a new model,
+    # otherwise we look at extending it.
 
     log.debug("change detection complete")
     return results

@@ -497,3 +497,16 @@ def lookback(dates, observations, model_window, peek_size, models,
 
     return model_window, outlier_indices
 
+
+def fit_spectral_model(dates, observations, fitter_fn,
+                       fit_window, peek_window):
+
+    models = [fitter_fn(dates[fit_window], spectrum)
+              for spectrum
+              in observations[:, fit_window]]
+
+    magnitudes_ = change_magnitudes(
+        dates[processing_mask][start_ix:model_window.start],
+        observations[processing_mask][start_ix:model_window.start],
+        models_tmp)
+
