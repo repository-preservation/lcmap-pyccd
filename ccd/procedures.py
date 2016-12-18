@@ -28,11 +28,15 @@ import numpy as np
 from ccd import qa
 from ccd.app import logging, defaults
 from ccd.change import initialize, extend, lookback, change_magnitudes, update_processing_mask
-from ccd.models import lasso, tmask, SpectralModel, ChangeModel
+from ccd.models import lasso, tmask, SpectralModel, ChangeModel, results_to_changemodel
 from ccd.math_utils import kelvin_to_celsius
 
 
 log = logging.getLogger(__name__)
+
+
+class ProcedureException(Exception):
+    pass
 
 
 def determine_fit_procedure(quality):
@@ -53,9 +57,6 @@ def determine_fit_procedure(quality):
             return fmask_fail_procedure
     else:
         return standard_procedure
-
-# TODO Standardize return values for the procedures with the
-# named tuple class
 
 
 def permanent_snow_procedure(dates, observations, fitter_fn, quality,
@@ -90,14 +91,21 @@ def permanent_snow_procedure(dates, observations, fitter_fn, quality,
     spectral_obs = observations[:, processing_mask]
 
     if np.sum(processing_mask) < meow_size:
-        log.debug('insufficient snow/water/clear observations for '
-                  'the snow procedure')
-        return None
+        raise ProcedureException('Insufficient snow/water/clear '
+                                 'observations for the snow procedure')
 
     models = [fitter_fn(period, spectrum, 4)
               for spectrum in spectral_obs]
 
-    return models
+    magnitudes = np.zeros(shape=(observations.shape[0],))
+
+    # White space is cheap, so let's use it
+    result = results_to_changemodel(fitted_models=models, start_day=dates[0], end_day=dates[-1],
+                                    break_day=0, magnitudes=magnitudes,
+                                    observation_count=np.sum(processing_mask), change_probability=0,
+                                    num_coefficients=4)
+
+    return (result,), processing_mask
 
 
 def fmask_fail_procedure(dates, observations, fitter_fn, quality,
@@ -128,18 +136,26 @@ def fmask_fail_procedure(dates, observations, fitter_fn, quality,
         """
     processing_mask = qa.standard_procedure_filter(observations, quality)
 
+    # TODO there is an additional mask based on the median value for the green band + 400
+
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
 
     if np.sum(processing_mask) < meow_size:
-        log.debug('insufficient observations for '
-                  'the fmask fail procedure')
-        return None
+        raise ProcedureException('Insufficient clear '
+                                 'observations for the fmask fail procedure')
 
     models = [fitter_fn(period, spectrum, 4)
               for spectrum in spectral_obs]
 
-    return models
+    magnitudes = np.zeros(shape=(observations.shape[0],))
+
+    result = results_to_changemodel(fitted_models=models, start_day=dates[0], end_day=dates[-1],
+                                    break_day=0, magnitudes=magnitudes,
+                                    observation_count=np.sum(processing_mask), change_probability=0,
+                                    num_coefficients=4)
+
+    return (result,), processing_mask
 
 
 def standard_procedure(dates, observations, fitter_fn, quality,
@@ -184,7 +200,7 @@ def standard_procedure(dates, observations, fitter_fn, quality,
 
     # Accumulator for models. This is a list of lists; each top-level list
     # corresponds to a particular spectra.
-    results = tuple()
+    results = []
 
     # Initialize the window which is used for building the models
     # this can actually be different than the start and ending indices
@@ -216,9 +232,9 @@ def standard_procedure(dates, observations, fitter_fn, quality,
                                           tmask_matrix, model_window,
                                           meow_size, processing_mask)
 
+        # Step 1.5: Lookback -- we need too look back at previous values to see
+        # if they can be included with the new initialized model
         if model_window.start > start_ix:
-            # TODO look at past the difference in indicies to see if they
-            # fall into the initialized model
             model_window, outliers = lookback(dates, observations,
                                               model_window, peek_size, models,
                                               start_ix, processing_mask)
@@ -228,21 +244,29 @@ def standard_procedure(dates, observations, fitter_fn, quality,
         # has moved forward the start of the first curve by more than the
         # peek size, then we should fit a general curve to those first
         # spectral values
-        if not results and model_window.start - peek_size > start_ix:
+        if not results and model_window.start - peek_size > 0:
             # TODO make uniform method for fitting models and returning the
             # appropriate information
             # Maybe define a namedtuple for model storage
-            models_tmp = [fitter_fn(dates[processing_mask][start_ix:model_window.start],
+            models_tmp = [fitter_fn(dates[processing_mask][0:model_window.start],
                                     spectrum)
                           for spectrum
-                          in observations[:, processing_mask][:, start_ix:model_window.start]]
+                          in observations[:, processing_mask][:, 0:model_window.start]]
 
-            magnitudes = change_magnitudes(dates[processing_mask][start_ix:model_window.start],
-                                            observations[processing_mask][start_ix:model_window.start],
-                                            models_tmp)
+            magnitudes = change_magnitudes(dates[processing_mask][0:model_window.start],
+                                           observations[processing_mask][0:model_window.start],
+                                           models_tmp)
 
-            results += (dates[model_window.start], dates[model_window.stop],
-                        models_tmp, magnitudes)
+            result = results_to_changemodel(fitted_models=models_tmp,
+                                            start_day=dates[0],
+                                            end_day=dates[model_window.start],
+                                            break_day=dates[model_window.start],
+                                            magnitudes=magnitudes,
+                                            observation_count=np.sum(processing_mask[0:model_window.start]),
+                                            change_probability=1,
+                                            num_coefficients=4)
+
+            results.append(result)
 
         # Step 2: Extension -- expand time-frame until a change is detected.
         # initialized models from Step 1 and the lookback
@@ -257,10 +281,15 @@ def standard_procedure(dates, observations, fitter_fn, quality,
 
         # After initialization and extension, the change models for each
         # spectra are complete for a period of time.
-        result = (dates[processing_mask][model_window.start],
-                  dates[processing_mask][model_window.stop],
-                  models, magnitudes)
-        results += (result,)
+        result = results_to_changemodel(fitted_models=models,
+                                        start_day=dates[model_window.start],
+                                        end_day=dates[model_window.end],
+                                        break_day=dates[model_window.end],
+                                        magnitudes=magnitudes,
+                                        observation_count=np.sum(processing_mask[0:model_window.start]),
+                                        change_probability=1,
+                                        num_coefficients=4)
+        results.append(result)
 
         log.debug("accumulate results, {} so far".format(len(results)))
         # Step 4: Iterate. The meow_ix is moved to the end of the current
@@ -275,4 +304,4 @@ def standard_procedure(dates, observations, fitter_fn, quality,
     # otherwise we look at extending it.
 
     log.debug("change detection complete")
-    return results
+    return results, processing_mask

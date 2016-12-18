@@ -77,7 +77,7 @@ def change_magnitudes(dates, observations, models,
     # TODO Redo and move into math_utils where appropriate
     magnitudes = np.array(shape=(len(detection_bands, )))
     for idx in detection_bands:
-        mag = (observations[idx] - models[idx].model.predict(dates))
+        mag = (observations[idx] - models[idx].fitted_model.predict(dates))
         mag /= rmse[idx]
         magnitudes[idx] = mag
 

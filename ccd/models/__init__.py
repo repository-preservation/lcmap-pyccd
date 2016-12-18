@@ -3,8 +3,8 @@ from collections import namedtuple
 # Since scipy models don't hold information on residuals or rmse, we should
 # carry them forward with the models themselves, so we don't have to
 # recalculate them all the time
-# TODO: give better names to avoid model.model.fit nonsense
-FittedModel = namedtuple('FittedModel', ['model', 'residual', 'rmse'])
+# TODO: give better names to avoid model.model.predict nonsense
+LassoModel = namedtuple('LassoModel', ['fitted_model', 'residual', 'rmse'])
 
 # Structure to store the results, this works better than a simple
 # list or tuple as it clearly states what is what
@@ -54,9 +54,51 @@ ChangeModel = namedtuple('ChangeModel', ['start_day',
                                          'observation_count',
                                          'change_probability',
                                          'num_coefficients',
-                                         'red',
-                                         'green',
                                          'blue',
+                                         'green',
+                                         'red',
+                                         'nir',
                                          'swir1',
                                          'swir2',
                                          'thermal'])
+
+
+def results_to_changemodel(fitted_models, start_day, end_day, break_day, magnitudes,
+                           observation_count, change_probability, num_coefficients):
+    """
+    Helper method to consolidate results into a concise, self documenting data structure
+
+    Args:
+        fitted_models:
+        start_day:
+        end_day:
+        break_day:
+        observation_count:
+        change_probability:
+        num_coefficients:
+
+    Returns:
+
+    """
+    spectral_models = []
+    for ix, model in enumerate(fitted_models):
+        spectral = SpectralModel(magnitude=magnitudes[ix],
+                                 rmse=model.rmse,
+                                 coefficients=model.fitted_model.coef_,
+                                 intercept=model.fitted_model.intercept_)
+        spectral_models.append(spectral)
+
+    return ChangeModel(start_day=start_day,
+                       end_day=end_day,
+                       break_day=break_day,
+                       observation_count=observation_count,
+                       change_probability=change_probability,
+                       num_coefficients=num_coefficients,
+                       blue=spectral_models[0],
+                       green=spectral_models[1],
+                       red=spectral_models[2],
+                       nir=spectral_models[3],
+                       swir1=spectral_models[4],
+                       swir2=spectral_models[5],
+                       thermal=spectral_models[6])
+

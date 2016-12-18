@@ -28,100 +28,61 @@ def attr_from_str(value):
         return None
 
 
-def __result_to_detection(change_tuple, processing_mask, procedure):
-    """Transforms results of change.detect to the detections dict.
-
-    Args:
-        change_tuple: A tuple as returned from change.detect
-            (start_day, end_day, models, errors, magnitudes_)
-        processing_mask: boolean array showing which values were included in the fitting
-            of the change models
-        procedure: method that was used to generate the change models
-
-    Returns: A dict representing a change detection
-
-        {algorithm: 'pyccd:x.x.x',
-         processing_mask: (bool, bool, ...),
-         procedure: string,
-         change_models: [
-             {start_day: int,
-              end_day: int,
-              break_day: int,
-              observation_count: int,
-              change_probability: float,
-              num_coefficients: int,
-              red:      {magnitude: float,
-                         rmse: float,
-                         coefficients: (float, float, ...),
-                         intercept: float},
-              green:    {magnitude: float,
-                         rmse: float,
-                         coefficients: (float, float, ...),
-                         intercept: float},
-              blue:     {magnitude: float,
-                         rmse: float,
-                         coefficients: (float, float, ...),
-                         intercept: float},
-              nir:      {magnitude: float,
-                         rmse: float,
-                         coefficients: (float, float, ...),
-                         intercept: float},
-              swir1:    {magnitude: float,
-                         rmse: float,
-                         coefficients: (float, float, ...),
-                         intercept: float},
-              swir2:    {magnitude: float,
-                         rmse: float,
-                         coefficients: (float, float, ...),
-                         intercept: float},
-              thermal:  {magnitude: float,
-                         rmse: float,
-                         coefficients: (float, float, ...),
-                         intercept: float}}
-                        ]
-        }
+def __attach_metadata(procedure_results, procedure):
     """
-    spectra = ((defaults.RED_IDX, 'red'), (defaults.GREEN_IDX, 'green'), (defaults.BLUE_IDX, 'blue'),
-               (defaults.NIR_IDX, 'nir'), (defaults.SWIR1_IDX, 'swir1'), (defaults.SWIR2_IDX, 'swir2'),
-               (defaults.THERMAL_IDX, 'thermal'))
+    Attach some information on the algorithm version, what procedure was used,
+    and which inputs were used
 
-    # get the start and end time for each detection period
-    detection = {'algorithm': __algorithm__,
-                 'processing_mask': processing_mask,
-                 'procedure': procedure.__name__}
-    # gather the results for each spectra
-    for ix, name in spectra:
-        model, error, mags = change_tuple[2], change_tuple[3], change_tuple[4]
-        _band = {'magnitude': float(mags[ix]),
-                 'rmse': float(error[ix]),
-                 'coefficients': tuple([float(x) for x in model[ix].coef_]),
-                 'intercept': float(model[ix].intercept_)}
+    Returns:
+        A dict representing the change detection results
 
-        # assign _band to the subdict
-        detection[name] = _band
-
-    # build the namedtuple from the dict and return
-    return detection
-
-
-def __as_detections(detect_tuple):
-    """Transforms results of change.detect to the detections namedtuple.
-
-    Args: A tuple of dicts as returned from change.detect
-        (
-            (start_day, end_day, models, errors_, magnitudes_),
-            (start_day, end_day, models, errors_, magnitudes_),
-            (start_day, end_day, models, errors_, magnitudes_)
-        )
-
-    Returns: A tuple of dicts representing change detections
-        (
-            {},{},{}}
-        )
+    {algorithm: 'pyccd:x.x.x',
+     processing_mask: (bool, bool, ...),
+     procedure: string,
+     change_models: [
+         {start_day: int,
+          end_day: int,
+          break_day: int,
+          observation_count: int,
+          change_probability: float,
+          num_coefficients: int,
+          blue:      {magnitude: float,
+                     rmse: float,
+                     coefficients: (float, float, ...),
+                     intercept: float},
+          green:    {magnitude: float,
+                     rmse: float,
+                     coefficients: (float, float, ...),
+                     intercept: float},
+          red:     {magnitude: float,
+                     rmse: float,
+                     coefficients: (float, float, ...),
+                     intercept: float},
+          nir:      {magnitude: float,
+                     rmse: float,
+                     coefficients: (float, float, ...),
+                     intercept: float},
+          swir1:    {magnitude: float,
+                     rmse: float,
+                     coefficients: (float, float, ...),
+                     intercept: float},
+          swir2:    {magnitude: float,
+                     rmse: float,
+                     coefficients: (float, float, ...),
+                     intercept: float},
+          thermal:  {magnitude: float,
+                     rmse: float,
+                     coefficients: (float, float, ...),
+                     intercept: float}}
+                    ]
+    }
     """
-    # iterate over each detection, build the result and return as tuple of
-    # dicts
-    return tuple([__result_to_detection(t) for t in detect_tuple])
+    change_models, processing_mask = procedure_results
+
+    return {'algorithm': __algorithm__,
+            'processing_mask': processing_mask,
+            'procedure': procedure.__name__,
+            'change_modes': change_models}
 
 
 def __split_dates_spectra(matrix):
@@ -163,4 +124,4 @@ def detect(dates, reds, greens, blues, nirs,
     procedure = __determine_fit_procedure(quality)
 
     # call detect and return results as the detections namedtuple
-    return __as_detections(procedure(dates, spectra, fitter_fn, quality))
+    return __attach_metadata(procedure(dates, spectra, fitter_fn, quality), procedure)
