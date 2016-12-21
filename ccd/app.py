@@ -60,7 +60,7 @@ defaults = Defaults(os.path.join(os.path.dirname(__file__), 'parameters.yaml'))
 # configure the
 # logging system below.
 # iso8601 date format
-__format = '%(asctime)s %(module)s::%(funcName)-20s - %(message)s'
+__format = '%(asctime)s %(module)-10s::%(funcName)-20s - [%(lineno)-3d]%(message)s'
 logging.basicConfig(stream=sys.stdout,
                     level=logging.DEBUG,
                     format=__format,

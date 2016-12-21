@@ -59,7 +59,7 @@ CHANGE_PROBABILITY: 1
 ############################
 # Affects how
 ############################
-MEOW_SIZE: 16
+MEOW_SIZE: 12
 PEEK_SIZE: 6
 DAY_DELTA: 365
 AVG_DAYS_YR: 365.25

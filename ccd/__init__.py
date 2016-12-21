@@ -1,4 +1,4 @@
-from ccd.procedures import determine_fit_procedure as __determine_fit_procedure
+from ccd.procedures import fit_procedure as __determine_fit_procedure
 import numpy as np
 from ccd import app
 import importlib

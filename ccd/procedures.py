@@ -27,9 +27,9 @@ import numpy as np
 
 from ccd import qa
 from ccd.app import logging, defaults
-from ccd.change import initialize, extend, lookback, change_magnitudes, update_processing_mask
+from ccd.change import initialize, build, lookback, change_magnitudes, update_processing_mask, catch
 from ccd.models import lasso, tmask, SpectralModel, ChangeModel, results_to_changemodel
-from ccd.math_utils import kelvin_to_celsius
+from ccd.math_utils import kelvin_to_celsius, calculate_variogram
 
 
 log = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ class ProcedureException(Exception):
     pass
 
 
-def determine_fit_procedure(quality):
+def fit_procedure(quality):
     """Determine which curve fitting function to use
 
     This is based on information from the QA band
@@ -52,11 +52,16 @@ def determine_fit_procedure(quality):
     """
     if not qa.enough_clear(quality):
         if qa.enough_snow(quality):
-            return permanent_snow_procedure
+            func = permanent_snow_procedure
         else:
-            return fmask_fail_procedure
+            func = fmask_fail_procedure
     else:
-        return standard_procedure
+        func = standard_procedure
+
+    log.debug('Procedure selected: %s',
+              func.__name__)
+
+    return func
 
 
 def permanent_snow_procedure(dates, observations, fitter_fn, quality,
@@ -100,9 +105,13 @@ def permanent_snow_procedure(dates, observations, fitter_fn, quality,
     magnitudes = np.zeros(shape=(observations.shape[0],))
 
     # White space is cheap, so let's use it
-    result = results_to_changemodel(fitted_models=models, start_day=dates[0], end_day=dates[-1],
-                                    break_day=0, magnitudes=magnitudes,
-                                    observation_count=np.sum(processing_mask), change_probability=0,
+    result = results_to_changemodel(fitted_models=models,
+                                    start_day=dates[0],
+                                    end_day=dates[-1],
+                                    break_day=0,
+                                    magnitudes=magnitudes,
+                                    observation_count=np.sum(processing_mask),
+                                    change_probability=0,
                                     num_coefficients=4)
 
     return (result,), processing_mask
@@ -136,7 +145,8 @@ def fmask_fail_procedure(dates, observations, fitter_fn, quality,
         """
     processing_mask = qa.standard_procedure_filter(observations, quality)
 
-    # TODO there is an additional mask based on the median value for the green band + 400
+    # TODO there is an additional mask based on the median value
+    # for the green band + 400
 
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
@@ -150,17 +160,23 @@ def fmask_fail_procedure(dates, observations, fitter_fn, quality,
 
     magnitudes = np.zeros(shape=(observations.shape[0],))
 
-    result = results_to_changemodel(fitted_models=models, start_day=dates[0], end_day=dates[-1],
-                                    break_day=0, magnitudes=magnitudes,
-                                    observation_count=np.sum(processing_mask), change_probability=0,
+    result = results_to_changemodel(fitted_models=models,
+                                    start_day=dates[0],
+                                    end_day=dates[-1],
+                                    break_day=0,
+                                    magnitudes=magnitudes,
+                                    observation_count=np.sum(processing_mask),
+                                    change_probability=0,
                                     num_coefficients=4)
 
     return (result,), processing_mask
 
 
 def standard_procedure(dates, observations, fitter_fn, quality,
-                           meow_size=defaults.MEOW_SIZE, peek_size=defaults.PEEK_SIZE,
-                           thermal_idx=defaults.THERMAL_IDX):
+                       meow_size=defaults.MEOW_SIZE,
+                       peek_size=defaults.PEEK_SIZE,
+                       thermal_idx=defaults.THERMAL_IDX,
+                       day_delta=defaults.DAY_DELTA):
     """Runs the core change detection algorithm.
 
         Args:
@@ -179,10 +195,9 @@ def standard_procedure(dates, observations, fitter_fn, quality,
             list: Change models for each observation of each spectra.
         """
 
-    log.debug("build change model – time: {0}, obs: {1}, {2}, \
-                   meow_size: {3}, peek_size: {4}".format(
-        dates.shape, observations.shape,
-        fitter_fn, meow_size, peek_size))
+    log.debug('Build change models – dates: %s, obs: %s, '
+              'meow_size: %s, peek_size: %s',
+              dates.shape[0], observations.shape, meow_size, peek_size)
 
     # First we need to filter the observations based on the spectra values
     # and qa information and convert kelvin to celsius
@@ -191,15 +206,10 @@ def standard_procedure(dates, observations, fitter_fn, quality,
     observations[thermal_idx] = kelvin_to_celsius(observations[thermal_idx])
     processing_mask = qa.standard_procedure_filter(observations, quality)
 
-    # All we care about now is stuff that passed the filtering and we
-    # need to convert the thermal values
-    # dates = dates[filter_idxs]
-    # observations = observations[:, filter_idxs]
-    # quality = quality[filter_idxs]
+    log.debug('Processing mask initial count: %s',
+              np.sum(processing_mask))
 
-
-    # Accumulator for models. This is a list of lists; each top-level list
-    # corresponds to a particular spectra.
+    # Accumulator for models. This is a list of ChangeModel named tuples
     results = []
 
     # Initialize the window which is used for building the models
@@ -209,35 +219,50 @@ def standard_procedure(dates, observations, fitter_fn, quality,
     model_window = slice(0, meow_size)
     start_ix = 0
 
-    # calculate a modified first-order variogram/madogram
-    # adjusted_rmse = np.median(np.abs(np.diff(observations)), axis=1)
-
     # pre-calculate coefficient matrix for all time values; this calculation
     # needs to be performed only once, we can not do this for the
     # lasso regression coefficients as the number of coefficients changes
     # based on the number of observations that are fed into it increases.
     # model_matrix = lasso.coefficient_matrix(dates)
     tmask_matrix = tmask.tmask_coefficient_matrix(dates)
+    variogram = calculate_variogram(observations[:, processing_mask])
+    log.debug('Variogram values: %s', variogram)
 
     # Only build models as long as sufficient data exists. The observation
     # window starts at meow_ix and is fixed until the change model no longer
-    # fits new observations, i.e. a change is detected. The meow_ix updated
-    # at the end of each iteration using an end index, so it is possible
-    # it will become None.
-    while model_window.stop <= dates.shape[0] - meow_size:
-
+    # fits new observations, i.e. a change is detected.
+    while model_window.stop <= dates.shape[0] - peek_size:
         # Step 1: Initialize -- find an initial stable time-frame.
-        log.debug("initialize change model")
-        model_window, models = initialize(dates, observations, fitter_fn,
-                                          tmask_matrix, model_window,
-                                          meow_size, processing_mask)
 
-        # Step 1.5: Lookback -- we need too look back at previous values to see
+        # Step 2: Lookback -- we need too look back at previous values to see
         # if they can be included with the new initialized model
+
+        # Step 3: Build -- expand time-frame until a change is detected.
+        # initialized models from Step 1 and the lookback cannot be passed
+        # along due to how Tmask can throw out some values used in that model,
+        # but are subsequently used in follow on methods
+
+        # Step 4: Iterate. The start_ix is moved to the end of the current
+        # timeframe and a new model is generated. It is possible for end_ix
+        # to be None, in which case iteration stops.
+
+        # Step 5: Catch. End of time series considerations, also provides for
+        # building models for short sets of data
+
+        log.debug('Initialize for change model #: %s', len(results) + 1)
+        model_window, init_models = initialize(dates, observations, fitter_fn,
+                                               tmask_matrix, model_window,
+                                               meow_size, peek_size, processing_mask,
+                                               variogram)
+
+        if init_models is None:
+            log.debug('Model initialization failed')
+            break
+
         if model_window.start > start_ix:
             model_window, outliers = lookback(dates, observations,
                                               model_window, peek_size, models,
-                                              start_ix, processing_mask)
+                                              start_ix, processing_mask, variogram)
             processing_mask = update_processing_mask(processing_mask, outliers)
 
         # If we are at the beginning of the time series and if initialize
@@ -255,7 +280,7 @@ def standard_procedure(dates, observations, fitter_fn, quality,
 
             magnitudes = change_magnitudes(dates[processing_mask][0:model_window.start],
                                            observations[processing_mask][0:model_window.start],
-                                           models_tmp)
+                                           models_tmp, variogram)
 
             result = results_to_changemodel(fitted_models=models_tmp,
                                             start_day=dates[0],
@@ -268,40 +293,46 @@ def standard_procedure(dates, observations, fitter_fn, quality,
 
             results.append(result)
 
-        # Step 2: Extension -- expand time-frame until a change is detected.
-        # initialized models from Step 1 and the lookback
-        # cannot be passed along due to how
-        # Tmask can throw out some values used in that model, but are
-        # subsequently used in follow on methods
-        log.debug("extend change model")
-        model_window, models, magnitudes, outliers = extend(dates, observations,
-                                                             model_window, peek_size,
-                                                             fitter_fn, processing_mask)
+        log.debug('Extend change model')
+        res = build(dates, observations, model_window, peek_size,
+                    fitter_fn, processing_mask, variogram)
+        model_window, models, magnitudes, change, outliers = res
+
         processing_mask = update_processing_mask(processing_mask, outliers)
 
-        # After initialization and extension, the change models for each
+        # After build, the change models for each
         # spectra are complete for a period of time.
         result = results_to_changemodel(fitted_models=models,
                                         start_day=dates[model_window.start],
-                                        end_day=dates[model_window.end],
-                                        break_day=dates[model_window.end],
+                                        end_day=dates[model_window.stop],
+                                        break_day=dates[model_window.stop],
                                         magnitudes=magnitudes,
-                                        observation_count=np.sum(processing_mask[0:model_window.start]),
-                                        change_probability=1,
+                                        observation_count=(model_window.stop - model_window.start),
+                                        change_probability=change,
                                         num_coefficients=4)
         results.append(result)
 
-        log.debug("accumulate results, {} so far".format(len(results)))
-        # Step 4: Iterate. The meow_ix is moved to the end of the current
-        # timeframe and a new model is generated. It is possible for end_ix
-        # to be None, in which case iteration stops.
+        log.debug('Accumulate results, {} so far'.format(len(results)))
+
         start_ix = model_window.stop
         model_window = slice(model_window.stop, model_window.stop + meow_size)
 
-    # TODO write method for the end of the series, there are two different
-    # approaches from the matlab version, based on if there is a current model
-    # or not. If the last model stopped due to change, then we fit a new model,
-    # otherwise we look at extending it.
+    models, outliers = catch(dates, observations, tmask_matrix, peek_size,
+                             fitter_fn, processing_mask, variogram, start_ix)
+
+    processing_mask = update_processing_mask(processing_mask, outliers)
+
+    result = results_to_changemodel(fitted_models=models,
+                                    start_day=dates[model_window.start],
+                                    end_day=dates[model_window.stop],
+                                    break_day=dates[model_window.stop],
+                                    magnitudes=np.zeros(shape=(7,)),
+                                    observation_count=(
+                                    model_window.stop - model_window.start),
+                                    change_probability=0,
+                                    num_coefficients=4)
+    results.append(result)
 
     log.debug("change detection complete")
+
     return results, processing_mask

@@ -4,7 +4,7 @@ from collections import namedtuple
 # carry them forward with the models themselves, so we don't have to
 # recalculate them all the time
 # TODO: give better names to avoid model.model.predict nonsense
-LassoModel = namedtuple('LassoModel', ['fitted_model', 'residual', 'rmse'])
+FittedModel = namedtuple('FittedModel', ['fitted_model', 'residual', 'rmse'])
 
 # Structure to store the results, this works better than a simple
 # list or tuple as it clearly states what is what

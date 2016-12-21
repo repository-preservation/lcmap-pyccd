@@ -97,18 +97,18 @@ def sinusoid(times, frequency=1, amplitude=0.1, seed=42):
     return np.array(scaled_ys)
 
 
-def sample_sinusoid(time_range, bands = 6):
+def sample_sinusoid(time_range, bands=7):
     """Produce N-bands of data with a sample for each moment in time range"""
     times = np.array(acquisition_delta(time_range))
     observations = np.array([sinusoid(times) for _ in range(bands)])
     return times, observations
 
 
-def line(times, value = 1000):
+def line(times, value=300):
     return np.full(len(times), value, dtype=np.int16)
 
 
-def sample_line(time_range, bands = 6):
+def sample_line(time_range, bands=7):
     """Produce N-bands of data with a sample for each moment in time range"""
     times = np.array(acquisition_delta(time_range))
     observations = np.array([line(times) for _ in range(bands)])

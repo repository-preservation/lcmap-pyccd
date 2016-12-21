@@ -6,6 +6,8 @@ from functools import wraps
 
 import numpy as np
 
+from ccd.app import defaults
+
 
 # TODO: Cache timings
 # TODO: Numba timings
@@ -138,5 +140,7 @@ def calculate_variogram(observations):
     Returns:
         1-d ndarray representing the variogram values
     """
-    # eventually should call the method defined in math_utils.py
     return np.median(np.abs(np.diff(observations)), axis=1)
+
+
+

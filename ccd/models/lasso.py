@@ -2,7 +2,7 @@ from sklearn import linear_model, metrics
 import numpy as np
 from cachetools import cached, LRUCache
 
-from ccd.models import LassoModel
+from ccd.models import FittedModel
 from ccd.math_utils import calc_rmse
 from ccd.app import defaults
 
@@ -72,4 +72,10 @@ def fitted_model(dates, spectra_obs, num_coefficients=4,
     predictions = [model.predict(c.reshape(1, -1)) for c in coef_matrix]
     rmse, residuals = calc_rmse(spectra_obs, predictions)
 
-    return LassoModel(lasso=model, rmse=rmse, residual=residuals)
+    return FittedModel(fitted_model=model, rmse=rmse, residual=residuals)
+
+
+def predict(model, dates):
+    coef_matrix = coefficient_matrix(dates, 8)
+
+    return model.fitted_model.predict(coef_matrix)

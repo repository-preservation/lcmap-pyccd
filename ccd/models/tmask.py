@@ -19,7 +19,7 @@ def tmask_coefficient_matrix(dates, avg_days_yr=defaults.AVG_DAYS_YR):
     annual_cycle = 2*np.pi/avg_days_yr
     observation_cycle = annual_cycle / np.ceil((dates[-1] - dates[0]) / avg_days_yr)
 
-    matrix = np.zeros(shape=(len(dates), 4), order='F')
+    matrix = np.zeros(shape=(dates.shape[0], 4), order='F')
     matrix[:, 0] = [np.cos(annual_cycle*t) for t in dates]
     matrix[:, 1] = [np.sin(annual_cycle*t) for t in dates]
     matrix[:, 2] = [np.cos(observation_cycle*t) for t in dates]
@@ -28,7 +28,7 @@ def tmask_coefficient_matrix(dates, avg_days_yr=defaults.AVG_DAYS_YR):
     return matrix
 
 
-def tmask(dates, observations, tmask_matrix,
+def tmask(dates, observations, tmask_matrix, variogram,
           bands=(defaults.GREEN_IDX, defaults.SWIR1_IDX)):
     """Produce an index for filtering outliers.
 
@@ -41,7 +41,7 @@ def tmask(dates, observations, tmask_matrix,
 
     Return: indexed array, excluding outlier observations.
     """
-    variogram = calculate_variogram(observations)
+    # variogram = calculate_variogram(observations)
     # Time and expected values using a four-part matrix of coefficients.
     regression = lm.LinearRegression()
 
