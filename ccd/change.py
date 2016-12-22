@@ -63,15 +63,12 @@ def change_magnitudes(median_resids, models, variogram,
     Returns:
         1-d ndarray of values representing change magnitudes across all bands
     """
-
     if comparison_rmse:
-        rmse = [max(adj_rmse, comp_rmse)
-                for comp_rmse, adj_rmse
-                in zip(comparison_rmse, variogram[detection_bands])]
+        rmse = [max(comparison_rmse[idx], variogram[idx])
+                for idx in range(variogram.shape[0])]
     else:
-        rmse = [max(adj_rmse, model.rmse)
-                for model, adj_rmse
-                in zip(models[detection_bands], variogram[detection_bands])]
+        rmse = [max(models[idx].rmse, variogram[idx])
+                for idx in range(variogram.shape[0])]
 
     magnitudes = median_resids[detection_bands] / rmse[detection_bands]
 
@@ -467,8 +464,7 @@ def lookback(dates, observations, model_window, peek_size, models,
         slice: window of indices to be used
         array: indices of data that have been flagged as outliers
     """
-    log.debug('Previous break: {0} model window: {1}'
-              .format(previous_break, model_window))
+    log.debug('Previous break: %s model window: %s', previous_break, model_window)
 
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
@@ -477,10 +473,13 @@ def lookback(dates, observations, model_window, peek_size, models,
     for idx in range(model_window.start, previous_break, -1):
         if model_window.start - previous_break > peek_size:
             peek_window = slice(model_window.start - previous_break, model_window.start)
+        elif model_window.start - peek_size < 0:
+            peek_window = slice(0, model_window.start)
         else:
             peek_window = slice(model_window.start - peek_size, model_window.start)
 
-        log.debug('Considering: %s using peek window: %s', idx, peek_window)
+        log.debug('Considering index: %s using peek window: %s',
+                  idx, peek_window)
 
         median_differences = [median_residual(period[peek_window],
                                               spectral_obs[idx, peek_window],
@@ -490,16 +489,20 @@ def lookback(dates, observations, model_window, peek_size, models,
         magnitudes = change_magnitudes(median_differences, variogram, models)
 
         if detect_change(magnitudes):
+            log.debug('Change detected for index: %s', idx)
             # change was detected, return to parent method
             break
         elif detect_outlier(magnitudes):
+            log.debug('Outlier detected for index: %s', idx)
             # keep track of any outliers as they will be excluded from future
             # processing steps
             outlier_indices.append(idx)
             continue
 
+        log.debug('Including index: %s', idx)
+
         # TODO verify how an outlier should affect the starting point
-        model_window.start = idx
+        model_window = slice(idx, model_window.stop)
 
     return model_window, None, None, None, outlier_indices
 
