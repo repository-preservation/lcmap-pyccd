@@ -69,7 +69,7 @@ def fitted_model(dates, spectra_obs, num_coefficients=4,
     lasso = linear_model.Lasso(max_iter=max_iter)
     model = lasso.fit(coef_matrix, spectra_obs)
 
-    predictions = [model.predict(c.reshape(1, -1)) for c in coef_matrix]
+    predictions = model.predict(coef_matrix)
     rmse, residuals = calc_rmse(spectra_obs, predictions)
 
     return FittedModel(fitted_model=model, rmse=rmse, residual=residuals)

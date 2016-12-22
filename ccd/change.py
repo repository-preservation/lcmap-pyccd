@@ -17,7 +17,9 @@ log = app.logging.getLogger(__name__)
 defaults = app.defaults
 
 
-def stable(observations, models, dates, t_cg=defaults.CHANGE_THRESHOLD):
+def stable(observations, models, dates, variogram,
+           t_cg=defaults.CHANGE_THRESHOLD,
+           detection_bands=defaults.DETECTION_BANDS):
     """Determine if we have a stable model to start building with
 
     Args:
@@ -28,20 +30,17 @@ def stable(observations, models, dates, t_cg=defaults.CHANGE_THRESHOLD):
 
     Returns: Boolean on whether stable or not
     """
-    variogram = calculate_variogram(observations)
-
-    rmse = [max(variogram, model.rmse)
-            for model, adj_rmse
-            in zip(models, variogram)]
-
     check_vals = []
-    for spectra, spectra_model, b_rmse in zip(observations, models, rmse):
-        slope = spectra_model.model.coef_[1] * (dates[-1] - dates[0])
+    for idx in detection_bands:
+        rmse_norm = max(variogram[idx], models[idx].rmse)
+        slope = models[idx].fitted_model.coef_[1] * (dates[-1] - dates[0])
 
-        check_val = (abs(slope) + abs(spectra_model.residual[0]) +
-                     abs(spectra_model.residual[-1])) / b_rmse
+        check_val = (abs(slope) + abs(models[idx].residual[0]) +
+                     abs(models[idx].residual[-1])) / rmse_norm
 
         check_vals.append(check_val)
+
+    log.debug('Stability values: %s, Check against: %s', check_vals, t_cg)
 
     return euclidean_norm(check_vals) < t_cg
 
