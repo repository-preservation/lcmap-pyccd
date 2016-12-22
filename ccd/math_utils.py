@@ -106,7 +106,7 @@ def calc_residuals(actual, predicted):
 
 
 @ensure_ndarray_input
-def kelvin_to_celsius(thermals, scale=100):
+def kelvin_to_celsius(thermals, scale=10):
     """
     Convert kelvin values to celsius
 
@@ -114,7 +114,7 @@ def kelvin_to_celsius(thermals, scale=100):
     kelvin and has been scaled by a factor of 10 already, in the interest of keeping the values
     in integer space, a further factor of 10 is calculated.
 
-    scaled C = K * 100 - 27315
+    scaled C = K * 10 - 27315
     unscaled C = K / 10 - 273.15
 
     Args:

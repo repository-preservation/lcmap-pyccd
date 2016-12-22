@@ -56,6 +56,7 @@ def tmask(dates, observations, tmask_matrix, variogram,
         fit = regression.fit(tmask_matrix, observations[band_ix])
         predicted = fit.predict(tmask_matrix)
         outliers += np.abs(predicted - observations[band_ix]) > variogram[band_ix]
+    print(outliers)
 
     # Keep all observations that aren't outliers.
     return outliers

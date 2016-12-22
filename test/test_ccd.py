@@ -14,7 +14,7 @@ def test_not_enough_observations():
 
     models, mask = change.standard_procedure(times, observations, fitter_fn, quality)
 
-    assert len(models) == 0
+    assert len(models) == 1
 
 
 def test_one_year_minimum():
@@ -26,7 +26,7 @@ def test_one_year_minimum():
     time_delta = times[-1]-times[1]
 
     assert time_delta < 365
-    assert len(models) == 0
+    assert len(models) == 1
 
 
 def test_enough_observations():

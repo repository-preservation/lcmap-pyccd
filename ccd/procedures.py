@@ -203,11 +203,19 @@ def standard_procedure(dates, observations, fitter_fn, quality,
     # and qa information and convert kelvin to celsius
     # We then persist the processing mask through subsequent operations as
     # additional data points get identified to be excluded from processing
+    print(observations[thermal_idx][0])
     observations[thermal_idx] = kelvin_to_celsius(observations[thermal_idx])
+    print(observations[thermal_idx][0])
+
     processing_mask = qa.standard_procedure_filter(observations, quality)
 
+    obs_count = np.sum(processing_mask)
+
     log.debug('Processing mask initial count: %s',
-              np.sum(processing_mask))
+              obs_count)
+
+    if obs_count <= peek_size:
+        raise ValueError('Insufficient data available after initial masking')
 
     # Accumulator for models. This is a list of ChangeModel named tuples
     results = []
