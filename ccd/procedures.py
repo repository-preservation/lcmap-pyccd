@@ -232,7 +232,6 @@ def standard_procedure(dates, observations, fitter_fn, quality,
     # lasso regression coefficients as the number of coefficients changes
     # based on the number of observations that are fed into it increases.
     # model_matrix = lasso.coefficient_matrix(dates)
-    tmask_matrix = tmask.tmask_coefficient_matrix(dates)
     variogram = calculate_variogram(observations[:, processing_mask])
     log.debug('Variogram values: %s', variogram)
 
@@ -259,8 +258,8 @@ def standard_procedure(dates, observations, fitter_fn, quality,
 
         log.debug('Initialize for change model #: %s', len(results) + 1)
         model_window, init_models = initialize(dates, observations, fitter_fn,
-                                               tmask_matrix, model_window,
-                                               meow_size, peek_size, processing_mask,
+                                               model_window, meow_size,
+                                               peek_size, processing_mask,
                                                variogram)
 
         if init_models is None:
@@ -325,8 +324,8 @@ def standard_procedure(dates, observations, fitter_fn, quality,
         start_ix = model_window.stop
         model_window = slice(model_window.stop, model_window.stop + meow_size)
 
-    models, outliers = catch(dates, observations, tmask_matrix, peek_size,
-                             fitter_fn, processing_mask, variogram, start_ix)
+    models, outliers = catch(dates, observations, peek_size, fitter_fn,
+                             processing_mask, variogram, start_ix)
 
     processing_mask = update_processing_mask(processing_mask, outliers)
 

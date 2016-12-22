@@ -33,6 +33,10 @@ DETECTION_BANDS:
   - 4
   - 5
 
+TMASK_BANDS:
+  - 1
+  - 4
+
 ############################
 # Representative values in the QA band
 ############################

@@ -258,7 +258,7 @@ def update_processing_mask(mask, index):
     return m
 
 
-def initialize(dates, observations, fitter_fn, tmask_matrix, model_window,
+def initialize(dates, observations, fitter_fn, model_window,
                meow_size, peek_size, processing_mask, variogram,
                day_delta=defaults.DAY_DELTA):
     """Determine the window indices, models, and errors for observations.
@@ -268,7 +268,6 @@ def initialize(dates, observations, fitter_fn, tmask_matrix, model_window,
             the particular epoch does not matter.
         observations: spectral values, list of spectra -> values
         fitter_fn: function used for the regression portion of the algorithm
-        tmask_matrix: predifined matrix of coefficients used for Tmask
         model_window: start index of time/observation window
         meow_size: offset from meow_ix, determines initial window size
         processing_mask: 1-d boolean array identifying which values to consider for processing
@@ -310,10 +309,7 @@ def initialize(dates, observations, fitter_fn, tmask_matrix, model_window,
         # Count outliers in the window, if there are too many outliers then
         # try again. It is important to note that the outliers caught here
         # are only temporary, only used in this initialization step.
-        tmask_outliers = tmask.tmask(model_period,
-                                     model_spectral,
-                                     tmask_matrix[model_window],
-                                     variogram)
+        tmask_outliers = tmask.tmask(model_period, model_spectral, variogram)
 
         log.debug('Number of Tmask outliers found: %s', np.sum(tmask_outliers))
 
@@ -330,8 +326,8 @@ def initialize(dates, observations, fitter_fn, tmask_matrix, model_window,
         # a common time-frame. Consequently, it doesn't make sense
         # to analyze one spectrum in it's entirety.
         models = [fitter_fn(model_period[~tmask_outliers], spectrum)
-                  for spectrum in model_spectral[~tmask_outliers]]
-        log.debug('Update change models')
+                  for spectrum in model_spectral[:, ~tmask_outliers]]
+        log.debug('Generating models to check for stability')
 
         # If a model is not stable, then it is possible that a disturbance
         # exists somewhere in the observation window. The window shifts
@@ -460,12 +456,8 @@ def build(dates, observations, model_window, peek_size, fitter_fn,
     return model_window, models, median_resids, change, outliers
 
 
-def lookback(dates, observations, fitter_fn, tmask_matrix, model_window,
-               meow_size, peek_size, processing_mask, variogram,
-               start_ix, day_delta):
-
-# def lookback(dates, observations, model_window, peek_size, models,
-#              previous_break, processing_mask, variogram):
+def lookback(dates, observations, model_window, peek_size, models,
+             previous_break, processing_mask, variogram):
     """
     Special case when there is a gap between the start of a time series model
     and the previous model break point, this can include values that were
@@ -523,7 +515,7 @@ def lookback(dates, observations, fitter_fn, tmask_matrix, model_window,
     return model_window, None, None, None, outlier_indices
 
 
-def catch(dates, observations, tmask_matrix, peek_size, fitter_fn,
+def catch(dates, observations, peek_size, fitter_fn,
           processing_mask, variogram, start_ix):
     """
     Handle the tail end of the time series change model process.
@@ -546,10 +538,7 @@ def catch(dates, observations, tmask_matrix, peek_size, fitter_fn,
     # Count outliers in the window, if there are too many outliers then
     # try again. It is important to note that the outliers caught here
     # are only temporary, only used in this initialization step.
-    outliers = tmask.tmask(model_period,
-                           model_spectral,
-                           tmask_matrix[model_window],
-                           variogram)
+    outliers = tmask.tmask(model_period, model_spectral, variogram)
 
     models = [fitter_fn(model_period[~outliers], spectrum)
               for spectrum in model_spectral[:, ~outliers]]
