@@ -33,16 +33,17 @@ def stable(observations, models, dates, variogram,
     check_vals = []
     for idx in detection_bands:
         rmse_norm = max(variogram[idx], models[idx].rmse)
-        slope = models[idx].fitted_model.coef_[1] * (dates[-1] - dates[0])
+        slope = models[idx].fitted_model.coef_[0] * (dates[-1] - dates[0])
 
         check_val = (abs(slope) + abs(models[idx].residual[0]) +
                      abs(models[idx].residual[-1])) / rmse_norm
 
         check_vals.append(check_val)
 
-    log.debug('Stability values: %s, Check against: %s', check_vals, t_cg)
+    euc_norm = euclidean_norm_sq(check_vals)
+    log.debug('Stability norm: %s, Check against: %s', euc_norm, t_cg)
 
-    return euclidean_norm(check_vals) < t_cg
+    return euc_norm < t_cg
 
 
 def change_magnitudes(median_resids, models, variogram,
@@ -168,7 +169,7 @@ def find_time_index(dates, window, meow_size=defaults.MEOW_SIZE, day_delta=defau
     return end_ix
 
 
-def enough_samples(dates, window):
+def enough_samples(dates, window, meow_size=defaults.MEOW_SIZE):
     """Change detection requires a minimum number of samples (as specified
     by meow size).
 
@@ -183,7 +184,7 @@ def enough_samples(dates, window):
         bool: True if times contains enough samples
         False otherwise.
     """
-    return window.stop <= dates.shape[0]
+    return len(dates[window]) >= meow_size
 
 
 def enough_time(dates, window, day_delta=defaults.DAY_DELTA):
@@ -279,20 +280,9 @@ def initialize(dates, observations, fitter_fn, model_window,
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
 
-    # Guard against insufficent data...
-    # TODO redo this, this is not right...
-    if not enough_samples(period, model_window):
-        log.debug('Failed, insufficient clear observations')
-        return model_window, None
-
-    if not enough_time(period, model_window, day_delta):
-        log.debug('Failed, insufficient time range')
-        return model_window, None
-
+    log.debug('Initial %s', model_window)
     models = None
     while model_window.stop <= period.shape[0] - peek_size:
-        log.debug('Initial %s', model_window)
-
         # Finding a sufficient window of time needs to run
         # each iteration because the starting point
         # will increment if the model isn't stable, incrementing
@@ -300,6 +290,7 @@ def initialize(dates, observations, fitter_fn, model_window,
         # time-range.
         stop = find_time_index(dates, model_window, meow_size)
         model_window = slice(model_window.start, stop)
+        log.debug('Checking window: %s', model_window)
 
         # Subset the data based on the current model window
         model_period = period[model_window]
@@ -315,6 +306,7 @@ def initialize(dates, observations, fitter_fn, model_window,
         # Make sure we still have enough observations and enough time
         if (not enough_time(model_period[~tmask_outliers], model_window, day_delta)
             or not enough_samples(model_period[~tmask_outliers], model_window)):
+
             log.debug('Insufficient time or observations after Tmask, '
                       'extending model window')
 
@@ -336,10 +328,8 @@ def initialize(dates, observations, fitter_fn, model_window,
             log.debug('Unstable model, shift window to: %s', model_window)
             continue
         else:
-            log.debug('Stable model found.')
+            log.debug('Stable start found: %s', model_window)
             break
-
-    log.debug('Initialized window: %s', model_window)
 
     return model_window, models
 

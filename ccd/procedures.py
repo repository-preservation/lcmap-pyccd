@@ -203,9 +203,7 @@ def standard_procedure(dates, observations, fitter_fn, quality,
     # and qa information and convert kelvin to celsius
     # We then persist the processing mask through subsequent operations as
     # additional data points get identified to be excluded from processing
-    print(observations[thermal_idx][0])
     observations[thermal_idx] = kelvin_to_celsius(observations[thermal_idx])
-    print(observations[thermal_idx][0])
 
     processing_mask = qa.standard_procedure_filter(observations, quality)
 
@@ -268,7 +266,7 @@ def standard_procedure(dates, observations, fitter_fn, quality,
 
         if model_window.start > start_ix:
             model_window, outliers = lookback(dates, observations,
-                                              model_window, peek_size, models,
+                                              model_window, peek_size, init_models,
                                               start_ix, processing_mask, variogram)
             processing_mask = update_processing_mask(processing_mask, outliers)
 
