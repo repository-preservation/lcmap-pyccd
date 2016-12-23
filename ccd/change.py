@@ -145,11 +145,8 @@ def find_time_index(dates, window, meow_size=defaults.MEOW_SIZE, day_delta=defau
 
     # If the last time is less than a year, then iterating through
     # times to find an index is futile.
-    if not enough_time(dates, window, day_delta=day_delta):
-
-        log.debug('Insufficient time ({0} days) after times[{1}]:{2}'
-                  .format(day_delta, window.start, dates[window.start]))
-
+    if not enough_time(dates, day_delta=day_delta):
+        log.debug('Insufficient time: %s', dates[-1] - dates[0])
         return None
 
     if window.stop:
@@ -171,7 +168,7 @@ def find_time_index(dates, window, meow_size=defaults.MEOW_SIZE, day_delta=defau
     return end_ix
 
 
-def enough_samples(dates, window, meow_size=defaults.MEOW_SIZE):
+def enough_samples(dates, meow_size=defaults.MEOW_SIZE):
     """Change detection requires a minimum number of samples (as specified
     by meow size).
 
@@ -186,10 +183,10 @@ def enough_samples(dates, window, meow_size=defaults.MEOW_SIZE):
         bool: True if times contains enough samples
         False otherwise.
     """
-    return len(dates[window]) >= meow_size
+    return len(dates) >= meow_size
 
 
-def enough_time(dates, window, day_delta=defaults.DAY_DELTA):
+def enough_time(dates, day_delta=defaults.DAY_DELTA):
     """Change detection requires a minimum amount of time (as specified by
     day_delta).
 
@@ -206,7 +203,7 @@ def enough_time(dates, window, day_delta=defaults.DAY_DELTA):
     Returns:
         list: True if the represented time span is greater than day_delta
     """
-    return (dates[-1] - dates[window.start]) >= day_delta
+    return (dates[-1] - dates[0]) >= day_delta
 
 
 def determine_num_coefs(dates,
@@ -295,19 +292,22 @@ def initialize(dates, observations, fitter_fn, model_window,
         log.debug('Checking window: %s', model_window)
 
         # Subset the data based on the current model window
-        model_period = period[model_window]
-        model_spectral = spectral_obs[:, model_window]
+        # model_period = period[model_window]
+        # model_spectral = spectral_obs[:, model_window]
 
         # Count outliers in the window, if there are too many outliers then
         # try again. It is important to note that the outliers caught here
         # are only temporary, only used in this initialization step.
-        tmask_outliers = tmask.tmask(model_period, model_spectral, variogram)
+        tmask_outliers = tmask.tmask(period[model_window],
+                                     spectral_obs[:, model_window], variogram)
 
         log.debug('Number of Tmask outliers found: %s', np.sum(tmask_outliers))
+        model_period = period[model_window][~tmask_outliers]
+        model_spectral = spectral_obs[:, model_window][:, ~tmask_outliers]
 
         # Make sure we still have enough observations and enough time
-        if (not enough_time(model_period[~tmask_outliers], model_window, day_delta)
-            or not enough_samples(model_period[~tmask_outliers], model_window)):
+        if (not enough_time(model_period, day_delta)
+            or not enough_samples(model_period)):
 
             log.debug('Insufficient time or observations after Tmask, '
                       'extending model window')
@@ -318,8 +318,8 @@ def initialize(dates, observations, fitter_fn, model_window,
         # Each spectra, although analyzed independently, all share
         # a common time-frame. Consequently, it doesn't make sense
         # to analyze one spectrum in it's entirety.
-        models = [fitter_fn(model_period[~tmask_outliers], spectrum)
-                  for spectrum in model_spectral[:, ~tmask_outliers]]
+        models = [fitter_fn(model_period, spectrum)
+                  for spectrum in model_spectral]
         log.debug('Generating models to check for stability')
 
         # If a model is not stable, then it is possible that a disturbance
@@ -416,8 +416,8 @@ def build(dates, observations, model_window, peek_size, fitter_fn,
             # the model building step. These are temporally the closest values
             # that will be associated with value that is under scrutiny
             # TODO Make better! and paramaterize
-            for band in detection_bands:
-                tmp_rmse = euclidean_norm(models[band].residual[24:])
+            for model in models:
+                tmp_rmse = euclidean_norm(model.residual[24:])
                 tmp_rmse /= 4
                 tmpcg_rmse.append(tmp_rmse)
 
@@ -442,7 +442,7 @@ def build(dates, observations, model_window, peek_size, fitter_fn,
             processing_mask = update_processing_mask(processing_mask,
                                                      peek_window.start)
 
-        model_window.stop += 1
+        model_window = slice(model_window.start, model_window.stop + 1)
 
     return model_window, models, median_resids, change, outliers
 
