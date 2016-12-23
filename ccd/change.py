@@ -400,7 +400,7 @@ def build(dates, observations, model_window, peek_size, fitter_fn,
                                                   models[idx])
                                   for idx in range(observations.shape[0])]
 
-            magnitudes = change_magnitude(median_resids, variogram, models)
+            magnitude = change_magnitude(median_resids, models, variogram)
 
         # More than 24 points
         else:
@@ -426,16 +426,16 @@ def build(dates, observations, model_window, peek_size, fitter_fn,
                                                   models[idx])
                                   for idx in range(observations.shape[0])]
 
-            magnitudes = change_magnitude(median_resids, variogram,
-                                          models, comparison_rmse=tmpcg_rmse)
+            magnitude = change_magnitude(median_resids, models, variogram,
+                                         comparison_rmse=tmpcg_rmse)
 
-        log.debug("detecting change in %s", peek_window.start, peek_window.stop)
+        log.debug('Detecting change for %s', peek_window)
 
-        if detect_change(magnitudes):
+        if detect_change(magnitude):
             # change was detected, return to parent method
             change = 1
             break
-        elif detect_outlier(magnitudes):
+        elif detect_outlier(magnitude):
             # keep track of any outliers as they will be excluded from future
             # processing steps
             outliers.append(peek_window.start)
