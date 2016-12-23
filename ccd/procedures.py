@@ -27,7 +27,7 @@ import numpy as np
 
 from ccd import qa
 from ccd.app import logging, defaults
-from ccd.change import initialize, build, lookback, change_magnitudes, update_processing_mask, catch
+from ccd.change import initialize, build, lookback, change_magnitude, update_processing_mask, catch
 from ccd.models import lasso, tmask, SpectralModel, ChangeModel, results_to_changemodel
 from ccd.math_utils import kelvin_to_celsius, calculate_variogram
 
@@ -283,9 +283,9 @@ def standard_procedure(dates, observations, fitter_fn, quality,
                           for spectrum
                           in observations[:, processing_mask][:, 0:model_window.start]]
 
-            magnitudes = change_magnitudes(dates[processing_mask][0:model_window.start],
+            magnitudes = change_magnitude(dates[processing_mask][0:model_window.start],
                                            observations[processing_mask][0:model_window.start],
-                                           models_tmp, variogram)
+                                          models_tmp, variogram)
 
             result = results_to_changemodel(fitted_models=models_tmp,
                                             start_day=dates[0],

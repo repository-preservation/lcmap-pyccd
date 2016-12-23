@@ -46,9 +46,9 @@ def stable(observations, models, dates, variogram,
     return euc_norm < t_cg
 
 
-def change_magnitudes(median_resids, models, variogram,
-                      detection_bands=defaults.DETECTION_BANDS,
-                      comparison_rmse=None):
+def change_magnitude(median_resids, models, variogram,
+                     detection_bands=defaults.DETECTION_BANDS,
+                     comparison_rmse=None):
     """
     Calculate the magnitude of change of a single point in time across
     all the spectra
@@ -70,9 +70,14 @@ def change_magnitudes(median_resids, models, variogram,
         rmse = [max(models[idx].rmse, variogram[idx])
                 for idx in range(variogram.shape[0])]
 
-    magnitudes = median_resids[detection_bands] / rmse[detection_bands]
+    magnitudes = [median_resids[idx] / rmse[idx]
+                  for idx in detection_bands]
 
-    return euclidean_norm_sq(magnitudes)
+    change_mag = euclidean_norm_sq(magnitudes)
+
+    log.debug('Magnitude of change: %s', change_mag)
+
+    return change_mag
 
 
 def median_residual(dates, observations, model):
@@ -105,7 +110,7 @@ def detect_change(magnitudes, change_threshold=defaults.CHANGE_THRESHOLD):
     return np.min(magnitudes) > change_threshold
 
 
-def detect_outlier(magnitudes, outlier_threshold=defaults.OUTLIER_THRESHOLD):
+def detect_outlier(magnitude, outlier_threshold=defaults.OUTLIER_THRESHOLD):
     """
     Convenience function to check if any of the magnitudes surpass the
     threshold to mark this date as being an outlier
@@ -113,13 +118,13 @@ def detect_outlier(magnitudes, outlier_threshold=defaults.OUTLIER_THRESHOLD):
     This is used to mask out values from current or future processing
 
     Args:
-        magnitudes: 1-d ndarray of magnitude values across the spectral bands
+        magnitude: float, magnitude of change at a given moment in time
         outlier_threshold: threshold value
 
     Returns:
         bool: True if these spectral values should be omitted
     """
-    return any(magnitudes > outlier_threshold)
+    return magnitude > outlier_threshold
 
 
 def find_time_index(dates, window, meow_size=defaults.MEOW_SIZE, day_delta=defaults.DAY_DELTA):
@@ -395,7 +400,7 @@ def build(dates, observations, model_window, peek_size, fitter_fn,
                                                   models[idx])
                                   for idx in range(observations.shape[0])]
 
-            magnitudes = change_magnitudes(median_resids, variogram, models)
+            magnitudes = change_magnitude(median_resids, variogram, models)
 
         # More than 24 points
         else:
@@ -421,8 +426,8 @@ def build(dates, observations, model_window, peek_size, fitter_fn,
                                                   models[idx])
                                   for idx in range(observations.shape[0])]
 
-            magnitudes = change_magnitudes(median_resids, variogram,
-                                           models, comparison_rmse=tmpcg_rmse)
+            magnitudes = change_magnitude(median_resids, variogram,
+                                          models, comparison_rmse=tmpcg_rmse)
 
         log.debug("detecting change in %s", peek_window.start, peek_window.stop)
 
@@ -470,7 +475,7 @@ def lookback(dates, observations, model_window, peek_size, models,
     spectral_obs = observations[:, processing_mask]
 
     outlier_indices = []
-    for idx in range(model_window.start, previous_break, -1):
+    for idx in range(model_window.start - 1, previous_break - 1, -1):
         if model_window.start - previous_break > peek_size:
             peek_window = slice(model_window.start - previous_break, model_window.start)
         elif model_window.start - peek_size < 0:
@@ -486,13 +491,13 @@ def lookback(dates, observations, model_window, peek_size, models,
                                               models[idx])
                               for idx in range(observations.shape[0])]
 
-        magnitudes = change_magnitudes(median_differences, variogram, models)
+        magnitude = change_magnitude(median_differences, models, variogram)
 
-        if detect_change(magnitudes):
+        if detect_change(magnitude):
             log.debug('Change detected for index: %s', idx)
             # change was detected, return to parent method
             break
-        elif detect_outlier(magnitudes):
+        elif detect_outlier(magnitude):
             log.debug('Outlier detected for index: %s', idx)
             # keep track of any outliers as they will be excluded from future
             # processing steps
@@ -504,7 +509,7 @@ def lookback(dates, observations, model_window, peek_size, models,
         # TODO verify how an outlier should affect the starting point
         model_window = slice(idx, model_window.stop)
 
-    return model_window, None, None, None, outlier_indices
+    return model_window, outlier_indices
 
 
 def catch(dates, observations, peek_size, fitter_fn,
