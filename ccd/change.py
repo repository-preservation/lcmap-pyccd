@@ -376,20 +376,21 @@ def build(dates, observations, model_window, peek_size, fitter_fn,
     models = None
     median_resids = None
     change = 0
+    period = dates[processing_mask]
+    spectral_obs = observations[:, processing_mask]
 
-    while (model_window.stop + peek_size) <= dates.shape[0]:
-        period = dates[processing_mask]
-        spectral_obs = observations[:, processing_mask]
-
+    while (model_window.stop + peek_size) < period.shape[0]:
         num_coefs = determine_num_coefs(period[model_window])
         tmpcg_rmse = []
         peek_window = slice(model_window.stop, model_window.stop + peek_size)
+        log.debug('Detecting change for %s', peek_window)
 
         # The models generated during initialization cannot be used as they
         # have values that could've been masked by Tmask. Models are
         # additionally only updated during certain time frames, in this case
         # if we have < than 24 data points
         if not time_span or model_window.stop - model_window.start < 24:
+            log.debug('Retrain models, less than 24 samples')
             models = [fitter_fn(period[fit_window], spectrum, num_coefs)
                       for spectrum in spectral_obs[:, fit_window]]
 
@@ -407,6 +408,7 @@ def build(dates, observations, model_window, peek_size, fitter_fn,
             # TODO FIX ME! Need a retrain decision method to determine if we
             # should retrain a model or not
             if period[model_window.stop] - period[model_window.start] >= 1.33 * period[fit_window.stop] - period[fit_window.start]:
+                log.debug('Retrain models, greater than 24 samples')
                 fit_window.stop = model_window.stop
 
                 models = [fitter_fn(period[fit_window], spectrum, num_coefs)
@@ -429,8 +431,6 @@ def build(dates, observations, model_window, peek_size, fitter_fn,
             magnitude = change_magnitude(median_resids, models, variogram,
                                          comparison_rmse=tmpcg_rmse)
 
-        log.debug('Detecting change for %s', peek_window)
-
         if detect_change(magnitude):
             # change was detected, return to parent method
             change = 1
@@ -443,6 +443,8 @@ def build(dates, observations, model_window, peek_size, fitter_fn,
                                                      peek_window.start)
 
         model_window = slice(model_window.start, model_window.stop + 1)
+        period = dates[processing_mask]
+        spectral_obs = observations[:, processing_mask]
 
     return model_window, models, median_resids, change, outliers
 

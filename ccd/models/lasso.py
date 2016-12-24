@@ -31,17 +31,17 @@ def coefficient_matrix(dates, num_coefficients=4,
 
     matrix = np.zeros(shape=(len(dates), 7), order='F')
 
-    matrix[:, 0] = [t for t in dates]
-    matrix[:, 1] = [np.cos(w*t) for t in dates]
-    matrix[:, 2] = [np.sin(w*t) for t in dates]
+    matrix[:, 0] = dates
+    matrix[:, 1] = np.cos(w * dates)
+    matrix[:, 2] = np.sin(w * dates)
 
     if num_coefficients == 6:
-        matrix[:, 3] = [np.cos(2 * w * t) for t in dates]
-        matrix[:, 4] = [np.sin(2 * w * t) for t in dates]
+        matrix[:, 3] = np.cos(2 * w * dates)
+        matrix[:, 4] = np.sin(2 * w * dates)
 
     if num_coefficients == 8:
-        matrix[:, 5] = [np.cos(3 * w * t) for t in dates]
-        matrix[:, 6] = [np.sin(3 * w * t) for t in dates]
+        matrix[:, 5] = np.cos(3 * w * dates)
+        matrix[:, 6] = np.sin(3 * w * dates)
 
     return matrix
 

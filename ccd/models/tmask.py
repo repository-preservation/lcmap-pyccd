@@ -20,10 +20,10 @@ def tmask_coefficient_matrix(dates, avg_days_yr=defaults.AVG_DAYS_YR):
     observation_cycle = annual_cycle / np.ceil((dates[-1] - dates[0]) / avg_days_yr)
 
     matrix = np.zeros(shape=(dates.shape[0], 4), order='F')
-    matrix[:, 0] = [np.cos(annual_cycle*t) for t in dates]
-    matrix[:, 1] = [np.sin(annual_cycle*t) for t in dates]
-    matrix[:, 2] = [np.cos(observation_cycle*t) for t in dates]
-    matrix[:, 3] = [np.sin(observation_cycle*t) for t in dates]
+    matrix[:, 0] = np.cos(annual_cycle * dates)
+    matrix[:, 1] = np.sin(annual_cycle * dates)
+    matrix[:, 2] = np.cos(observation_cycle * dates)
+    matrix[:, 3] = np.sin(observation_cycle * dates)
 
     return matrix
 

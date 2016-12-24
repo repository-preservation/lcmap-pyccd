@@ -6,9 +6,6 @@ from functools import wraps
 
 import numpy as np
 
-from ccd.app import defaults
-
-
 # TODO: Cache timings
 # TODO: Numba timings
 

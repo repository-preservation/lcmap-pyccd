@@ -1,3 +1,5 @@
+import time
+
 from ccd.procedures import fit_procedure as __determine_fit_procedure
 import numpy as np
 from ccd import app
@@ -82,7 +84,7 @@ def __attach_metadata(procedure_results, procedure):
     return {'algorithm': __algorithm__,
             'processing_mask': processing_mask,
             'procedure': procedure.__name__,
-            'change_modes': change_models}
+            'change_models': change_models}
 
 
 def __split_dates_spectra(matrix):
@@ -111,6 +113,7 @@ def detect(dates, reds, greens, blues, nirs,
     Returns:
         Tuple of ccd.detections namedtuples
     """
+    t1 = time.time()
     dates = np.asarray(dates)
 
     spectra = np.stack((reds, greens,
@@ -123,5 +126,8 @@ def detect(dates, reds, greens, blues, nirs,
     # Determine which procedure to use for the detection
     procedure = __determine_fit_procedure(quality)
 
+    results = procedure(dates, spectra, fitter_fn, quality)
+    logger.debug('Total time for algorithm: %s', time.time() - t1)
+
     # call detect and return results as the detections namedtuple
-    return __attach_metadata(procedure(dates, spectra, fitter_fn, quality), procedure)
+    return __attach_metadata(results, procedure)
