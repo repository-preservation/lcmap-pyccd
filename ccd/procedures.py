@@ -177,23 +177,42 @@ def standard_procedure(dates, observations, fitter_fn, quality,
                        peek_size=defaults.PEEK_SIZE,
                        thermal_idx=defaults.THERMAL_IDX,
                        day_delta=defaults.DAY_DELTA):
-    """Runs the core change detection algorithm.
+    """
+    Runs the core change detection algorithm.
+    Step 1: Initialize -- find an initial stable time-frame.
 
-        Args:
-            dates: list of ordinal day numbers relative to some epoch,
-                the particular epoch does not matter.
-            observations: values for one or more spectra corresponding
-                to each time.
-            fitter_fn: a function used to fit observation values and
-                acquisition dates for each spectra.
-            meow_size: minimum expected observation window needed to
-                produce a fit.
-            peek_size: number of observations to consider when detecting
-                a change.
+    Step 2: Lookback -- we need too look back at previous values to see
+    if they can be included with the new initialized model
 
-        Returns:
-            list: Change models for each observation of each spectra.
-        """
+    Step 3: Build -- expand time-frame until a change is detected.
+    initialized models from Step 1 and the lookback cannot be passed
+    along due to how Tmask can throw out some values used in that model,
+    but are subsequently used in follow on methods
+
+    Step 4: Iterate. The start_ix is moved to the end of the current
+    timeframe and a new model is generated. It is possible for end_ix
+    to be None, in which case iteration stops.
+
+    Step 5: Catch. End of time series considerations, also provides for
+    building models for short sets of data
+
+    Args:
+        dates: list of ordinal day numbers relative to some epoch,
+            the particular epoch does not matter.
+        observations: values for one or more spectra corresponding
+            to each time.
+        fitter_fn: a function used to fit observation values and
+            acquisition dates for each spectra.
+        meow_size: minimum expected observation window needed to
+            produce a fit.
+        peek_size: number of observations to consider when detecting
+            a change.
+
+    Returns:
+        list: Change models for each observation of each spectra.
+        1-d ndarray: processing mask indicating which values were used
+            for model fitting
+    """
 
     log.debug('Build change models – dates: %s, obs: %s, '
               'meow_size: %s, peek_size: %s',
@@ -225,11 +244,6 @@ def standard_procedure(dates, observations, fitter_fn, quality,
     model_window = slice(0, meow_size)
     start_ix = 0
 
-    # pre-calculate coefficient matrix for all time values; this calculation
-    # needs to be performed only once, we can not do this for the
-    # lasso regression coefficients as the number of coefficients changes
-    # based on the number of observations that are fed into it increases.
-    # model_matrix = lasso.coefficient_matrix(dates)
     variogram = calculate_variogram(observations[:, processing_mask])
     log.debug('Variogram values: %s', variogram)
 
@@ -237,23 +251,7 @@ def standard_procedure(dates, observations, fitter_fn, quality,
     # window starts at meow_ix and is fixed until the change model no longer
     # fits new observations, i.e. a change is detected.
     while model_window.stop <= dates.shape[0] - peek_size:
-        # Step 1: Initialize -- find an initial stable time-frame.
-
-        # Step 2: Lookback -- we need too look back at previous values to see
-        # if they can be included with the new initialized model
-
-        # Step 3: Build -- expand time-frame until a change is detected.
-        # initialized models from Step 1 and the lookback cannot be passed
-        # along due to how Tmask can throw out some values used in that model,
-        # but are subsequently used in follow on methods
-
-        # Step 4: Iterate. The start_ix is moved to the end of the current
-        # timeframe and a new model is generated. It is possible for end_ix
-        # to be None, in which case iteration stops.
-
-        # Step 5: Catch. End of time series considerations, also provides for
-        # building models for short sets of data
-
+        # Step 1: Initialize
         log.debug('Initialize for change model #: %s', len(results) + 1)
         model_window, init_models = initialize(dates, observations, fitter_fn,
                                                model_window, meow_size,
@@ -264,6 +262,7 @@ def standard_procedure(dates, observations, fitter_fn, quality,
             log.debug('Model initialization failed')
             break
 
+        # Step 2: Lookback
         if model_window.start > start_ix:
             model_window, outliers = lookback(dates, observations,
                                               model_window, peek_size, init_models,
@@ -298,6 +297,7 @@ def standard_procedure(dates, observations, fitter_fn, quality,
 
             results.append(result)
 
+        # Step 3: Build
         log.debug('Extend change model')
         res = build(dates, observations, model_window, peek_size,
                     fitter_fn, processing_mask, variogram)
@@ -319,9 +319,11 @@ def standard_procedure(dates, observations, fitter_fn, quality,
 
         log.debug('Accumulate results, {} so far'.format(len(results)))
 
+        # Step 4: Iterate
         start_ix = model_window.stop
         model_window = slice(model_window.stop, model_window.stop + meow_size)
 
+    # Step 5: Catch
     models, outliers = catch(dates, observations, peek_size, fitter_fn,
                              processing_mask, variogram, start_ix)
 
