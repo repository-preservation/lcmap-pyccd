@@ -11,9 +11,42 @@ Module level constructs are only evaluated once in a Python application's
 lifecycle, usually at the time of first import. This pattern is borrowed
 from Flask.
 """
-import logging
-import sys
+import logging, sys, yaml, os, hashlib
+
 from cachetools import LRUCache
+
+
+# Simplify parameter setting and make it easier for adjustment
+class Defaults(dict):
+    def __init__(self, config_path='parameters.yaml'):
+        with open(config_path, 'r') as f:
+            super(Defaults, self).__init__(yaml.load(f.read()))
+
+    def __getattr__(self, name):
+        if name in self:
+            return self[name]
+        else:
+            raise AttributeError('No such attribute: ' + name)
+
+    def __setattr__(self, name, value):
+        self[name] = value
+
+    def __delattr__(self, name):
+        if name in self:
+            del self[name]
+        else:
+            raise AttributeError('No such attribute: ' + name)
+
+
+# Don't need to be going down this rabbit hole just yet
+# mainly here as reference
+def numpy_hashkey(array):
+    return hashlib.sha1(array).hexdigest()
+
+############################
+# Configuration/parameter defaults
+############################
+defaults = Defaults(os.path.join(os.path.dirname(__file__), 'parameters.yaml'))
 
 
 ############################
@@ -27,8 +60,7 @@ from cachetools import LRUCache
 # configure the
 # logging system below.
 # iso8601 date format
-#__format = '%(asctime)s %(module)s::%(funcName)-20s - %(message)s'
-__format = '%(asctime)s.%(msecs)03d %(module)s::%(funcName)-20s - %(message)s'
+__format = '%(asctime)s %(module)-10s::%(funcName)-20s - [%(lineno)-3d]%(message)s'
 logging.basicConfig(stream=sys.stdout,
                     level=logging.DEBUG,
                     format=__format,
@@ -37,33 +69,6 @@ logging.basicConfig(stream=sys.stdout,
 
 # configure caching
 cache = LRUCache(maxsize=2000)
-
-############################
-# Global configuration items
-############################
-MINIMUM_CLEAR_OBSERVATION_COUNT = 12
-
-# 2 for tri-modal; 2 for bi-modal; 2 for seasonality; 2 for linear
-COEFFICIENT_CATEGORIES = {'min': 4, 'mid': 6, 'max': 8}
-
-# number of clear observation / number of coefficients
-CLEAR_OBSERVATION_THRESHOLD = 3
-
-CLEAR_OBSERVATION_PCT = 0.25
-
-PERMANENT_SNOW_THRESHOLD = 0.75
-
-CHANGE_PROBABILITY = 1
-
-FILL_VALUE = 255
-
-MEOW_SIZE = 16
-
-PEEK_SIZE = 3
-
-T_CONST = 4.89
-
-STABILITY_THRESHOLD = 200.0
 
 # This is a string.fully.qualified.reference to the fitter function.
 # Cannot import and supply the function directly or we'll get a
