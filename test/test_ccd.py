@@ -1,44 +1,44 @@
-import numpy as np
-
-from shared import sinusoid
-from shared import sample_line, sample_sinusoid
-
-from ccd.models import lasso
-import ccd.procedures as change
-
-
-def test_not_enough_observations():
-    times, observations = sample_line('R15/2000-01-01/P16D')
-    fitter_fn = lasso.fitted_model
-    quality = np.zeros(shape=times.shape)
-
-    models, mask = change.standard_procedure(times, observations, fitter_fn, quality)
-
-    assert len(models) == 1
+# import numpy as np
+#
+# from shared import sinusoid
+# from shared import sample_line, sample_sinusoid
+#
+# from ccd.models import lasso
+# import ccd.procedures as change
 
 
-def test_one_year_minimum():
-    times, observations = sample_line('R16/2000-01-01/P1W')
-    fitter_fn = lasso.fitted_model
-    quality = np.zeros(shape=times.shape)
-
-    models, mask = change.standard_procedure(times, observations, fitter_fn, quality)
-    time_delta = times[-1]-times[1]
-
-    assert time_delta < 365
-    assert len(models) == 1
-
-
-def test_enough_observations():
-    times, observations = sample_line('R18/2000-01-01/P1M')
-    fitter_fn = lasso.fitted_model
-    quality = np.zeros(shape=times.shape)
-
-    models, mask = change.standard_procedure(times, observations, fitter_fn, quality)
-    time_delta = times[-1]-times[0]
-
-    assert time_delta > 365
-    assert len(models) == 1
+# def test_not_enough_observations():
+#     times, observations = sample_line('R15/2000-01-01/P16D')
+#     fitter_fn = lasso.fitted_model
+#     quality = np.zeros(shape=times.shape)
+#
+#     models, mask = change.standard_procedure(times, observations, fitter_fn, quality)
+#
+#     assert len(models) == 1
+#
+#
+# def test_one_year_minimum():
+#     times, observations = sample_line('R16/2000-01-01/P1W')
+#     fitter_fn = lasso.fitted_model
+#     quality = np.zeros(shape=times.shape)
+#
+#     models, mask = change.standard_procedure(times, observations, fitter_fn, quality)
+#     time_delta = times[-1]-times[1]
+#
+#     assert time_delta < 365
+#     assert len(models) == 1
+#
+#
+# def test_enough_observations():
+#     times, observations = sample_line('R18/2000-01-01/P1M')
+#     fitter_fn = lasso.fitted_model
+#     quality = np.zeros(shape=times.shape)
+#
+#     models, mask = change.standard_procedure(times, observations, fitter_fn, quality)
+#     time_delta = times[-1]-times[0]
+#
+#     assert time_delta > 365
+#     assert len(models) == 1
 #
 #
 # def test_change_windows(n=50, meow_size=16, peek_size=3):

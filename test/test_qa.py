@@ -1,104 +1,121 @@
 """
 Tests for the basic masking and filtering operations
-
-This also serves as a check for the expected sample data sets
 """
-import shared
+import numpy as np
+
+from . import shared
 import pytest
 from ccd.qa import *
 from ccd.app import defaults
 
 
-# TODO build contrived arrays for testing rather than reading from a file
+def test_mask_snow():
+    arr = np.arange(5)
+    ans = np.array([False, False, False, True, False])
 
-#
-# Sample 1 (test/resources/sample_1.csva)
-#
-
-
-def test_basic_loading_sample():
-    data = shared.read_data("test/resources/sample_1.csv")
-    print(data.shape)
-    assert data.shape == (9, 69), "Sample data an unexpected shape, other tests may fail."
+    assert np.array_equal(ans, mask_snow(arr, 3))
 
 
-def test_count_snow():
-    data = shared.read_data("test/resources/sample_1.csv")
-    qa = data[8]
-    assert count_snow(qa) == 2
+def test_mask_clear():
+    arr = np.arange(5)
+    ans = np.array([True, False, False, False, False])
+
+    assert np.array_equal(ans, mask_clear(arr, 0))
+
+
+def test_mask_water():
+    arr = np.arange(5)
+    ans = np.array([False, True, False, False, False])
+
+    assert np.array_equal(ans, mask_water(arr, 1))
+
+
+def test_mask_fill():
+    arr = np.arange(5)
+    arr[-1] = 255
+    ans = np.array([False, False, False, False, True])
+
+    assert np.array_equal(ans, mask_fill(arr, 255))
+
+
+def test_mask_clear_or_water():
+    arr = np.arange(5)
+    ans = np.array([True, True, False, False, False])
+
+    assert np.array_equal(ans, mask_clear_or_water(arr))
 
 
 def test_count_clear_or_water():
-    data = shared.read_data("test/resources/sample_1.csv")
-    qa = data[8]
-    assert count_clear_or_water(qa) == 24
+    arr = np.arange(5)
+    ans = 2
+
+    assert ans == count_clear_or_water(arr)
+
+
+def test_count_fill():
+    arr = np.arange(5)
+    arr[-1] = 255
+    ans = 1
+
+    assert ans == count_fill(arr)
+
+
+def test_count_snow():
+    arr = np.arange(5)
+    ans = 1
+
+    assert ans == count_snow(arr)
 
 
 def test_count_total():
-    data = shared.read_data("test/resources/sample_1.csv")
-    qa = data[8]
-    assert count_total(qa) == 69
+    arr = np.arange(5)
+    arr[-1] = 255
+    ans = 4
 
-
-def test_ratio_snow():
-    data = shared.read_data("test/resources/sample_1.csv")
-    qa = data[8]
-    ratio = ratio_snow(qa)
-    assert ratio == pytest.approx(0.076, rel=0.1), ratio_snow(qa)
+    assert ans == count_total(arr)
 
 
 def test_ratio_clear():
-    data = shared.read_data("test/resources/sample_1.csv")
-    qa = data[8]
-    ratio = ratio_clear(qa)
-    assert ratio == pytest.approx(0.347, rel=1e-2)
+    arr = np.arange(5)
+    arr[-1] = 255
+    ans = 0.5
 
-#
-# Sample 2 (test/resources/sample_2.csv)
-#
+    assert ans == ratio_clear(arr)
 
 
-def test_basic_loading_sample():
-    data = shared.read_data("test/resources/sample_2.csv")
-    assert data.shape == (9, 724), "Sample data an unexpected shape, other tests may fail."
+def test_ratio_snow():
+    arr = np.arange(5)
+    arr[-1] = 255
+    ans = 1/3.01
+
+    assert ans == ratio_snow(arr)
 
 
-def test_sample_2_count_snow():
-    data = shared.read_data("test/resources/sample_2.csv")
-    qa = data[8]
-    assert count_snow(qa) == 8, count_snow(qa)
+def test_enough_clear():
+    arr = np.arange(5)
+    ans = True
+
+    assert ans == enough_clear(arr)
+
+    arr[1:] = 4
+    ans = False
+    assert ans == enough_clear(arr)
 
 
-def test_sample_2_count_clear_or_water():
-    data = shared.read_data("test/resources/sample_2.csv")
-    qa = data[8]
-    assert count_clear_or_water(qa) == 480, count_clear_or_water(qa)
+def test_enough_snow():
+    arr = np.arange(5)
+    ans = False
+
+    assert ans == enough_snow(arr)
+
+    arr[1:] = 3
+    ans = True
+    assert ans == enough_snow(arr)
 
 
-def test_sample_2_count_total():
-    data = shared.read_data("test/resources/sample_2.csv")
-    qa = data[8]
-    assert count_total(qa) == 724, count_total(qa)
+def test_filter_median_green():
+    arr = np.arange(10)
+    ans = np.array([True, True, True, True, True,
+                    True, True, True, False, False])
 
-
-def test_sample_2_ratio_snow():
-    data = shared.read_data("test/resources/sample_2.csv")
-    qa = data[8]
-    ratio = ratio_snow(qa)
-    assert ratio == pytest.approx(0.016, rel=0.1), ratio_snow(qa)
-
-
-def test_sample_2_ratio_clear():
-    data = shared.read_data("test/resources/sample_2.csv")
-    qa = data[8,:]
-    ratio = ratio_clear(qa)
-    assert ratio == pytest.approx(0.662, rel=1e-2)
-
-
-def test_sample_2_exercise_temperature_index():
-    # This sample data does not have any thermal values that
-    # are outside the threshold... this test still serves
-    # a purpose though.
-    data = shared.read_data("test/resources/sample_2.csv")
-    # index = filter_thermal_celsius(data)
-    assert data.shape == (9, 724)
+    assert np.array_equal(ans, filter_median_green(arr, 3))
