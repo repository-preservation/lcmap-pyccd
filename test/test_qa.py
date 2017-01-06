@@ -3,7 +3,6 @@ Tests for the basic masking and filtering operations
 """
 import numpy as np
 
-from . import shared
 import pytest
 from ccd.qa import *
 from ccd.app import defaults
