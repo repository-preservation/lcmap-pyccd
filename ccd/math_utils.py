@@ -1,6 +1,11 @@
 """
-Contains commonly used math functions
-this file is meant to help code reuse and profiling purposes
+Contains commonly used math functions.
+
+This file is meant to help code reuse, profiling, and look at speeding up
+individual operations.
+
+In the interest of avoiding circular imports, this should be kept to be fairly
+stand-alone. I.e. it should not import any other piece of the overall project.
 """
 from functools import wraps
 
@@ -85,6 +90,20 @@ def calc_rmse(actual, predicted):
     residuals = calc_residuals(actual, predicted)
 
     return (residuals ** 2).mean() ** 0.5, residuals
+
+
+@ensure_ndarray_input
+def calc_median(vector):
+    """
+    Calculate the median value of the given vector
+
+    Args:
+        vector: array of values
+
+    Returns:
+        float: median value
+    """
+    return np.median(vector)
 
 
 @ensure_ndarray_input

@@ -54,7 +54,7 @@ def fit_procedure(quality):
         if qa.enough_snow(quality):
             func = permanent_snow_procedure
         else:
-            func = fmask_fail_procedure
+            func = insufficient_clear_procedure
     else:
         func = standard_procedure
 
@@ -117,12 +117,12 @@ def permanent_snow_procedure(dates, observations, fitter_fn, quality,
     return (result,), processing_mask
 
 
-def fmask_fail_procedure(dates, observations, fitter_fn, quality,
-                             meow_size=defaults.MEOW_SIZE,
-                             peek_size=defaults.PEEK_SIZE,
-                             thermal_idx=defaults.THERMAL_IDX):
+def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
+                                 meow_size=defaults.MEOW_SIZE,
+                                 peek_size=defaults.PEEK_SIZE,
+                                 thermal_idx=defaults.THERMAL_IDX):
     """
-    Fmaks fail procedure for when there is an insufficient quality
+    insufficient clear procedure for when there is an insufficient quality
     observations
 
     This method essentially fits a 4 coefficient model across all the
@@ -143,17 +143,14 @@ def fmask_fail_procedure(dates, observations, fitter_fn, quality,
     Returns:
 
         """
-    processing_mask = qa.standard_procedure_filter(observations, quality)
-
-    # TODO there is an additional mask based on the median value
-    # for the green band + 400
+    processing_mask = qa.insufficient_clear_filter(observations, quality)
 
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
 
     if np.sum(processing_mask) < meow_size:
-        raise ProcedureException('Insufficient clear '
-                                 'observations for the fmask fail procedure')
+        raise ProcedureException('Insufficient clear observations for the '
+                                 'insufficient_clear_procedure')
 
     models = [fitter_fn(period, spectrum, 4)
               for spectrum in spectral_obs]

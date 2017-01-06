@@ -13,6 +13,7 @@ This module currently uses explicit values from the Landsat CFMask:
 import numpy as np
 
 from ccd.app import defaults
+from ccd.math_utils import calc_median
 
 
 def mask_snow(quality, snow=defaults.QA_SNOW):
@@ -204,6 +205,22 @@ def enough_snow(quality, threshold=defaults.SNOW_PCT_THRESHOLD):
     return ratio_snow(quality) >= threshold
 
 
+def filter_median_green(green, filter_range=defaults.MEDIAN_GREEN_FILTER):
+    """
+    Filter values based on the median value + some range
+
+    Args:
+        green: array of green values
+        filter_range: value added to the median value in which to filter on
+
+    Returns:
+        1-d boolean ndarray
+    """
+    median = calc_median(green) + filter_range
+
+    return green < median
+
+
 def filter_saturated(observations):
     """bool index for unsaturated obserervations between 0..10,000
 
@@ -248,6 +265,14 @@ def standard_procedure_filter(observations, quality, thermal_idx=defaults.THERMA
     and Unsaturated
 
     Temperatures are expected to be in celsius
+    Args:
+        observations: 2-d ndarray, spectral observations
+        quality: 1-d ndarray quality information
+        thermal_idx: int value identifying the thermal band in the observations
+
+    Returns:
+        1-d boolean ndarray
+
     """
     return (mask_clear_or_water(quality) &
             filter_thermal_celsius(observations[thermal_idx]) &
@@ -262,10 +287,38 @@ def snow_procedure_filter(observations, quality, thermal_idx=defaults.THERMAL_ID
     and Snow
 
     Args:
-        quality: 1-d ndarray
+        observations: 2-d ndarray, spectral observations
+        quality: 1-d ndarray quality information
+        thermal_idx: int value identifying the thermal band in the observations
 
     Returns:
         1-d boolean ndarray
     """
     return (standard_procedure_filter(observations, quality, thermal_idx) |
             mask_snow(quality))
+
+
+def insufficient_clear_filter(observations, quality,
+                              green_idx=defaults.GREEN_IDX,
+                              thermal_idx=defaults.THERMAL_IDX):
+    """
+    Filter for the initial stages of the insufficient clear procedure.
+
+    The main difference being there is an additional exclusion of observations
+    where the green value is > the median green + 400.
+
+    Args:
+        observations: 2-d ndarray, spectral observations
+        quality: 1-d ndarray quality information
+        green_idx: int value identifying the green band in the observations
+        thermal_idx: int value identifying the thermal band in the observations
+
+    Returns:
+        1-d boolean ndarray
+    """
+    standard_mask = standard_procedure_filter(observations, quality, thermal_idx)
+    green_mask = filter_median_green(observations[:, standard_mask][green_idx])
+
+    standard_mask[standard_mask] &= green_mask
+
+    return standard_mask
