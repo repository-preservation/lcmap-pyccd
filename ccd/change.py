@@ -11,7 +11,7 @@ import numpy as np
 
 from ccd import app
 from ccd.models import tmask, lasso
-from ccd.math_utils import euclidean_norm, euclidean_norm_sq, calculate_variogram
+from ccd.math_utils import euclidean_norm, euclidean_norm_sq, calculate_variogram, sum_of_squares
 
 log = app.logging.getLogger(__name__)
 defaults = app.defaults
@@ -46,41 +46,34 @@ def stable(observations, models, dates, variogram,
     return euc_norm < t_cg
 
 
-def change_magnitude(median_resids, models, variogram,
-                     detection_bands=defaults.DETECTION_BANDS,
-                     comparison_rmse=None):
+def change_magnitude(residuals, variogram, comparison_rmse):
     """
-    Calculate the magnitude of change of a single point in time across
-    all the spectra
+    Calculate the magnitude of change for multiple points in time.
 
     Args:
-        observations: spectral observations
-        models: named tuple with the scipy model, rmse, and residuals
-        dates: ordinal dates associated with the observations
-        detection_bands: spectral band index values that are used
-            for detecting change
+        residuals: predicted - observed values across the desired bands,
+            expecting a 2-d array with each band as a row and the observations
+            as columns
+        variogram: 1-d array of variogram values to compare against for the
+            normalization factor
+        comparison_rmse: values to compare against the variogram values, if
+            none, then the model RMSE's are used
 
     Returns:
-        1-d ndarray of values representing change magnitudes across all bands
+        1-d ndarray of values representing change magnitudes
     """
-    if comparison_rmse:
-        rmse = [max(comparison_rmse[idx], variogram[idx])
-                for idx in range(variogram.shape[0])]
-    else:
-        rmse = [max(models[idx].rmse, variogram[idx])
-                for idx in range(variogram.shape[0])]
+    rmse = np.maximum(variogram, comparison_rmse)
 
-    magnitudes = [median_resids[idx] / rmse[idx]
-                  for idx in detection_bands]
+    magnitudes = residuals / rmse[:, None]
 
-    change_mag = euclidean_norm_sq(magnitudes)
+    change_mag = sum_of_squares(magnitudes, axis=0)
 
-    log.debug('Magnitude of change: %s', change_mag)
+    log.debug('Magnitudes of change: %s', change_mag)
 
     return change_mag
 
 
-def median_residual(dates, observations, model):
+def calc_residuals(dates, observations, model):
     """
     Calculate the median residual for each band
 
@@ -92,7 +85,7 @@ def median_residual(dates, observations, model):
     Returns:
         1-d ndarray of residuals
     """
-    return np.median(observations - lasso.predict(model, dates))
+    return np.abs(observations - lasso.predict(model, dates))
 
 
 def detect_change(magnitudes, change_threshold=defaults.CHANGE_THRESHOLD):
@@ -260,21 +253,24 @@ def update_processing_mask(mask, index):
 def initialize(dates, observations, fitter_fn, model_window,
                meow_size, peek_size, processing_mask, variogram,
                day_delta=defaults.DAY_DELTA):
-    """Determine the window indices, models, and errors for observations.
+    """
+    Determine a good starting point in which to build off of for the
+    subsequent process of change detection, both forward and backward.
 
     Args:
-        dates: list of ordinal day numbers relative to some epoch,
-            the particular epoch does not matter.
-        observations: spectral values, list of spectra -> values
+        dates: 1-d ndarray of ordinal day values
+        observations: 2-d ndarray representing the spectral values
         fitter_fn: function used for the regression portion of the algorithm
         model_window: start index of time/observation window
         meow_size: offset from meow_ix, determines initial window size
-        processing_mask: 1-d boolean array identifying which values to consider for processing
-        day_delta: minimum difference between time at meow_ix and most
-            recent observation
+        processing_mask: 1-d boolean array identifying which values to
+            consider for processing
+        day_delta: minimum difference between the start and end of a model
+            window
 
     Returns:
-        slice object representing the start and end of a stable time segment to start with
+        slice: model window
+        models: named tuple of fitted regression models
     """
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
@@ -291,29 +287,31 @@ def initialize(dates, observations, fitter_fn, model_window,
         model_window = slice(model_window.start, stop)
         log.debug('Checking window: %s', model_window)
 
-        # Subset the data based on the current model window
-        # model_period = period[model_window]
-        # model_spectral = spectral_obs[:, model_window]
-
         # Count outliers in the window, if there are too many outliers then
-        # try again. It is important to note that the outliers caught here
-        # are only temporary, only used in this initialization step.
+        # try again.
         tmask_outliers = tmask.tmask(period[model_window],
-                                     spectral_obs[:, model_window], variogram)
+                                     spectral_obs[:, model_window],
+                                     variogram)
 
         log.debug('Number of Tmask outliers found: %s', np.sum(tmask_outliers))
+
+        # Subset the data to the observations that currently under scrutiny
+        # and remove the outliers identified by the tmask.
         model_period = period[model_window][~tmask_outliers]
         model_spectral = spectral_obs[:, model_window][:, ~tmask_outliers]
 
-        # Make sure we still have enough observations and enough time
-        if (not enough_time(model_period, day_delta)
-            or not enough_samples(model_period)):
+        # Make sure we still have enough observations and enough time after
+        # the tmask removal.
+        if (not enough_time(model_period, day_delta) or not enough_samples(model_period)):
 
             log.debug('Insufficient time or observations after Tmask, '
                       'extending model window')
 
             model_window = slice(model_window.start, model_window.stop + 1)
             continue
+
+        # Update the persistent mask with the values identified by the Tmask
+        # processing_mask = update_processing_mask(processing_mask, )
 
         # Each spectra, although analyzed independently, all share
         # a common time-frame. Consequently, it doesn't make sense
@@ -396,12 +394,18 @@ def build(dates, observations, model_window, peek_size, fitter_fn,
 
             time_span = period[model_window.stop] - period[model_window.start]
 
-            median_resids = [median_residual(period[peek_window],
-                                                  spectral_obs[idx, peek_window],
-                                                  models[idx])
-                                  for idx in range(observations.shape[0])]
+            # TODO: do the residual calculations in a smarter way instead
+            # of a list comprehension
+            residuals = np.array([calc_residuals(period[peek_window],
+                                        spectral_obs[idx, peek_window],
+                                        models[idx])
+                                  for idx in range(observations.shape[0])])
 
-            magnitude = change_magnitude(median_resids, models, variogram)
+            comp_rmse = [models[idx].rmse for idx in detection_bands]
+
+            magnitude = change_magnitude(residuals[detection_bands, :],
+                                         variogram[detection_bands],
+                                         comp_rmse)
 
         # More than 24 points
         else:
@@ -414,28 +418,25 @@ def build(dates, observations, model_window, peek_size, fitter_fn,
                 models = [fitter_fn(period[fit_window], spectrum, num_coefs)
                           for spectrum in spectral_obs[:, fit_window]]
 
-            # We need the last 24 residual values that were generated during
-            # the model building step. These are temporally the closest values
-            # that will be associated with value that is under scrutiny
-            # TODO Make better! and paramaterize
-            for model in models:
-                tmp_rmse = euclidean_norm(model.residual[24:])
-                tmp_rmse /= 4
-                tmpcg_rmse.append(tmp_rmse)
+            residuals = np.array([calc_residuals(period[peek_window],
+                                                 spectral_obs[idx, peek_window],
+                                                 models[idx])
+                                  for idx in range(observations.shape[0])])
 
-            median_resids = [median_residual(period[peek_window],
-                                                  spectral_obs[idx, peek_window],
-                                                  models[idx])
-                                  for idx in range(observations.shape[0])]
+            # TODO: fix so that it uses the closest 24 residuals based on
+            # day of year
+            comp_rmse = [euclidean_norm(models[idx].residual[-24:]) / 4
+                         for idx in detection_bands]
 
-            magnitude = change_magnitude(median_resids, models, variogram,
-                                         comparison_rmse=tmpcg_rmse)
+            magnitude = change_magnitude(residuals[detection_bands, :],
+                                         variogram[detection_bands],
+                                         comp_rmse)
 
         if detect_change(magnitude):
             # change was detected, return to parent method
             change = 1
             break
-        elif detect_outlier(magnitude):
+        elif detect_outlier(magnitude[0]):
             # keep track of any outliers as they will be excluded from future
             # processing steps
             outliers.append(peek_window.start)
@@ -450,7 +451,8 @@ def build(dates, observations, model_window, peek_size, fitter_fn,
 
 
 def lookback(dates, observations, model_window, peek_size, models,
-             previous_break, processing_mask, variogram):
+             previous_break, processing_mask, variogram,
+             detection_bands=defaults.DETECTION_BANDS):
     """
     Special case when there is a gap between the start of a time series model
     and the previous model break point, this can include values that were
@@ -488,18 +490,26 @@ def lookback(dates, observations, model_window, peek_size, models,
         log.debug('Considering index: %s using peek window: %s',
                   idx, peek_window)
 
-        median_differences = [median_residual(period[peek_window],
-                                              spectral_obs[idx, peek_window],
-                                              models[idx])
-                              for idx in range(observations.shape[0])]
+        residuals = np.array([calc_residuals(period[peek_window],
+                                             spectral_obs[idx, peek_window],
+                                             models[idx])
+                              for idx in range(observations.shape[0])])
 
-        magnitude = change_magnitude(median_differences, models, variogram)
+        log.debug('Residuals for peek window: %s', residuals)
+
+        comp_rmse = [models[idx].rmse for idx in detection_bands]
+
+        log.debug('RMSE values for comparison: %s', comp_rmse)
+
+        magnitude = change_magnitude(residuals[detection_bands, :],
+                                     variogram[detection_bands],
+                                     comp_rmse)
 
         if detect_change(magnitude):
             log.debug('Change detected for index: %s', idx)
             # change was detected, return to parent method
             break
-        elif detect_outlier(magnitude):
+        elif detect_outlier(magnitude[0]):
             log.debug('Outlier detected for index: %s', idx)
             # keep track of any outliers as they will be excluded from future
             # processing steps

@@ -225,8 +225,7 @@ def standard_procedure(dates, observations, fitter_fn, quality,
 
     obs_count = np.sum(processing_mask)
 
-    log.debug('Processing mask initial count: %s',
-              obs_count)
+    log.debug('Processing mask initial count: %s', obs_count)
 
     if obs_count <= peek_size:
         raise ValueError('Insufficient data available after initial masking')
@@ -244,9 +243,7 @@ def standard_procedure(dates, observations, fitter_fn, quality,
     variogram = calculate_variogram(observations[:, processing_mask])
     log.debug('Variogram values: %s', variogram)
 
-    # Only build models as long as sufficient data exists. The observation
-    # window starts at meow_ix and is fixed until the change model no longer
-    # fits new observations, i.e. a change is detected.
+    # Only build models as long as sufficient data exists.
     while model_window.stop <= dates.shape[0] - peek_size:
         # Step 1: Initialize
         log.debug('Initialize for change model #: %s', len(results) + 1)

@@ -57,7 +57,7 @@ def euclidean_norm(vector):
 
 
 @ensure_ndarray_input
-def euclidean_norm_sq(vector):
+def euclidean_norm_sq(vector, axis=None):
     """
     Return the square of the euclidean norm, essentially removes
     the square root
@@ -67,11 +67,16 @@ def euclidean_norm_sq(vector):
 
     Args:
         vector: 1-d array of values
+        axis: axis along which to perform the summation process
 
     Returns:
         float
     """
-    return np.sum(vector ** 2)
+    return np.sum(vector ** 2, axis=axis)
+
+
+def sum_of_squares(vector, axis=None):
+    return np.sum(vector ** 2, axis=axis)
 
 
 @ensure_ndarray_input
