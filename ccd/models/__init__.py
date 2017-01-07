@@ -43,8 +43,7 @@ FittedModel = namedtuple('FittedModel', ['fitted_model', 'residual', 'rmse'])
 #                          coefficients: (float, float, ...),
 #                          intercept: float}}
 
-SpectralModel = namedtuple('SpectralModel', ['magnitude',
-                                             'rmse',
+SpectralModel = namedtuple('SpectralModel', ['rmse',
                                              'coefficients',
                                              'intercept'])
 
@@ -60,7 +59,8 @@ ChangeModel = namedtuple('ChangeModel', ['start_day',
                                          'nir',
                                          'swir1',
                                          'swir2',
-                                         'thermal'])
+                                         'thermal',
+                                         'median_resids'])
 
 
 def results_to_changemodel(fitted_models, start_day, end_day, break_day, magnitudes,
@@ -82,8 +82,7 @@ def results_to_changemodel(fitted_models, start_day, end_day, break_day, magnitu
     """
     spectral_models = []
     for ix, model in enumerate(fitted_models):
-        spectral = SpectralModel(magnitude=magnitudes[ix],
-                                 rmse=model.rmse,
+        spectral = SpectralModel(rmse=model.rmse,
                                  coefficients=model.fitted_model.coef_,
                                  intercept=model.fitted_model.intercept_)
         spectral_models.append(spectral)
@@ -100,5 +99,6 @@ def results_to_changemodel(fitted_models, start_day, end_day, break_day, magnitu
                        nir=spectral_models[3],
                        swir1=spectral_models[4],
                        swir2=spectral_models[5],
-                       thermal=spectral_models[6])
+                       thermal=spectral_models[6],
+                       median_resids=magnitudes)
 
