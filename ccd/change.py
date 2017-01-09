@@ -10,7 +10,7 @@ be looked at from a higher level
 import numpy as np
 
 from ccd import app
-from ccd.models import tmask, lasso
+from ccd.models import tmask, lasso, results_to_changemodel
 from ccd.math_utils import euclidean_norm, euclidean_norm_sq, calculate_variogram, sum_of_squares
 
 log = app.logging.getLogger(__name__)
@@ -67,6 +67,9 @@ def change_magnitude(residuals, variogram, comparison_rmse):
     magnitudes = residuals / rmse[:, None]
 
     change_mag = sum_of_squares(magnitudes, axis=0)
+
+    if len(change_mag) > 6:
+        raise ValueError
 
     log.debug('Magnitudes of change: %s', change_mag)
 
@@ -159,6 +162,29 @@ def find_time_index(dates, window, meow_size=defaults.MEOW_SIZE, day_delta=defau
               .format(window.start, end_ix, dates[window.start], dates[end_ix]))
 
     return end_ix
+
+
+def boolean_step(start, processing_mask, step):
+    """
+    Using the boolean mask, we need to jump either forwards or backwards
+    by the step size, in True values. This means that False values are not
+    counted in the step.
+
+    Args:
+        start: index value to start with in the processing mask
+        processing_mask: 1-d ndarray of boolean values
+        step: how many positive or True values to count, sign indicates
+            direction
+
+    Returns:
+        int: index value
+    """
+    true_indexes = np.where(processing_mask)[0]
+    loc = np.where(start == true_indexes)[0][0]
+    # Do we need bounds checking here? or should that be the responsibility
+    # of the calling method?
+
+    return true_indexes[loc + step]
 
 
 def enough_samples(dates, meow_size=defaults.MEOW_SIZE):
@@ -334,8 +360,8 @@ def initialize(dates, observations, fitter_fn, model_window,
     return model_window, models
 
 
-def build(dates, observations, model_window, peek_size, fitter_fn,
-          processing_mask, variogram, detection_bands=defaults.DETECTION_BANDS):
+def lookforward(dates, observations, model_window, peek_size, fitter_fn,
+                processing_mask, variogram, detection_bands=defaults.DETECTION_BANDS):
     """Increase observation window until change is detected or
     we are out of observations
 
@@ -353,7 +379,7 @@ def build(dates, observations, model_window, peek_size, fitter_fn,
     Returns:
         tuple: end index, models, and change magnitude.
     """
-    # Step 2: BUILD.
+    # Step 2: lookforward.
     # The second step is to update a model until observations that do not
     # fit the model are found.
     log.debug('Change detection started for: %s', model_window)
@@ -372,14 +398,12 @@ def build(dates, observations, model_window, peek_size, fitter_fn,
     fit_window = model_window
 
     models = None
-    median_resids = None
     change = 0
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
 
     while (model_window.stop + peek_size) < period.shape[0]:
         num_coefs = determine_num_coefs(period[model_window])
-        tmpcg_rmse = []
         peek_window = slice(model_window.stop, model_window.stop + peek_size)
         log.debug('Detecting change for %s', peek_window)
 
@@ -447,7 +471,17 @@ def build(dates, observations, model_window, peek_size, fitter_fn,
         period = dates[processing_mask]
         spectral_obs = observations[:, processing_mask]
 
-    return model_window, models, median_resids, change, outliers
+    result = results_to_changemodel(fitted_models=models,
+                                    start_day=dates[model_window.start],
+                                    end_day=dates[model_window.stop],
+                                    break_day=dates[model_window.stop],
+                                    magnitudes=magnitude,
+                                    observation_count=(
+                                    model_window.stop - model_window.start),
+                                    change_probability=change,
+                                    num_coefficients=num_coefs)
+
+    return result, outliers
 
 
 def lookback(dates, observations, model_window, peek_size, models,
@@ -475,27 +509,36 @@ def lookback(dates, observations, model_window, peek_size, models,
     """
     log.debug('Previous break: %s model window: %s', previous_break, model_window)
 
-    period = dates[processing_mask]
-    spectral_obs = observations[:, processing_mask]
-
     outlier_indices = []
-    for idx in range(model_window.start - 1, previous_break - 1, -1):
+    while model_window.start > previous_break:
+        # mask_window =
+        masked = processing_mask[model_window]
+        period = dates[model_window][processing_mask]
+        spectral_obs = observations[:, processing_mask]
+
+        # Three conditions to see how far we want to look back each iteration.
+        # 1. If we have more than 6 previous observations
+        # 2. Catch to make sure we don't go past the start of observations
+        # 3. Less than 6 observations to look at
+
+        # Important note about python slice objects, start is inclusive and
+        # stop is exclusive, regardless of direction/step
         if model_window.start - previous_break > peek_size:
-            peek_window = slice(model_window.start - previous_break, model_window.start)
+            peek_window = slice(model_window.start - 1, model_window.start - peek_size, -1)
         elif model_window.start - peek_size < 0:
-            peek_window = slice(0, model_window.start)
+            peek_window = slice(model_window.start - 1, None, -1)
         else:
-            peek_window = slice(model_window.start - peek_size, model_window.start)
+            peek_window = slice(model_window.start - 1, previous_break - 1, -1)
 
         log.debug('Considering index: %s using peek window: %s',
-                  idx, peek_window)
+                  peek_window.start, peek_window)
 
         residuals = np.array([calc_residuals(period[peek_window],
                                              spectral_obs[idx, peek_window],
                                              models[idx])
                               for idx in range(observations.shape[0])])
 
-        log.debug('Residuals for peek window: %s', residuals)
+        # log.debug('Residuals for peek window: %s', residuals)
 
         comp_rmse = [models[idx].rmse for idx in detection_bands]
 
@@ -506,28 +549,29 @@ def lookback(dates, observations, model_window, peek_size, models,
                                      comp_rmse)
 
         if detect_change(magnitude):
-            log.debug('Change detected for index: %s', idx)
+            log.debug('Change detected for index: %s', peek_window.start)
             # change was detected, return to parent method
             break
         elif detect_outlier(magnitude[0]):
-            log.debug('Outlier detected for index: %s', idx)
+            log.debug('Outlier detected for index: %s', peek_window.start)
             # keep track of any outliers as they will be excluded from future
             # processing steps
-            outlier_indices.append(idx)
+            outlier_indices.append(peek_window.start)
+            model_window = slice(model_window.start - 1, model_window.stop)
             continue
 
-        log.debug('Including index: %s', idx)
+        log.debug('Including index: %s', peek_window.start)
 
         # TODO verify how an outlier should affect the starting point
-        model_window = slice(idx, model_window.stop)
+        model_window = slice(peek_window.start, model_window.stop)
 
     return model_window, outlier_indices
 
 
-def catch(dates, observations, peek_size, fitter_fn,
-          processing_mask, variogram, start_ix):
+def catch(dates, observations, fitter_fn, processing_mask, model_window):
     """
-    Handle the tail end of the time series change model process.
+    Handle special cases where general models need just need to fit and return
+    their results.
 
     Args:
         results:
@@ -535,35 +579,29 @@ def catch(dates, observations, peek_size, fitter_fn,
     Returns:
 
     """
+    log.debug('Catching observations: %s', model_window)
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
-
-    model_window = slice(start_ix, dates.shape[0])
 
     # Subset the data based on the model window
     model_period = period[model_window]
     model_spectral = spectral_obs[:, model_window]
 
     # Count outliers in the window, if there are too many outliers then
-    # try again. It is important to note that the outliers caught here
-    # are only temporary, only used in this initialization step.
-    outliers = tmask.tmask(model_period, model_spectral, variogram)
+    # try again.
+    # outliers = tmask.tmask(model_period, model_spectral, variogram)
 
-    models = [fitter_fn(model_period[~outliers], spectrum)
-              for spectrum in model_spectral[:, ~outliers]]
+    models = [fitter_fn(model_period, spectrum)
+              for spectrum in model_spectral]
 
-    return models, np.where(outliers)
+    result = results_to_changemodel(fitted_models=models,
+                                    start_day=dates[model_window.start],
+                                    end_day=dates[model_window.stop],
+                                    break_day=dates[model_window.stop],
+                                    magnitudes=np.zeros(shape=(7,)),
+                                    observation_count=(
+                                        model_window.stop - model_window.start),
+                                    change_probability=0,
+                                    num_coefficients=4)
 
-
-# def fit_spectral_model(dates, observations, fitter_fn,
-#                        fit_window, peek_window):
-#
-#     models = [fitter_fn(dates[fit_window], spectrum)
-#               for spectrum
-#               in observations[:, fit_window]]
-#
-#     magnitudes_ = change_magnitudes(
-#         dates[processing_mask][start_ix:model_window.start],
-#         observations[processing_mask][start_ix:model_window.start],
-#         models_tmp)
-
+    return result

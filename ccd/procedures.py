@@ -27,7 +27,7 @@ import numpy as np
 
 from ccd import qa
 from ccd.app import logging, defaults
-from ccd.change import initialize, build, lookback, change_magnitude, update_processing_mask, catch
+from ccd.change import initialize, lookforward, lookback, change_magnitude, update_processing_mask, catch
 from ccd.models import lasso, tmask, SpectralModel, ChangeModel, results_to_changemodel
 from ccd.math_utils import kelvin_to_celsius, calculate_variogram
 
@@ -181,12 +181,12 @@ def standard_procedure(dates, observations, fitter_fn, quality,
     Step 2: Lookback -- we need too look back at previous values to see
     if they can be included with the new initialized model
 
-    Step 3: Build -- expand time-frame until a change is detected.
+    Step 3: lookforward -- expand time-frame until a change is detected.
     initialized models from Step 1 and the lookback cannot be passed
     along due to how Tmask can throw out some values used in that model,
     but are subsequently used in follow on methods
 
-    Step 4: Iterate. The start_ix is moved to the end of the current
+    Step 4: Iterate. The previous_start is moved to the end of the current
     timeframe and a new model is generated. It is possible for end_ix
     to be None, in which case iteration stops.
 
@@ -221,6 +221,19 @@ def standard_procedure(dates, observations, fitter_fn, quality,
     # additional data points get identified to be excluded from processing
     observations[thermal_idx] = kelvin_to_celsius(observations[thermal_idx])
 
+    # There's two ways to handle the boolean mask with the windows in
+    # subsequent processing:
+    # 1. Apply the mask and adjust the window values to compensate for the
+    # values that are taken out.
+    # 2. Apply the window to the data and use the mask only for that window
+    # Option 2 allows window values to be applied directly to the input data.
+    # But now you must compensate when you want to have certain sized windows.
+    # This would also seem to be important for subsequent analysis
+    # utilizing the logs.
+
+    # The masked module from numpy does not seem to really add anything of
+    # benefit to what we need to do, plus scikit may still be incompatible
+    # with them.
     processing_mask = qa.standard_procedure_filter(observations, quality)
 
     obs_count = np.sum(processing_mask)
@@ -238,13 +251,13 @@ def standard_procedure(dates, observations, fitter_fn, quality,
     # that are used for the time-span that the model covers
     # thus we need to initialize a starting index value as well
     model_window = slice(0, meow_size)
-    start_ix = 0
+    previous_start = 0
 
     variogram = calculate_variogram(observations[:, processing_mask])
     log.debug('Variogram values: %s', variogram)
 
     # Only build models as long as sufficient data exists.
-    while model_window.stop <= dates.shape[0] - peek_size:
+    while model_window.stop <= dates.shape[0] - meow_size:
         # Step 1: Initialize
         log.debug('Initialize for change model #: %s', len(results) + 1)
         model_window, init_models = initialize(dates, observations, fitter_fn,
@@ -257,10 +270,12 @@ def standard_procedure(dates, observations, fitter_fn, quality,
             break
 
         # Step 2: Lookback
-        if model_window.start > start_ix:
+        if model_window.start > previous_start:
             model_window, outliers = lookback(dates, observations,
-                                              model_window, peek_size, init_models,
-                                              start_ix, processing_mask, variogram)
+                                              model_window, peek_size,
+                                              init_models, previous_start,
+                                              processing_mask, variogram)
+
             processing_mask = update_processing_mask(processing_mask, outliers)
 
         # If we are at the beginning of the time series and if initialize
@@ -268,71 +283,32 @@ def standard_procedure(dates, observations, fitter_fn, quality,
         # peek size, then we should fit a general curve to those first
         # spectral values
         if not results and model_window.start - peek_size > 0:
-            # TODO make uniform method for fitting models and returning the
-            # appropriate information
-            # Maybe define a namedtuple for model storage
-            models_tmp = [fitter_fn(dates[processing_mask][0:model_window.start],
-                                    spectrum)
-                          for spectrum
-                          in observations[:, processing_mask][:, 0:model_window.start]]
+            results.append(catch(dates, observations, fitter_fn,
+                                 processing_mask, slice(0, model_window.start)))
 
-            magnitudes = change_magnitude(dates[processing_mask][0:model_window.start],
-                                           observations[processing_mask][0:model_window.start],
-                                          models_tmp, variogram)
-
-            result = results_to_changemodel(fitted_models=models_tmp,
-                                            start_day=dates[0],
-                                            end_day=dates[model_window.start],
-                                            break_day=dates[model_window.start],
-                                            magnitudes=magnitudes,
-                                            observation_count=np.sum(processing_mask[0:model_window.start]),
-                                            change_probability=1,
-                                            num_coefficients=4)
-
-            results.append(result)
-
-        # Step 3: Build
+        # Step 3: lookforward
         log.debug('Extend change model')
-        res = build(dates, observations, model_window, peek_size,
-                    fitter_fn, processing_mask, variogram)
-        model_window, models, magnitudes, change, outliers = res
+        result, outliers = lookforward(dates, observations,
+                                       model_window,  peek_size,
+                                       fitter_fn, processing_mask, variogram)
 
         processing_mask = update_processing_mask(processing_mask, outliers)
-
-        # After build, the change models for each
-        # spectra are complete for a period of time.
-        result = results_to_changemodel(fitted_models=models,
-                                        start_day=dates[model_window.start],
-                                        end_day=dates[model_window.stop],
-                                        break_day=dates[model_window.stop],
-                                        magnitudes=magnitudes,
-                                        observation_count=(model_window.stop - model_window.start),
-                                        change_probability=change,
-                                        num_coefficients=4)
         results.append(result)
 
         log.debug('Accumulate results, {} so far'.format(len(results)))
 
         # Step 4: Iterate
-        start_ix = model_window.stop
+        previous_start = model_window.stop
         model_window = slice(model_window.stop, model_window.stop + meow_size)
 
     # Step 5: Catch
-    models, outliers = catch(dates, observations, peek_size, fitter_fn,
-                             processing_mask, variogram, start_ix)
-
-    processing_mask = update_processing_mask(processing_mask, outliers)
-
-    result = results_to_changemodel(fitted_models=models,
-                                    start_day=dates[model_window.start],
-                                    end_day=dates[model_window.stop],
-                                    break_day=dates[model_window.stop],
-                                    magnitudes=np.zeros(shape=(7,)),
-                                    observation_count=(
-                                    model_window.stop - model_window.start),
-                                    change_probability=0,
-                                    num_coefficients=4)
-    results.append(result)
+    # We can use previous start here as that value should be equal to
+    # model_window.stop due to the constraints on the the previous while
+    # loop.
+    if previous_start + peek_size < dates[processing_mask].shape[0]:
+        model_window = slice(previous_start, dates[processing_mask].shape[0])
+        results.append(catch(dates, observations, fitter_fn,
+                             processing_mask, model_window))
 
     log.debug("change detection complete")
 
