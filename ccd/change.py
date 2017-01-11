@@ -282,11 +282,14 @@ def update_processing_mask(mask, index, window=None):
         1-d boolean ndarry
     """
     m = mask[:]
+    sub = m[m]
 
     if window:
-        m[m][window][index] = 0
+        sub[window][index] = False
     else:
-        m[m][index] = 0
+        sub[index] = False
+
+    m[m] = sub
 
     return m
 
