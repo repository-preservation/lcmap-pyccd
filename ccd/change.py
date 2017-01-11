@@ -425,8 +425,7 @@ def lookforward(dates, observations, model_window, peek_size, fitter_fn,
     # Step 2: lookforward.
     # The second step is to update a model until observations that do not
     # fit the model are found.
-    log.debug('Change detection started for: %s', model_window)
-    time_span = 0
+    log.debug('lookforward initial model window: %s', model_window)
     fit_window = model_window
 
     models = None
@@ -434,21 +433,25 @@ def lookforward(dates, observations, model_window, peek_size, fitter_fn,
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
 
+    fit_span = period[model_window.stop - 1] - period[model_window.start]
+
     # stop is always exclusive
-    while model_window.stop <= period.shape[0]:
+    while model_window.stop + peek_size <= period.shape[0]:
         num_coefs = determine_num_coefs(period[model_window])
         peek_window = slice(model_window.stop, model_window.stop + peek_size)
+        time_span = period[model_window.stop - 1] - period[model_window.start]
         log.debug('Detecting change for %s', peek_window)
 
         # If we have less than 24 observations covered by the model_window
         # then we always fit a new window
-        if not time_span or model_window.stop - model_window.start < 24:
+        if not models or model_window.stop - model_window.start < 24:
+            fit_span = period[model_window.stop - 1] - period[
+                model_window.start]
+
             fit_window = model_window
             log.debug('Retrain models, less than 24 samples')
             models = [fitter_fn(period[fit_window], spectrum, num_coefs)
                       for spectrum in spectral_obs[:, fit_window]]
-
-            time_span = period[model_window.stop] - period[model_window.start]
 
             residuals = np.array([calc_residuals(period[peek_window],
                                                  spectral_obs[idx, peek_window],
@@ -459,8 +462,11 @@ def lookforward(dates, observations, model_window, peek_size, fitter_fn,
 
         # More than 24 points
         else:
-            if time_span >= 1.33 * (fit_window.stop - fit_window.start):
-                log.debug('Retrain models, greater than 24 samples')
+            if time_span >= 1.33 * fit_span:
+                log.debug('Timespan: %s Fit Window Size * 1.33: %s', time_span,
+                          1.33 * (fit_window.stop - fit_window.start))
+                fit_span = period[model_window.stop - 1] - period[
+                    model_window.start]
                 fit_window = model_window
 
                 models = [fitter_fn(period[fit_window], spectrum, num_coefs)
