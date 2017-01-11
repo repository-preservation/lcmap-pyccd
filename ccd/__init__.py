@@ -92,8 +92,14 @@ def __split_dates_spectra(matrix):
     return matrix[0], matrix[1:7]
 
 
+def __sort_dates(dates):
+    """ Sort the values chronologically """
+    return np.argsort(dates)
+
+
 def detect(dates, reds, greens, blues, nirs,
-           swir1s, swir2s, thermals, quality):
+           swir1s, swir2s, thermals, quality,
+           temporal_sort=False):
     """Entry point call to detect change
 
     No filtering up-front as different procedures may do things
@@ -109,6 +115,8 @@ def detect(dates, reds, greens, blues, nirs,
         swir2s:   1d-array or list of swir2 band values
         thermals: 1d-array or list of thermal band values
         quality:  1d-array or list of qa band values
+        temporal_sort: boolean value if the input data is suspected of not
+            being in chronological order, from oldest to newest
 
     Returns:
         Tuple of ccd.detections namedtuples
@@ -119,8 +127,12 @@ def detect(dates, reds, greens, blues, nirs,
     spectra = np.stack((reds, greens,
                         blues, nirs, swir1s,
                         swir2s, thermals))
+    if temporal_sort:
+        sort_indexes = __sort_dates(dates)
+        dates = dates[sort_indexes]
+        spectra = spectra[:, sort_indexes]
 
-    # load the fitter_fn from app.FITTER_FN
+    # load the fitter_fn
     fitter_fn = attr_from_str(defaults.FITTER_FN)
 
     # Determine which procedure to use for the detection
