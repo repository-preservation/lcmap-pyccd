@@ -97,9 +97,16 @@ def __sort_dates(dates):
     return np.argsort(dates)
 
 
+def __unique_indices(dates):
+    """ Find the index locations of the first occurrence of a value"""
+    _, indices = np.unique(dates, return_index=True)
+    return indices
+
+
 def detect(dates, reds, greens, blues, nirs,
            swir1s, swir2s, thermals, quality,
-           temporal_sort=False):
+           temporal_sort=False,
+           duplicate_dates=False):
     """Entry point call to detect change
 
     No filtering up-front as different procedures may do things
@@ -117,6 +124,8 @@ def detect(dates, reds, greens, blues, nirs,
         quality:  1d-array or list of qa band values
         temporal_sort: boolean value if the input data is suspected of not
             being in chronological order, from oldest to newest
+        duplicate_dates: boolean value if the input data is suspected of having
+            multiple observations for a single date, many to one
 
     Returns:
         Tuple of ccd.detections namedtuples
@@ -127,10 +136,19 @@ def detect(dates, reds, greens, blues, nirs,
     spectra = np.stack((reds, greens,
                         blues, nirs, swir1s,
                         swir2s, thermals))
+
+    if duplicate_dates:
+        indices = __unique_indices(dates)
+        dates = dates[indices]
+        spectra = spectra[:, indices]
+
+        # Unique will return a sorted index list
+        temporal_sort = False
+
     if temporal_sort:
-        sort_indexes = __sort_dates(dates)
-        dates = dates[sort_indexes]
-        spectra = spectra[:, sort_indexes]
+        sort_indices = __sort_dates(dates)
+        dates = dates[sort_indices]
+        spectra = spectra[:, sort_indices]
 
     # load the fitter_fn
     fitter_fn = attr_from_str(defaults.FITTER_FN)

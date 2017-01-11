@@ -33,3 +33,10 @@ def test_sort_dates():
     ans = np.array([0, 2, 1, 3])
 
     assert np.array_equal(ans, ccd.__sort_dates(arr))
+
+
+def test_unique():
+    arr = np.array([1, 3, 2, 5, 3, 2])
+    ans = np.array([0, 2, 1, 3])
+
+    assert np.array_equal(ans, ccd.__unique_indices(arr))
