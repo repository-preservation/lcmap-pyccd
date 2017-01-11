@@ -1,5 +1,8 @@
 from collections import namedtuple
 
+# TODO: establish standardize object for handling models used for general
+# regression purposes. This will truly make the code much more modular.
+
 # Since scipy models don't hold information on residuals or rmse, we should
 # carry them forward with the models themselves, so we don't have to
 # recalculate them all the time

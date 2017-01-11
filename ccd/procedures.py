@@ -257,13 +257,19 @@ def standard_procedure(dates, observations, fitter_fn, quality,
     log.debug('Variogram values: %s', variogram)
 
     # Only build models as long as sufficient data exists.
-    while model_window.stop <= dates.shape[0] - meow_size:
+    while model_window.stop <= dates[processing_mask].shape[0] - meow_size:
         # Step 1: Initialize
         log.debug('Initialize for change model #: %s', len(results) + 1)
-        model_window, init_models = initialize(dates, observations, fitter_fn,
-                                               model_window, meow_size,
-                                               peek_size, processing_mask,
-                                               variogram)
+        # Hopefully, one of these days line lengths for pep8 will change,
+        # and I won't have to worry about people saying something about it
+        model_window, init_models, processing_mask = initialize(dates,
+                                                                observations,
+                                                                fitter_fn,
+                                                                model_window,
+                                                                meow_size,
+                                                                peek_size,
+                                                                processing_mask,
+                                                                variogram)
 
         if init_models is None:
             log.debug('Model initialization failed')
@@ -271,28 +277,32 @@ def standard_procedure(dates, observations, fitter_fn, quality,
 
         # Step 2: Lookback
         if model_window.start > previous_start:
-            model_window, outliers = lookback(dates, observations,
-                                              model_window, peek_size,
-                                              init_models, previous_start,
-                                              processing_mask, variogram)
-
-            processing_mask = update_processing_mask(processing_mask, outliers)
+            model_window, processing_mask = lookback(dates,
+                                                     observations,
+                                                     model_window,
+                                                     peek_size,
+                                                     init_models,
+                                                     previous_start,
+                                                     processing_mask,
+                                                     variogram)
 
         # If we are at the beginning of the time series and if initialize
         # has moved forward the start of the first curve by more than the
         # peek size, then we should fit a general curve to those first
-        # spectral values
+        # spectral values.
         if not results and model_window.start - peek_size > 0:
             results.append(catch(dates, observations, fitter_fn,
                                  processing_mask, slice(0, model_window.start)))
 
         # Step 3: lookforward
         log.debug('Extend change model')
-        result, outliers = lookforward(dates, observations,
-                                       model_window,  peek_size,
-                                       fitter_fn, processing_mask, variogram)
-
-        processing_mask = update_processing_mask(processing_mask, outliers)
+        result, processing_mask = lookforward(dates,
+                                              observations,
+                                              model_window,
+                                              peek_size,
+                                              fitter_fn,
+                                              processing_mask,
+                                              variogram)
         results.append(result)
 
         log.debug('Accumulate results, {} so far'.format(len(results)))
