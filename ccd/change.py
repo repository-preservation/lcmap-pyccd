@@ -491,10 +491,12 @@ def lookforward(dates, observations, model_window, peek_size, fitter_fn,
                                      comp_rmse)
 
         if detect_change(magnitude):
+            log.debug('Change detected at: %s', peek_window.start)
             # change was detected, return to parent method
             change = 1
             break
         elif detect_outlier(magnitude[0]):
+            log.debug('Outlier detected at: %s', peek_window.start)
             # keep track of any outliers as they will be excluded from future
             # processing steps
             processing_mask = update_processing_mask(processing_mask,
@@ -502,14 +504,13 @@ def lookforward(dates, observations, model_window, peek_size, fitter_fn,
 
             period = dates[processing_mask]
             spectral_obs = observations[:, processing_mask]
+            continue
 
         model_window = slice(model_window.start, model_window.stop + 1)
-        period = dates[processing_mask]
-        spectral_obs = observations[:, processing_mask]
 
     result = results_to_changemodel(fitted_models=models,
                                     start_day=dates[model_window.start],
-                                    end_day=dates[model_window.stop],
+                                    end_day=dates[model_window.stop - 1],
                                     break_day=dates[model_window.stop],
                                     magnitudes=magnitude,
                                     observation_count=(
@@ -517,7 +518,7 @@ def lookforward(dates, observations, model_window, peek_size, fitter_fn,
                                     change_probability=change,
                                     num_coefficients=num_coefs)
 
-    return result, processing_mask
+    return result, processing_mask, model_window
 
 
 def lookback(dates, observations, model_window, peek_size, models,
@@ -635,7 +636,7 @@ def catch(dates, observations, fitter_fn, processing_mask, model_window):
 
     result = results_to_changemodel(fitted_models=models,
                                     start_day=dates[model_window.start],
-                                    end_day=dates[model_window.stop],
+                                    end_day=dates[model_window.stop - 1],
                                     break_day=dates[model_window.stop],
                                     magnitudes=np.zeros(shape=(7,)),
                                     observation_count=(

@@ -186,7 +186,7 @@ def standard_procedure(dates, observations, fitter_fn, quality,
     along due to how Tmask can throw out some values used in that model,
     but are subsequently used in follow on methods
 
-    Step 4: Iterate. The previous_start is moved to the end of the current
+    Step 4: Iterate. The previous_end is moved to the end of the current
     timeframe and a new model is generated. It is possible for end_ix
     to be None, in which case iteration stops.
 
@@ -251,7 +251,7 @@ def standard_procedure(dates, observations, fitter_fn, quality,
     # that are used for the time-span that the model covers
     # thus we need to initialize a starting index value as well
     model_window = slice(0, meow_size)
-    previous_start = 0
+    previous_end = 0
 
     variogram = calculate_variogram(observations[:, processing_mask])
     log.debug('Variogram values: %s', variogram)
@@ -276,13 +276,13 @@ def standard_procedure(dates, observations, fitter_fn, quality,
             break
 
         # Step 2: Lookback
-        if model_window.start > previous_start:
+        if model_window.start > previous_end:
             model_window, processing_mask = lookback(dates,
                                                      observations,
                                                      model_window,
                                                      peek_size,
                                                      init_models,
-                                                     previous_start,
+                                                     previous_end,
                                                      processing_mask,
                                                      variogram)
 
@@ -296,27 +296,27 @@ def standard_procedure(dates, observations, fitter_fn, quality,
 
         # Step 3: lookforward
         log.debug('Extend change model')
-        result, processing_mask = lookforward(dates,
-                                              observations,
-                                              model_window,
-                                              peek_size,
-                                              fitter_fn,
-                                              processing_mask,
-                                              variogram)
+        result, processing_mask, model_window = lookforward(dates,
+                                                            observations,
+                                                            model_window,
+                                                            peek_size,
+                                                            fitter_fn,
+                                                            processing_mask,
+                                                            variogram)
         results.append(result)
 
         log.debug('Accumulate results, {} so far'.format(len(results)))
 
         # Step 4: Iterate
-        previous_start = model_window.stop
+        previous_end = model_window.stop
         model_window = slice(model_window.stop, model_window.stop + meow_size)
 
     # Step 5: Catch
     # We can use previous start here as that value should be equal to
     # model_window.stop due to the constraints on the the previous while
     # loop.
-    if previous_start + peek_size < dates[processing_mask].shape[0]:
-        model_window = slice(previous_start, dates[processing_mask].shape[0])
+    if previous_end + peek_size < dates[processing_mask].shape[0]:
+        model_window = slice(previous_end, dates[processing_mask].shape[0])
         results.append(catch(dates, observations, fitter_fn,
                              processing_mask, model_window))
 
