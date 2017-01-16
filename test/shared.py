@@ -115,8 +115,8 @@ def sample_line(time_range, bands=7):
     return times, observations
 
 
-sample1 = read_data("test/resources/sample_1.csv")
-sample2 = read_data("test/resources/sample_2.csv")
-persistent_snow = read_data("test/resources/sample_WA_grid08_row9_col2267_persistent_snow.csv")
-standard_procedure = read_data("test/resources/sample_WA_grid08_row999_col1_normal.csv")
-fmask_fail = read_data("test/resources/sample_WA_grid08_row12_col2265_fmask_fail.csv")
+# sample1 = read_data("test/resources/sample_1.csv")
+# sample2 = read_data("test/resources/sample_2.csv")
+# persistent_snow = read_data("test/resources/sample_WA_grid08_row9_col2267_persistent_snow.csv")
+# standard_procedure = read_data("test/resources/sample_WA_grid08_row999_col1_normal.csv")
+# fmask_fail = read_data("test/resources/sample_WA_grid08_row12_col2265_fmask_fail.csv")
