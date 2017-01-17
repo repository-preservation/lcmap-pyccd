@@ -286,13 +286,14 @@ def standard_procedure(dates, observations, fitter_fn, quality,
                                                      processing_mask,
                                                      variogram)
 
-        # If we are at the beginning of the time series and if initialize
-        # has moved forward the start of the first curve by more than the
-        # peek size, then we should fit a general curve to those first
-        # spectral values.
-        if not results and model_window.start - peek_size > 0:
-            results.append(catch(dates, observations, fitter_fn,
-                                 processing_mask, slice(0, model_window.start)))
+        # If we have moved > peek_size from the previous break point
+        # then we fit a generalized model to those points.
+        if model_window.start - previous_end > peek_size:
+                results.append(catch(dates,
+                                     observations,
+                                     fitter_fn,
+                                     processing_mask,
+                                     slice(previous_end, model_window.start)))
 
         # Step 3: lookforward
         log.debug('Extend change model')
