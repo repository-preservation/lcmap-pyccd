@@ -515,9 +515,9 @@ def lookforward(dates, observations, model_window, peek_size, fitter_fn,
         model_window = slice(model_window.start, model_window.stop + 1)
 
     result = results_to_changemodel(fitted_models=models,
-                                    start_day=dates[model_window.start],
-                                    end_day=dates[model_window.stop - 1],
-                                    break_day=dates[model_window.stop],
+                                    start_day=period[model_window.start],
+                                    end_day=period[model_window.stop - 1],
+                                    break_day=period[model_window.stop],
                                     magnitudes=magnitude,
                                     observation_count=(
                                     model_window.stop - model_window.start),
@@ -600,8 +600,10 @@ def lookback(dates, observations, model_window, peek_size, models,
 
             period = dates[processing_mask]
             spectral_obs = observations[:, processing_mask]
-            # Since the observation is now masked, we don't need to adjust the
-            # windows
+
+            # Since this location was used in determining the model_window
+            # passed in, we must now account for removing it.
+            model_window = slice(model_window.start - 1, model_window.stop - 1)
             continue
 
         log.debug('Including index: %s', peek_window.start)
@@ -641,9 +643,9 @@ def catch(dates, observations, fitter_fn, processing_mask, model_window):
               for spectrum in model_spectral]
 
     result = results_to_changemodel(fitted_models=models,
-                                    start_day=dates[model_window.start],
-                                    end_day=dates[model_window.stop - 1],
-                                    break_day=dates[model_window.stop],
+                                    start_day=period[model_window.start],
+                                    end_day=period[model_window.stop - 1],
+                                    break_day=period[model_window.stop],
                                     magnitudes=np.zeros(shape=(7,)),
                                     observation_count=(
                                         model_window.stop - model_window.start),
