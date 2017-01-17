@@ -642,10 +642,15 @@ def catch(dates, observations, fitter_fn, processing_mask, model_window):
     models = [fitter_fn(model_period, spectrum)
               for spectrum in model_spectral]
 
+    try:
+        break_day = period[model_window.stop]
+    except:
+        break_day = period[-1]
+
     result = results_to_changemodel(fitted_models=models,
                                     start_day=period[model_window.start],
                                     end_day=period[model_window.stop - 1],
-                                    break_day=period[model_window.stop],
+                                    break_day=break_day,
                                     magnitudes=np.zeros(shape=(7,)),
                                     observation_count=(
                                         model_window.stop - model_window.start),
