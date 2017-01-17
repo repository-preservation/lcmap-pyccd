@@ -363,12 +363,12 @@ def initialize(dates, observations, fitter_fn, model_window,
 
         # Subset the data to the observations that currently under scrutiny
         # and remove the outliers identified by the tmask.
-        model_period = period[model_window][~tmask_outliers]
-        model_spectral = spectral_obs[:, model_window][:, ~tmask_outliers]
+        tmask_period = period[model_window][~tmask_outliers]
+        # model_spectral = spectral_obs[:, model_window][:, ~tmask_outliers]
 
         # Make sure we still have enough observations and enough time after
         # the tmask removal.
-        if (not enough_time(model_period, day_delta) or not enough_samples(model_period)):
+        if not enough_time(tmask_period, day_delta) or not enough_samples(tmask_period):
 
             log.debug('Insufficient time or observations after Tmask, '
                       'extending model window')
@@ -381,21 +381,27 @@ def initialize(dates, observations, fitter_fn, model_window,
             processing_mask = update_processing_mask(processing_mask,
                                                      tmask_outliers,
                                                      model_window)
+
+            # The model window now actually refers to a smaller slice
+            model_window = slice(model_window.start, model_window.stop - np.sum(tmask_outliers))
             # Update the subset
             period = dates[processing_mask]
             spectral_obs = observations[:, processing_mask]
 
+        if tmask_period[-1] != period[model_window][-1]:
+            raise ValueError
+
         # Each spectra, although analyzed independently, all share
         # a common time-frame. Consequently, it doesn't make sense
         # to analyze one spectrum in it's entirety.
-        models = [fitter_fn(model_period, spectrum)
-                  for spectrum in model_spectral]
+        models = [fitter_fn(period[model_window], spectrum)
+                  for spectrum in spectral_obs[:, model_window]]
         log.debug('Generating models to check for stability')
 
         # If a model is not stable, then it is possible that a disturbance
         # exists somewhere in the observation window. The window shifts
         # forward in time, and begins initialization again.
-        if not stable(model_spectral, models, model_period, variogram):
+        if not stable(spectral_obs[:, model_window], models, period[model_window], variogram):
             model_window = slice(model_window.start + 1, model_window.stop + 1)
             log.debug('Unstable model, shift window to: %s', model_window)
             continue
@@ -442,7 +448,7 @@ def lookforward(dates, observations, model_window, peek_size, fitter_fn,
     while model_window.stop + peek_size <= period.shape[0]:
         num_coefs = determine_num_coefs(period[model_window])
         peek_window = slice(model_window.stop, model_window.stop + peek_size)
-        time_span = period[model_window.stop - 1] - period[model_window.start]
+        model_span = period[model_window.stop - 1] - period[model_window.start]
         log.debug('Detecting change for %s', peek_window)
 
         # If we have less than 24 observations covered by the model_window
@@ -465,9 +471,9 @@ def lookforward(dates, observations, model_window, peek_size, fitter_fn,
 
         # More than 24 points
         else:
-            if time_span >= 1.33 * fit_span:
-                log.debug('Timespan: %s Fit Window Size * 1.33: %s', time_span,
-                          1.33 * (fit_window.stop - fit_window.start))
+            if model_span >= 1.33 * fit_span:
+                log.debug('Retrain models, model_span: %s fit_span: %s',
+                          model_span, fit_span)
                 fit_span = period[model_window.stop - 1] - period[
                     model_window.start]
                 fit_window = model_window
