@@ -74,5 +74,5 @@ if the percentage of clear pixels is less than the clear threshold:
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Persistent Snow Procedure] (snow.md)  
 &nbsp;&nbsp;&nbsp;&nbsp;else:  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Insufficient Clear Procedure] (fmask_fail.md)  
-Else:  
+else:  
 &nbsp;&nbsp;&nbsp;&nbsp;[Standard Procedure] (standard.md)  
