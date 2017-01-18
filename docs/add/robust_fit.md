@@ -1,4 +1,5 @@
-**RobustFit ( Ordinary Least Squares - OLS) **
+**RobustFit ( Ordinary Least Squares - OLS) **  
+
 This is a standard python module.
 ( Robust Linear Models may be investigated )
 

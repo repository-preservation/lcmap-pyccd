@@ -1,4 +1,4 @@
-**Persistent Snow Procedure**
+**Persistent Snow Procedure**  
 
 - include observations flagged as snow by the QA
 - total observations = snow observations + clear observations

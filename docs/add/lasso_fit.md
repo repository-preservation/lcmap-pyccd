@@ -1,4 +1,5 @@
-**LASSO Regression ( Least Absolute Shrinkage and Selector Operator )**
+**LASSO Regression ( Least Absolute Shrinkage and Selector Operator )**  
+
 Lasso regression is mathematical model to do curve fitting of points.
 The python module is a standard all python apps/modules adhere to.
 Calculations are documented and consistent across platforms and applications.
