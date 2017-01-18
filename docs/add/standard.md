@@ -45,6 +45,6 @@ while there are clear observations:
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;record change model  
 
 if number of remaining observations < MEOW size but >= Peek Size:  
-&nbsp;&nbsp;&nbsp;&nbsp;fit generalized model for remaining observations [LASSOFit]  
+&nbsp;&nbsp;&nbsp;&nbsp;[fit generalized model for remaining observations] (lasso_fit.md)  
 send/save results  
 exit  
