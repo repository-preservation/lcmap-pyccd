@@ -96,8 +96,7 @@ def permanent_snow_procedure(dates, observations, fitter_fn, quality,
     spectral_obs = observations[:, processing_mask]
 
     if np.sum(processing_mask) < meow_size:
-        raise ProcedureException('Insufficient snow/water/clear '
-                                 'observations for the snow procedure')
+        return ([],), processing_mask
 
     models = [fitter_fn(period, spectrum, 4)
               for spectrum in spectral_obs]
@@ -149,8 +148,7 @@ def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
     spectral_obs = observations[:, processing_mask]
 
     if np.sum(processing_mask) < meow_size:
-        raise ProcedureException('Insufficient clear observations for the '
-                                 'insufficient_clear_procedure')
+        return ([],), processing_mask
 
     models = [fitter_fn(period, spectrum, 4)
               for spectrum in spectral_obs]
