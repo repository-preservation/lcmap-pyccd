@@ -75,6 +75,7 @@ def euclidean_norm_sq(vector, axis=None):
     return np.sum(vector ** 2, axis=axis)
 
 
+@ensure_ndarray_input
 def sum_of_squares(vector, axis=None):
     return np.sum(vector ** 2, axis=axis)
 
