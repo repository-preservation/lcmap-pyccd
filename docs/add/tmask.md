@@ -1,6 +1,6 @@
 **Tmask Function**  
 
-Uses Robust Regression method to fit curves for the green SWIR1 and bands,  
+Uses Robust Regression method to fit curves for the green and SWIR1 and bands,  
 for a given observation window.  
 
 Inputs: dates, green and SWIR1 bands observations, median variogram values for  

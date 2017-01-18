@@ -16,9 +16,9 @@ obtaining input data from different conventions, ensure it is pyccd-ready:
 while there are clear observations:  
 
 &nbsp;&nbsp;&nbsp;&nbsp;if there are enough observations and minimum temporal span:  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;calculate [Tmask] (tmask.md) and mask out where Tmask is 1  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;calculate [Tmask] (tmask.md) and mask out where [Tmask] (tmask_md) is 1  
 
-&nbsp;&nbsp;&nbsp;&nbsp;if not enough observations or minimum temporal span after Tmask:  
+&nbsp;&nbsp;&nbsp;&nbsp;if not enough observations or minimum temporal span after [Tmask] (tmask_md):  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;continue to the next observation  
 
 &nbsp;&nbsp;&nbsp;&nbsp;initial [do generalized curve fit for observation set ( observations, number coeffs = 4 )] (lasso_fit.md)  
