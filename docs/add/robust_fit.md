@@ -21,4 +21,4 @@ regress
 return coefficients  
 
 note: Number of years refers to the span of years represented by the model  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;window, rounded up
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;window, rounded up

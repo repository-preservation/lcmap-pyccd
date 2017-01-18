@@ -8,8 +8,8 @@ green and SWIR1 bands, T_CONST
 
 set up coefficient matrix  
 
-[use Robust Regression to fit curve] (robust_fit.md) green band  
-[use Robust Regression to fit curve] (robust_fit.md) SWIR1 band  
+[use Robust Regression to fit curve] (robust_fit.md) for green band  
+[use Robust Regression to fit curve] (robust_fit.md) for SWIR1 band  
 
 set up tmask accummulator for outliers  
 

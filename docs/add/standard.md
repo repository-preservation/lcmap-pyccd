@@ -21,7 +21,7 @@ while there are clear observations:
 &nbsp;&nbsp;&nbsp;&nbsp;if not enough observations or minimum temporal span after Tmask:  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;continue to the next observation  
 
-&nbsp;&nbsp;&nbsp;&nbsp;initial [LASSOFit ( observations, number coeffs = 4 )] (lasso_fit.md)  
+&nbsp;&nbsp;&nbsp;&nbsp;initial [do generalized curve fit for observation set ( observations, number coeffs = 4 )] (lasso_fit.md)  
 
 &nbsp;&nbsp;&nbsp;&nbsp;#check for a stable start  
 &nbsp;&nbsp;&nbsp;&nbsp;if [change detected] (detect_change.md):  
@@ -33,7 +33,7 @@ while there are clear observations:
 
 &nbsp;&nbsp;&nbsp;&nbsp;if change detected:  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;adjust model window start  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;build new curve fit [LassoFit]  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[build new curve fit] (lasso_fit.md)  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;look forward in time to see if additional values fit curve  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if no change deteced:  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if no change detected:  
