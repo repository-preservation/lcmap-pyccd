@@ -1,4 +1,4 @@
-**Detect Change in Select Bands**
+**Detect Change in Select Bands**  
 Inputs: per band observations, current models, start date, end date, median band variogram values, T_Cg value
 
 for each band:
