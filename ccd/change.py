@@ -1,35 +1,38 @@
 """Functions and classes used by the change detection procedures
 
-This includes things such as a calculating RMSE, bounds checking,
-and other methods that are used outside of the main detection loop
-
-This allows for a layer of abstraction, where the individual loop procedures can
-be looked at from a higher level
+This allows for a layer of abstraction, where the individual loop procedures
+can be looked at from a higher level
 """
 
 import numpy as np
 
 from ccd import app
 from ccd.models import tmask, lasso, results_to_changemodel
-from ccd.math_utils import euclidean_norm, euclidean_norm_sq, calculate_variogram, sum_of_squares
+from ccd.math_utils import euclidean_norm, sum_of_squares
 
 log = app.logging.getLogger(__name__)
 defaults = app.defaults
 
 
-def stable(observations, models, dates, variogram,
+def stable(models, dates, variogram,
            t_cg=defaults.CHANGE_THRESHOLD,
            detection_bands=defaults.DETECTION_BANDS):
     """Determine if we have a stable model to start building with
 
     Args:
-        observations: spectral observations
-        models: current representative models
-        dates: date values that is covered by the models
+        models: list of current representative/fitted models
+        variogram: 1-d array of variogram values to compare against for the
+            normalization factor
+        dates: array of ordinal date values
         t_cg: change threshold
+        detection_bands: index locations of the spectral bands that are used
+            to determine stability
 
-    Returns: Boolean on whether stable or not
+    Returns:
+        Boolean on whether stable or not
     """
+    # This could be written nicer, or more performant using numpy in the
+    # future
     check_vals = []
     for idx in detection_bands:
         rmse_norm = max(variogram[idx], models[idx].rmse)
@@ -40,7 +43,7 @@ def stable(observations, models, dates, variogram,
 
         check_vals.append(check_val)
 
-    euc_norm = euclidean_norm_sq(check_vals)
+    euc_norm = sum_of_squares(check_vals)
     log.debug('Stability norm: %s, Check against: %s', euc_norm, t_cg)
 
     return euc_norm < t_cg
@@ -56,8 +59,7 @@ def change_magnitude(residuals, variogram, comparison_rmse):
             as columns
         variogram: 1-d array of variogram values to compare against for the
             normalization factor
-        comparison_rmse: values to compare against the variogram values, if
-            none, then the model RMSE's are used
+        comparison_rmse: values to compare against the variogram values
 
     Returns:
         1-d ndarray of values representing change magnitudes
@@ -68,9 +70,6 @@ def change_magnitude(residuals, variogram, comparison_rmse):
 
     change_mag = sum_of_squares(magnitudes, axis=0)
 
-    if len(change_mag) > 6:
-        raise ValueError
-
     log.debug('Magnitudes of change: %s', change_mag)
 
     return change_mag
@@ -78,7 +77,7 @@ def change_magnitude(residuals, variogram, comparison_rmse):
 
 def calc_residuals(dates, observations, model):
     """
-    Calculate the median residual for each band
+    Calculate the residuals using the fitted model.
 
     Args:
         dates: ordinal dates associated with the observations
@@ -88,16 +87,18 @@ def calc_residuals(dates, observations, model):
     Returns:
         1-d ndarray of residuals
     """
+    # This needs to be modularized in the future.
+    # Basically the model object should have a predict method with it.
     return np.abs(observations - lasso.predict(model, dates))
 
 
 def detect_change(magnitudes, change_threshold=defaults.CHANGE_THRESHOLD):
     """
     Convenience function to check if the minimum magnitude surpasses the
-    threshold required to determine if it is change
+    threshold required to determine if it is change.
 
     Args:
-        magnitudes: magnitude values across the spectral bands
+        magnitudes: change magnitude values across the observations
         change_threshold: threshold value to determine if change has occurred
 
     Returns:
@@ -130,8 +131,8 @@ def find_time_index(dates, window, meow_size=defaults.MEOW_SIZE, day_delta=defau
             the particular epoch does not matter.
         window: index into times, used to get day number for comparing
             times for
-        meow_size: relative number of observations after meow_ix to
-            begin searching for a time index
+        meow_size: minimum expected observation window needed to
+            produce a fit.
         day_delta: number of days required for a years worth of data,
             defined to be 365
     Returns:
@@ -170,6 +171,8 @@ def boolean_step(start, processing_mask, step):
     by the step size, in True values. This means that False values are not
     counted in the step.
 
+    Currently not used.
+
     Args:
         start: index value to start with in the processing mask
         processing_mask: 1-d ndarray of boolean values
@@ -196,7 +199,8 @@ def enough_samples(dates, meow_size=defaults.MEOW_SIZE):
     Args:
         dates: list of ordinal day numbers relative to some epoch,
             the particular epoch does not matter.
-        window: slice object representing the indices that we want to look at
+        meow_size: minimum expected observation window needed to
+            produce a fit.
 
     Returns:
         bool: True if times contains enough samples
@@ -215,12 +219,11 @@ def enough_time(dates, day_delta=defaults.DAY_DELTA):
     Args:
         dates: list of ordinal day numbers relative to some epoch,
             the particular epoch does not matter.
-        window: slice object representing the indices that we want to look at
         day_delta: minimum difference between time at meow_ix and most
             recent observation.
 
     Returns:
-        list: True if the represented time span is greater than day_delta
+        bool: True if the represented time span is greater than day_delta
     """
     return (dates[-1] - dates[0]) >= day_delta
 
@@ -246,7 +249,7 @@ def determine_num_coefs(dates,
         num_obs_factor: used to scale the time span
 
     Returns:
-
+        int: number of coefficients to use during the fitting process
     """
     span = dates.shape[0] / num_obs_factor
 
@@ -268,9 +271,9 @@ def update_processing_mask(mask, index, window=None):
 
     The window slice object is to catch when it is in relation to some
     window of the masked values. So, we must mask against itself, then look at
-    a subset of that result. Turtles all the way down...
+    a subset of that result.
 
-    This method will create a new view object as to avoid mutability issues
+    This method should create a new view object as to avoid mutability issues.
 
     Args:
         mask: 1-d boolean ndarray, current mask being used
@@ -279,7 +282,7 @@ def update_processing_mask(mask, index, window=None):
         window: slice object identifying a further subset of the mask
 
     Returns:
-        1-d boolean ndarry
+        1-d boolean ndarray
     """
     m = mask[:]
     sub = m[m]
@@ -302,14 +305,16 @@ def find_closest_doy(dates, date_idx, window, num):
     n number of dates that are closest to that same day of year.
 
     Args:
-        dates: 1-d ndarray of ordianl day values
+        dates: 1-d ndarray of ordinal day values
         date_idx: index of date value
-        window: slice of values to in
+        window: slice object identifying the subset of values used in the
+            current model
         num: number of index values desired
 
     Returns:
         1-d ndarray of index values
     """
+    # May be a better way of doing this
     d_rt = dates[window] - dates[date_idx]
     d_yr = np.abs(np.round(d_rt / 365.25) * 365.25 - d_rt)
 
@@ -329,14 +334,18 @@ def initialize(dates, observations, fitter_fn, model_window,
         fitter_fn: function used for the regression portion of the algorithm
         model_window: start index of time/observation window
         meow_size: offset from meow_ix, determines initial window size
+        peek_size: number of observations to consider when detecting
+            a change.
         processing_mask: 1-d boolean array identifying which values to
             consider for processing
+        variogram: 1-d array of variogram values to compare against for the
+            normalization factor
         day_delta: minimum difference between the start and end of a model
             window
 
     Returns:
-        slice: model window
-        models: named tuple of fitted regression models
+        slice: model window that was deemed to be a stable start
+        namedtuple: fitted regression models
     """
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
@@ -359,12 +368,13 @@ def initialize(dates, observations, fitter_fn, model_window,
                                      spectral_obs[:, model_window],
                                      variogram)
 
-        log.debug('Number of Tmask outliers found: %s', np.sum(tmask_outliers))
+        tmask_count = np.sum(tmask_outliers)
+
+        log.debug('Number of Tmask outliers found: %s', tmask_count)
 
         # Subset the data to the observations that currently under scrutiny
         # and remove the outliers identified by the tmask.
         tmask_period = period[model_window][~tmask_outliers]
-        # model_spectral = spectral_obs[:, model_window][:, ~tmask_outliers]
 
         # Make sure we still have enough observations and enough time after
         # the tmask removal.
@@ -383,25 +393,20 @@ def initialize(dates, observations, fitter_fn, model_window,
                                                      model_window)
 
             # The model window now actually refers to a smaller slice
-            model_window = slice(model_window.start, model_window.stop - np.sum(tmask_outliers))
+            model_window = slice(model_window.start,
+                                 model_window.stop - tmask_count)
             # Update the subset
             period = dates[processing_mask]
             spectral_obs = observations[:, processing_mask]
 
-        if tmask_period[-1] != period[model_window][-1]:
-            raise ValueError
-
-        # Each spectra, although analyzed independently, all share
-        # a common time-frame. Consequently, it doesn't make sense
-        # to analyze one spectrum in it's entirety.
+        log.debug('Generating models to check for stability')
         models = [fitter_fn(period[model_window], spectrum)
                   for spectrum in spectral_obs[:, model_window]]
-        log.debug('Generating models to check for stability')
 
         # If a model is not stable, then it is possible that a disturbance
         # exists somewhere in the observation window. The window shifts
         # forward in time, and begins initialization again.
-        if not stable(spectral_obs[:, model_window], models, period[model_window], variogram):
+        if not stable(models, period[model_window], variogram):
             model_window = slice(model_window.start + 1, model_window.stop + 1)
             log.debug('Unstable model, shift window to: %s', model_window)
             continue
@@ -425,34 +430,52 @@ def lookforward(dates, observations, model_window, peek_size, fitter_fn,
             process
         peek_size: look ahead for detecting change
         fitter_fn: function used to model observations
-        processing_mask: 1-d boolean array identifying which values to consider for processing
-        detection_bands: spectral band indicies that are used in the detect change portion
+        processing_mask: 1-d boolean array identifying which values to
+            consider for processing
+        variogram: 1-d array of variogram values to compare against for the
+            normalization factor
+        detection_bands: spectral band indicies that are used in the detect
+            change portion
 
     Returns:
-        namedtuple representing the time segment
+        namedtuple: representation of the time segment
+        1-d bool ndarray: processing mask that may have been modified
+        slice: model window
     """
-    # Step 2: lookforward.
+    # Step 4: lookforward.
     # The second step is to update a model until observations that do not
     # fit the model are found.
     log.debug('lookforward initial model window: %s', model_window)
+    # The fit_window pertains to which locations are used in the model
+    # regression. While the model_window identifies the locations in which
+    # fitted models apply to. They are not always the same.
     fit_window = model_window
 
+    # Initialized for a check at the first iteration.
     models = None
+    # Simple value to determine if change has occured or not. Change may not
+    # have occurred if we reach the end of the time series.
     change = 0
+
+    # Initial subset of the data
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
 
+    # Used for comparison purposes
     fit_span = period[model_window.stop - 1] - period[model_window.start]
 
     # stop is always exclusive
     while model_window.stop + peek_size <= period.shape[0]:
         num_coefs = determine_num_coefs(period[model_window])
+
         peek_window = slice(model_window.stop, model_window.stop + peek_size)
+        # Used for comparison against fit_span
         model_span = period[model_window.stop - 1] - period[model_window.start]
+
         log.debug('Detecting change for %s', peek_window)
 
         # If we have less than 24 observations covered by the model_window
-        # then we always fit a new window
+        # or it the first iteration, then we always fit a new window
         if not models or model_window.stop - model_window.start < 24:
             fit_span = period[model_window.stop - 1] - period[
                 model_window.start]
@@ -471,6 +494,9 @@ def lookforward(dates, observations, model_window, peek_size, fitter_fn,
 
         # More than 24 points
         else:
+            # If the number of observations that the current fitted models
+            # expands past a threshold, then we need to fit new ones.
+            # The 1.33 should be parametrized at some point.
             if model_span >= 1.33 * fit_span:
                 log.debug('Retrain models, model_span: %s fit_span: %s',
                           model_span, fit_span)
@@ -486,12 +512,18 @@ def lookforward(dates, observations, model_window, peek_size, fitter_fn,
                                                  models[idx])
                                   for idx in range(observations.shape[0])])
 
+            # We want to use the closest residual values to the peek_window
+            # values based on seasonality.
             closest_indexes = find_closest_doy(period, peek_window.stop - 1,
                                                fit_window, 24)
 
+            # Calculate an RMSE for the seasonal residual values, using 8
+            # as the degrees of freedom.
             comp_rmse = [euclidean_norm(models[idx].residual[closest_indexes]) / 4
                          for idx in detection_bands]
 
+        # Calculate the chang magnitude values for each observation in the
+        # peek_window.
         magnitude = change_magnitude(residuals[detection_bands, :],
                                      variogram[detection_bands],
                                      comp_rmse)
@@ -508,6 +540,10 @@ def lookforward(dates, observations, model_window, peek_size, fitter_fn,
             processing_mask = update_processing_mask(processing_mask,
                                                      peek_window.start)
 
+            # Since only one value was excluded, we shouldn't need to adjust
+            # the model_window, as the location hasn't been used in
+            # processing yet. So, the next iteration can use the same windows
+            # without issue.
             period = dates[processing_mask]
             spectral_obs = observations[:, processing_mask]
             continue
