@@ -1,57 +1,78 @@
-Default Parameters:  
+Default Parameters:
+(Parameters is not entirely accurate.  In practice, these values are in a
+.yaml file, which is read, and can be adjusted, but these are not actual
+“command line arguments”.)
 
-- Bands for detection change  
-B_detect = 2 thru 6  
-
-- change probability threshold  
-T_cg = inverse of chi^2(0.99, number of detection bands)  
-```python  
->>> from scipy.stats import chi2  
->>> chi2.ppf(0.99, 5)  
-15.086272469388987  
- ```  
+- change probability threshold
+T_cg = inverse of chi^2(0.99, number of detection bands)
+```python
+>>> from scipy.stats import chi2
+>>> chi2.ppf(0.99, 5)
+15.086272469388987
+ ```
  
-- number of consecutive observations  
-conse = 6  
+- outlier threshold (Tmasking of noise)
+Tmax_cg = inverse of chi^2(1-1e-6, number of detection bands)
+```python
+>>> from scipy.stats import chi2
+>>> chi2.ppf(1-1e-6, 5)
+35.888186879610423
+ ```
 
-- maximum number of coefficients used  
-max_c = 8  
+- Minimum Number of Consecutive Observations requied to identify a change
+  6
 
-- Clear count threhold
-clear = 0.25
+- Maximum Number of Model Coefficients Produced
+  8
 
-- Snow count threhold
-snow = 0.75
+- Clear count threhold percent
+  0.25
 
-- Tmasking of noise  
-Tmax_cg = inverse of chi^2(1-1e-6, number of detection bands)  
+- Snow count threhold percent
+  0.75
 
-Initial change detection setup:  
+- LASSO Regression lambda value
+  20 (limiting cross-validation saves processing time)
 
-1. Convert thermal values from kelvin to Celsius  
+Initial change detection setup:
+ 
+- pyccd Input Landsat Data
+  red, green, NIR, SWIR1, SWIR2, Thermal, cfmask
+
+- Landsat bands for detection change
+  red, green, NIR, SWIR1, SWIR2
+
+- Mask out duplicate observations using the first of two swath overlap
+  observations
+
+- Sort observations temporally
+
+- Create mask(s) of values that fall outside of acceptable ranges, considered
+  saturated if > acceptable maximum:
+  - Surface Reflectance bands acceptable range:           (  0, 10000 )
+  - Brightness Temperature (Thermal) acceptable range: ( -9320,  7070 )
+
+- Convert thermal values from kelvin to Celsius
     `val * 10 – 27315`
 
-2. Create mask(s) of values that fall outside of acceptable ranges, considered saturated if > max  
-    - Reflectance acceptable range: (0, 10000)  
-    - Thermal acceptable range: (-9320, 7070)  
+- Create variogram for each band
 
-3. Derive some QA (CFmask) masks/information for reference during the process  
-    - Clear pixel mask  
-    `val < 2 (water and clear)`  
-    - Non-Fill mask  
-    `val < 255`  
-    - Percent clear  
-    `sum(clear) / sum(non-fill)`  
-    - Snow mask  
-    `val == 3`  
-    - Percent snow  
-    `sum(snow) / (sum(clear) + sum(snow) + 0.01)`  
+- Derive some QA (CFmask) masks/information for reference during the process
+  - Clear pixel mask
+    `val < 2 (water and clear)`
+  - Non-Fill mask
+    `val < 255`
+  - Percent clear
+    `sum(clear) / sum(non-fill)`
+  - Snow mask
+    `val == 3`
+  - Percent snow
+    `sum(snow) / (sum(clear) + sum(snow) + 0.01)`
 
-\*Inputs are inferred to be in temporal order  
-If the percentage of clear pixels is less than the clear threshold:  
-&nbsp;&nbsp;&nbsp;&nbsp;If the percentage of snow is greater than the snow threshold:  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Snow Procedure] (snow.md)  
-&nbsp;&nbsp;&nbsp;&nbsp;Else:  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Fmask Fail Procedure] (fmask_fail.md)  
+if the percentage of clear pixels is less than the clear threshold:
+&nbsp;&nbsp;&nbsp;&nbsp;if the percentage of snow is greater than the snow threshold:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Persistent Snow Procedure] (snow.md)
+&nbsp;&nbsp;&nbsp;&nbsp;else:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Insufficient Clear Procedure] (fmask_fail.md)  
 Else:  
 &nbsp;&nbsp;&nbsp;&nbsp;[Standard Procedure] (standard.md)  
