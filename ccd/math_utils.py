@@ -21,8 +21,8 @@ def ensure_ndarray_input(func):
     This cleans up subsequent code that might need to check for this
     """
     @wraps(func)
-    def f(*args):
-        return func(*(np.asarray(_) for _ in args))
+    def f(*args, **kwargs):
+        return func(*(np.asarray(_) for _ in args), **kwargs)
     return f
 
 

@@ -103,7 +103,7 @@ def __unique_indices(dates):
     return indices
 
 
-def detect(dates, reds, greens, blues, nirs,
+def detect(dates, blues, greens, reds, nirs,
            swir1s, swir2s, thermals, quality,
            temporal_sort=False,
            duplicate_dates=False):
@@ -114,9 +114,9 @@ def detect(dates, reds, greens, blues, nirs,
 
     Args:
         dates:    1d-array or list of ordinal date values
-        reds:     1d-array or list of red band values
+        blues:     1d-array or list of red band values
         greens:   1d-array or list of green band values
-        blues:    1d-array or list of blue band values
+        reds:    1d-array or list of blue band values
         nirs:     1d-array or list of nir band values
         swir1s:   1d-array or list of swir1 band values
         swir2s:   1d-array or list of swir2 band values
@@ -133,8 +133,8 @@ def detect(dates, reds, greens, blues, nirs,
     t1 = time.time()
     dates = np.asarray(dates)
 
-    spectra = np.stack((reds, greens,
-                        blues, nirs, swir1s,
+    spectra = np.stack((blues, greens,
+                        reds, nirs, swir1s,
                         swir2s, thermals))
 
     if duplicate_dates:
