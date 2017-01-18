@@ -197,7 +197,7 @@ def standard_procedure(dates, observations, fitter_fn, quality,
             for model fitting
     """
 
-    log.debug('Build change models – dates: %s, obs: %s, '
+    log.debug('Build change models - dates: %s, obs: %s, '
               'meow_size: %s, peek_size: %s',
               dates.shape[0], observations.shape, meow_size, peek_size)
 
