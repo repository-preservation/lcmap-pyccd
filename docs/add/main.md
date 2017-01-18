@@ -69,10 +69,10 @@ Initial change detection setup:
   - Percent snow
     `sum(snow) / (sum(clear) + sum(snow) + 0.01)`
 
-if the percentage of clear pixels is less than the clear threshold:
-&nbsp;&nbsp;&nbsp;&nbsp;if the percentage of snow is greater than the snow threshold:
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Persistent Snow Procedure] (snow.md)
-&nbsp;&nbsp;&nbsp;&nbsp;else:
+if the percentage of clear pixels is less than the clear threshold:  
+&nbsp;&nbsp;&nbsp;&nbsp;if the percentage of snow is greater than the snow threshold:  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Persistent Snow Procedure] (snow.md)  
+&nbsp;&nbsp;&nbsp;&nbsp;else:  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Insufficient Clear Procedure] (fmask_fail.md)  
 Else:  
 &nbsp;&nbsp;&nbsp;&nbsp;[Standard Procedure] (standard.md)  
