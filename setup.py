@@ -84,7 +84,8 @@ setup(
                       'scikit-learn>=0.18',
                       'cachetools>=2.0.0',
                       'click>=6.6',
-                      'click-plugins>=1.0.3'],
+                      'click-plugins>=1.0.3',
+                      'PyYAML>=3.12'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
