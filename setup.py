@@ -84,7 +84,8 @@ setup(
                       'scikit-learn>=0.18',
                       'cachetools>=2.0.0',
                       'click>=6.6',
-                      'click-plugins>=1.0.3'],
+                      'click-plugins>=1.0.3',
+                      'PyYAML>=3.12'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
@@ -110,7 +111,10 @@ setup(
     # package_data={
     #    'sample': ['package_data.dat'],
     # },
-
+    package_data={
+        'ccd': ['parameters.yaml'],
+    },
+    
     # Although 'package_data' is the preferred approach, in some case you may
     # need to place data files outside of your packages. See:
     # http://docs.python.org/3.4/distutils/setupscript.html#installing-additional-files # noqa
