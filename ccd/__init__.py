@@ -105,7 +105,6 @@ def __unique_indices(dates):
 
 def detect(dates, blues, greens, reds, nirs,
            swir1s, swir2s, thermals, quality,
-           temporal_sort=False,
            duplicate_dates=False):
     """Entry point call to detect change
 
@@ -114,18 +113,17 @@ def detect(dates, blues, greens, reds, nirs,
 
     Args:
         dates:    1d-array or list of ordinal date values
-        blues:     1d-array or list of red band values
+        blues:    1d-array or list of red band values
         greens:   1d-array or list of green band values
-        reds:    1d-array or list of blue band values
+        reds:     1d-array or list of blue band values
         nirs:     1d-array or list of nir band values
         swir1s:   1d-array or list of swir1 band values
         swir2s:   1d-array or list of swir2 band values
         thermals: 1d-array or list of thermal band values
         quality:  1d-array or list of qa band values
-        temporal_sort: boolean value if the input data is suspected of not
-            being in chronological order, from oldest to newest
         duplicate_dates: boolean value if the input data is suspected of having
-            multiple observations for a single date, many to one
+            multiple observations for a single date, many to one, this will
+            also sort based on the ordinal date value as well
 
     Returns:
         Tuple of ccd.detections namedtuples
@@ -141,14 +139,7 @@ def detect(dates, blues, greens, reds, nirs,
         indices = __unique_indices(dates)
         dates = dates[indices]
         spectra = spectra[:, indices]
-
-        # Unique will return a sorted index list
-        temporal_sort = False
-
-    if temporal_sort:
-        sort_indices = __sort_dates(dates)
-        dates = dates[sort_indices]
-        spectra = spectra[:, sort_indices]
+        quality = quality[indices]
 
     # load the fitter_fn
     fitter_fn = attr_from_str(defaults.FITTER_FN)
