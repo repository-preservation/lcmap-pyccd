@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-""" Command line interface to Python Continuous Change Detection. """
+""" Command line interface to Python Continuous Change Detection.
+
+Currently unsupported through beta
+"""
 
 from ccd import app
 import ccd

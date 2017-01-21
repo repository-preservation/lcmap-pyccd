@@ -105,7 +105,7 @@ def __unique_indices(dates):
 
 def detect(dates, blues, greens, reds, nirs,
            swir1s, swir2s, thermals, quality,
-           duplicate_dates=False):
+           duplicate_dates=True):
     """Entry point call to detect change
 
     No filtering up-front as different procedures may do things
