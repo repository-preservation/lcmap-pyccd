@@ -352,7 +352,7 @@ def initialize(dates, observations, fitter_fn, model_window,
 
     log.debug('Initial %s', model_window)
     models = None
-    while model_window.stop <= period.shape[0] - peek_size:
+    while model_window.stop + peek_size < period.shape[0]:
         # Finding a sufficient window of time needs to run
         # each iteration because the starting point
         # will increment if the model isn't stable, incrementing
@@ -465,7 +465,7 @@ def lookforward(dates, observations, model_window, peek_size, fitter_fn,
     fit_span = period[model_window.stop - 1] - period[model_window.start]
 
     # stop is always exclusive
-    while model_window.stop + peek_size <= period.shape[0] or models is None:
+    while model_window.stop + peek_size < period.shape[0] or models is None:
         num_coefs = determine_num_coefs(period[model_window])
 
         peek_window = slice(model_window.stop, model_window.stop + peek_size)
