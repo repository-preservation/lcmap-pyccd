@@ -465,7 +465,7 @@ def lookforward(dates, observations, model_window, peek_size, fitter_fn,
     fit_span = period[model_window.stop - 1] - period[model_window.start]
 
     # stop is always exclusive
-    while model_window.stop + peek_size <= period.shape[0]:
+    while model_window.stop + peek_size <= period.shape[0] or models is None:
         num_coefs = determine_num_coefs(period[model_window])
 
         peek_window = slice(model_window.stop, model_window.stop + peek_size)
@@ -602,7 +602,7 @@ def lookback(dates, observations, model_window, peek_size, models,
         # stop is exclusive, regardless of direction/step
         if model_window.start - previous_break > peek_size:
             peek_window = slice(model_window.start - 1, model_window.start - peek_size, -1)
-        elif model_window.start - peek_size < 0:
+        elif model_window.start - peek_size <= 0:
             peek_window = slice(model_window.start - 1, None, -1)
         else:
             peek_window = slice(model_window.start - 1, previous_break - 1, -1)
