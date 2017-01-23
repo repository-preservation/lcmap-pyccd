@@ -376,6 +376,14 @@ def initialize(dates, observations, fitter_fn, model_window,
         # and remove the outliers identified by the tmask.
         tmask_period = period[model_window][~tmask_outliers]
 
+        # TODO should probably look at a different fit procedure to handle
+        # the following case.
+        if tmask_count == model_window.stop - model_window.start:
+            log.debug('Tmask identified all values as outliers')
+
+            model_window = slice(model_window.start, model_window.stop + 1)
+            continue
+
         # Make sure we still have enough observations and enough time after
         # the tmask removal.
         if not enough_time(tmask_period, day_delta) or not enough_samples(tmask_period):
@@ -553,7 +561,7 @@ def lookforward(dates, observations, model_window, peek_size, fitter_fn,
     result = results_to_changemodel(fitted_models=models,
                                     start_day=period[model_window.start],
                                     end_day=period[model_window.stop - 1],
-                                    break_day=period[model_window.stop],
+                                    break_day=period[peek_window.start],
                                     magnitudes=magnitude,
                                     observation_count=(
                                     model_window.stop - model_window.start),
