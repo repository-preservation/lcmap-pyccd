@@ -417,6 +417,7 @@ def initialize(dates, observations, fitter_fn, model_window,
         if not stable(models, period[model_window], variogram):
             model_window = slice(model_window.start + 1, model_window.stop + 1)
             log.debug('Unstable model, shift window to: %s', model_window)
+            models = None
             continue
         else:
             log.debug('Stable start found: %s', model_window)
