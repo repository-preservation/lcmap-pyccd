@@ -352,7 +352,7 @@ def initialize(dates, observations, fitter_fn, model_window,
 
     log.debug('Initial %s', model_window)
     models = None
-    while model_window.stop + peek_size < period.shape[0]:
+    while model_window.stop + meow_size < period.shape[0]:
         # Finding a sufficient window of time needs to run
         # each iteration because the starting point
         # will increment if the model isn't stable, incrementing
