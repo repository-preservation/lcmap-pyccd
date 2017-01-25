@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 """ Command line interface to Python Continuous Change Detection.
 
-Currently unsupported through beta
+Currently unsupported through beta.
+
+However, the click conventions used to import a .csv test dataset could be
+replaced with other conventions (API, wget, etc) to formulate a an
+observations data set for invoking pyccd with a similar client call to:
+results = ccd.detect() .
 """
 
 from ccd import app
@@ -20,7 +25,7 @@ logger = app.logging.getLogger(__name__)
 @with_plugins(iter_entry_points('core_package.cli_plugins'))
 @click.group()
 def cli():
-    """Commandline interface for yourpackage."""
+    """Commandline interface for your package."""
     logger.info("CLI running...")
 
 

@@ -36,7 +36,7 @@ def tmask(dates, observations, variogram, bands=defaults.TMASK_BANDS,
         dates: ordinal date values associated to each n-moment in the
             observations
         observations: spectral values, assumed to be shaped as
-            (n-bands,n-moments)
+            (n-bands, n-moments)
         bands: list of band indices used for outlier detection, by default
             bands 2 and 5.
         t_const: constant used to scale a variogram value for thresholding on

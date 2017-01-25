@@ -211,7 +211,8 @@ def filter_median_green(green, filter_range=defaults.MEDIAN_GREEN_FILTER):
 
     Args:
         green: array of green values
-        filter_range: value added to the median value in which to filter on
+        filter_range: value added to the median value, this new result is
+                      used as the value for filtering
 
     Returns:
         1-d boolean ndarray

@@ -31,7 +31,7 @@ def stable(models, dates, variogram,
     Returns:
         Boolean on whether stable or not
     """
-    # This could be written nicer, or more performant using numpy in the
+    # This could be written differently, or more performant using numpy in the
     # future
     check_vals = []
     for idx in detection_bands:
@@ -130,7 +130,7 @@ def find_time_index(dates, window, meow_size=defaults.MEOW_SIZE, day_delta=defau
         dates: list of ordinal day numbers relative to some epoch,
             the particular epoch does not matter.
         window: index into times, used to get day number for comparing
-            times for
+            times
         meow_size: minimum expected observation window needed to
             produce a fit.
         day_delta: number of days required for a years worth of data,
@@ -236,7 +236,7 @@ def determine_num_coefs(dates,
     """
     Determine the number of coefficients to use for the main fit procedure
 
-    This is based mostly on the amount of time (in ordinal days) that is being
+    This is based mostly on the amount of time (in ordinal days) that is
     going to be covered by the model
 
     This is referred to as df (degrees of freedom) in the model section
@@ -265,7 +265,7 @@ def update_processing_mask(mask, index, window=None):
     """
     Update the persistent processing mask.
 
-    Since processes apply the mask first, index values given are in relation
+    Because processes apply the mask first, index values given are in relation
     to that. So we must apply the mask to itself, then update the boolean
     values.
 
@@ -273,11 +273,11 @@ def update_processing_mask(mask, index, window=None):
     window of the masked values. So, we must mask against itself, then look at
     a subset of that result.
 
-    This method should create a new view object as to avoid mutability issues.
+    This method should create a new view object to avoid mutability issues.
 
     Args:
         mask: 1-d boolean ndarray, current mask being used
-        index: int/list/tuple of index(es) to be excluded from processing.
+        index: int/list/tuple of index(es) to be excluded from processing,
             or boolean array
         window: slice object identifying a further subset of the mask
 
@@ -325,7 +325,7 @@ def initialize(dates, observations, fitter_fn, model_window,
                meow_size, peek_size, processing_mask, variogram,
                day_delta=defaults.DAY_DELTA):
     """
-    Determine a good starting point in which to build off of for the
+    Determine a good starting point at which to build off of for the
     subsequent process of change detection, both forward and backward.
 
     Args:
@@ -355,7 +355,7 @@ def initialize(dates, observations, fitter_fn, model_window,
     while model_window.stop + meow_size < period.shape[0]:
         # Finding a sufficient window of time needs to run
         # each iteration because the starting point
-        # will increment if the model isn't stable, incrementing
+        # will increment if the model isn't stable, incrementing only
         # the window stop in lock-step does not guarantee a 1-year+
         # time-range.
         stop = find_time_index(dates, model_window, meow_size)
@@ -455,13 +455,15 @@ def lookforward(dates, observations, model_window, peek_size, fitter_fn,
     # The second step is to update a model until observations that do not
     # fit the model are found.
     log.debug('lookforward initial model window: %s', model_window)
+
     # The fit_window pertains to which locations are used in the model
-    # regression. While the model_window identifies the locations in which
+    # regression, while the model_window identifies the locations in which
     # fitted models apply to. They are not always the same.
     fit_window = model_window
 
     # Initialized for a check at the first iteration.
     models = None
+
     # Simple value to determine if change has occured or not. Change may not
     # have occurred if we reach the end of the time series.
     change = 0
@@ -478,6 +480,7 @@ def lookforward(dates, observations, model_window, peek_size, fitter_fn,
         num_coefs = determine_num_coefs(period[model_window])
 
         peek_window = slice(model_window.stop, model_window.stop + peek_size)
+
         # Used for comparison against fit_span
         model_span = period[model_window.stop - 1] - period[model_window.start]
 
@@ -504,7 +507,7 @@ def lookforward(dates, observations, model_window, peek_size, fitter_fn,
         # More than 24 points
         else:
             # If the number of observations that the current fitted models
-            # expands past a threshold, then we need to fit new ones.
+            # expand past a threshold, then we need to fit new ones.
             # The 1.33 should be parametrized at some point.
             if model_span >= 1.33 * fit_span:
                 log.debug('Retrain models, model_span: %s fit_span: %s',
@@ -531,7 +534,7 @@ def lookforward(dates, observations, model_window, peek_size, fitter_fn,
             comp_rmse = [euclidean_norm(models[idx].residual[closest_indexes]) / 4
                          for idx in detection_bands]
 
-        # Calculate the chang magnitude values for each observation in the
+        # Calculate the change magnitude values for each observation in the
         # peek_window.
         magnitude = change_magnitude(residuals[detection_bands, :],
                                      variogram[detection_bands],
@@ -539,18 +542,20 @@ def lookforward(dates, observations, model_window, peek_size, fitter_fn,
 
         if detect_change(magnitude):
             log.debug('Change detected at: %s', peek_window.start)
-            # change was detected, return to parent method
+
+            # Change was detected, return to parent method
             change = 1
             break
         elif detect_outlier(magnitude[0]):
             log.debug('Outlier detected at: %s', peek_window.start)
-            # keep track of any outliers as they will be excluded from future
+
+            # Keep track of any outliers so they will be excluded from future
             # processing steps
             processing_mask = update_processing_mask(processing_mask,
                                                      peek_window.start)
 
-            # Since only one value was excluded, we shouldn't need to adjust
-            # the model_window, as the location hasn't been used in
+            # Because only one value was excluded, we shouldn't need to adjust
+            # the model_window.  The location hasn't been used in
             # processing yet. So, the next iteration can use the same windows
             # without issue.
             period = dates[processing_mask]
@@ -578,7 +583,7 @@ def lookback(dates, observations, model_window, peek_size, models,
     """
     Special case when there is a gap between the start of a time series model
     and the previous model break point, this can include values that were
-    excluded during the initialization step
+    excluded during the initialization step.
 
     Args:
         dates: list of ordinal days
@@ -590,7 +595,8 @@ def lookback(dates, observations, model_window, peek_size, models,
             of the time series if there wasn't one
         processing_mask: index values that are currently being masked out from
             processing
-        variogram:
+        variogram: 1-d array of variogram values to compare against for the
+            normalization factor
         detection_bands: subset of spectral bands to use to detect change
 
     Returns:
@@ -646,7 +652,7 @@ def lookback(dates, observations, model_window, peek_size, models,
             period = dates[processing_mask]
             spectral_obs = observations[:, processing_mask]
 
-            # Since this location was used in determining the model_window
+            # Because this location was used in determining the model_window
             # passed in, we must now account for removing it.
             model_window = slice(model_window.start - 1, model_window.stop - 1)
             continue

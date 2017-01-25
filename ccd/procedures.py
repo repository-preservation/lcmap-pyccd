@@ -1,4 +1,4 @@
-"""Functions for providing the over-arching methodology. Tieing together the
+"""Functions for providing the over-arching methodology. Tying together the
 individual components that make-up the change detection process.
 
 The results of this process is a list-of-lists of change models that correspond
@@ -9,10 +9,10 @@ Pre-processing routines are essential to, but distinct from, the core change
 detection algorithm. See the `ccd.qa` for more details related to this
 step.
 
-For more information please refer to the `CCDC Algorithm Description Document`.
+For more information please refer to the `pyccd Algorithm Description Document`.
 
 .. _Algorithm Description Document:
-   http://landsat.usgs.gov/documents/ccdc_add.pdf
+   https://drive.google.com/drive/folders/0BzELHvbrg1pDREJlTF8xOHBZbEU
 """
 
 import numpy as np
@@ -160,14 +160,14 @@ def standard_procedure(dates, observations, fitter_fn, quality,
     """
     Runs the core change detection algorithm.
 
-    Step 1: initialize -- Find an initial stable time-frame to build off of.
+    Step 1: initialize -- Find an initial stable time-frame to build from.
 
     Step 2: lookback -- The initlize step may have iterated the start of the
     model past the previous break point. If so then we need too look back at
-    previous values to see if they can be included with the new
+    previous values to see if they can be included within the new
     initialized model.
 
-    Step 3: catch -- Fit a general model to values that may have skipped
+    Step 3: catch -- Fit a general model to values that may have been skipped
     over by the previous steps.
 
     Step 4: lookforward -- Expand the time-frame until a change is detected.
@@ -202,9 +202,9 @@ def standard_procedure(dates, observations, fitter_fn, quality,
               dates.shape[0], observations.shape, meow_size, peek_size)
 
     # First we need to filter the observations based on the spectra values
-    # and qa information and convert kelvin to celsius
+    # and qa information and convert kelvin to celsius.
     # We then persist the processing mask through subsequent operations as
-    # additional data points get identified to be excluded from processing
+    # additional data points get identified to be excluded from processing.
     observations[thermal_idx] = kelvin_to_celsius(observations[thermal_idx])
 
     # There's two ways to handle the boolean mask with the windows in
@@ -214,7 +214,7 @@ def standard_procedure(dates, observations, fitter_fn, quality,
     # 2. Apply the window to the data and use the mask only for that window
     # Option 2 allows window values to be applied directly to the input data.
     # But now you must compensate when you want to have certain sized windows
-    # and brings other complications in the iterative steps.
+    # which brings other complications in the iterative steps.
 
     # The masked module from numpy does not seem to really add anything of
     # benefit to what we need to do, plus scikit may still be incompatible
@@ -235,8 +235,8 @@ def standard_procedure(dates, observations, fitter_fn, quality,
     model_window = slice(0, meow_size)
     previous_end = 0
 
-    # Calculate the variogram/madogram that used in subsequent processing
-    # steps. See algorithm documentation for further information.
+    # Calculate the variogram/madogram that will be used in subsequent
+    # processing steps. See algorithm documentation for further information.
     variogram = calculate_variogram(observations[:, processing_mask])
     log.debug('Variogram values: %s', variogram)
 

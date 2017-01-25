@@ -3,7 +3,7 @@ requires configuration or services should import app and obtain the
 configuration or service from here.
 
 app.py enables a very basic but sufficient form of loose coupling
-by setting names of services & configuration once and allowing other modules
+by setting names of services & configuration once, then allowing other modules
 that require these services/information to obtain them by name rather than
 directly importing or instantiating.
 
@@ -43,22 +43,18 @@ class Defaults(dict):
 def numpy_hashkey(array):
     return hashlib.sha1(array).hexdigest()
 
-############################
 # Configuration/parameter defaults
-############################
 defaults = Defaults(os.path.join(os.path.dirname(__file__), 'parameters.yaml'))
 
 
-############################
 # Logging system
-############################
-# to use the logging from any module:
+#
+# To use the logging from any module:
 # import app
 # logger = app.logging.getLogger(__name__)
 #
 # To alter where log messages go or how they are represented,
-# configure the
-# logging system below.
+# configure the logging system below.
 # iso8601 date format
 __format = '%(asctime)s %(module)-10s::%(funcName)-20s - [%(lineno)-3d]%(message)s'
 logging.basicConfig(stream=sys.stdout,
@@ -67,7 +63,7 @@ logging.basicConfig(stream=sys.stdout,
                     datefmt='%Y-%m-%d %H:%M:%S')
 
 
-# configure caching
+# Configure caching
 cache = LRUCache(maxsize=2000)
 
 # This is a string.fully.qualified.reference to the fitter function.

@@ -113,9 +113,9 @@ def detect(dates, blues, greens, reds, nirs,
 
     Args:
         dates:    1d-array or list of ordinal date values
-        blues:    1d-array or list of red band values
+        blues:    1d-array or list of blue band values
         greens:   1d-array or list of green band values
-        reds:     1d-array or list of blue band values
+        reds:     1d-array or list of red band values
         nirs:     1d-array or list of nir band values
         swir1s:   1d-array or list of swir1 band values
         swir2s:   1d-array or list of swir2 band values

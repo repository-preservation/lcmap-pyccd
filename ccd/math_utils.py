@@ -132,9 +132,10 @@ def kelvin_to_celsius(thermals, scale=10):
     """
     Convert kelvin values to celsius
 
-    L2 processing for the thermal band (known as Brightness Temperature) is initial done in
-    kelvin and has been scaled by a factor of 10 already, in the interest of keeping the values
-    in integer space, a further factor of 10 is calculated.
+    L2 processing for the thermal band (known as Brightness Temperature) is
+    initially done in kelvin and has been scaled by a factor of 10 already,
+    in the interest of keeping the values in integer space, a further factor
+    of 10 is calculated.
 
     scaled C = K * 10 - 27315
     unscaled C = K / 10 - 273.15

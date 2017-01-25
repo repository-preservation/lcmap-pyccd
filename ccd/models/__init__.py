@@ -3,7 +3,7 @@ from collections import namedtuple
 # TODO: establish standardize object for handling models used for general
 # regression purposes. This will truly make the code much more modular.
 
-# Since scipy models don't hold information on residuals or rmse, we should
+# Because scipy models don't hold information on residuals or rmse, we should
 # carry them forward with the models themselves, so we don't have to
 # recalculate them all the time
 # TODO: give better names to avoid model.model.predict nonsense
@@ -17,7 +17,7 @@ FittedModel = namedtuple('FittedModel', ['fitted_model', 'residual', 'rmse'])
 #               observation_count: int,
 #               change_probability: float,
 #               num_coefficients: int,
-#               red:      {magnitude: float,
+#               blue:     {magnitude: float,
 #                          rmse: float,
 #                          coefficients: (float, float, ...),
 #                          intercept: float},
@@ -25,7 +25,7 @@ FittedModel = namedtuple('FittedModel', ['fitted_model', 'residual', 'rmse'])
 #                          rmse: float,
 #                          coefficients: (float, float, ...),
 #                          intercept: float},
-#               blue:     {magnitude: float,
+#               red:      {magnitude: float,
 #                          rmse: float,
 #                          coefficients: (float, float, ...),
 #                          intercept: float},
