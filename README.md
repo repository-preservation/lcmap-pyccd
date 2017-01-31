@@ -50,6 +50,7 @@ pyccd exists to provide the simplest possible implementation of ccd.
                   intercept: float}}
                  ]
 }
+
 ```
 
 ## Installing
