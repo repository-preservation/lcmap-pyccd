@@ -1,7 +1,7 @@
 import numpy as np
 import datetime
 import aniso8601
-import ccd.app as app
+from ccd import app
 
 
 log = app.logging.getLogger(__name__)
@@ -97,19 +97,26 @@ def sinusoid(times, frequency=1, amplitude=0.1, seed=42):
     return np.array(scaled_ys)
 
 
-def sample_sinusoid(time_range, bands = 6):
+def sample_sinusoid(time_range, bands=7):
     """Produce N-bands of data with a sample for each moment in time range"""
     times = np.array(acquisition_delta(time_range))
     observations = np.array([sinusoid(times) for _ in range(bands)])
     return times, observations
 
 
-def line(times, value = 1000):
+def line(times, value=300):
     return np.full(len(times), value, dtype=np.int16)
 
 
-def sample_line(time_range, bands = 6):
+def sample_line(time_range, bands=7):
     """Produce N-bands of data with a sample for each moment in time range"""
     times = np.array(acquisition_delta(time_range))
     observations = np.array([line(times) for _ in range(bands)])
     return times, observations
+
+
+# sample1 = read_data("test/resources/sample_1.csv")
+# sample2 = read_data("test/resources/sample_2.csv")
+# persistent_snow = read_data("test/resources/sample_WA_grid08_row9_col2267_persistent_snow.csv")
+# standard_procedure = read_data("test/resources/sample_WA_grid08_row999_col1_normal.csv")
+# fmask_fail = read_data("test/resources/sample_WA_grid08_row12_col2265_fmask_fail.csv")

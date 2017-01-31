@@ -4,8 +4,6 @@ from setuptools import setup
 # To use a consistent encoding
 from codecs import open
 from os import path
-from ccd import __version__ as __version
-from ccd import __name__ as __name
 
 here = path.abspath(path.dirname(__file__))
 
@@ -13,20 +11,27 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
+# bring in __version__ and __name from version.py for install.
+with open(path.join(here, 'ccd', 'version.py')) as h:
+    exec(h.read())
+
 setup(
 
+    # __name is defined in version.py
     name=__name,
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version=__version,
+
+    # __version__ is defined in version.py
+    version=__version__,
 
     description='Python implementation of change detection',
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://github.com/davidvhill/pyccd',
+    url='https://github.com/usgs-eros/lcmap-pyccd',
 
     # Author details
     author='',
@@ -50,10 +55,10 @@ setup(
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
+        # 'Programming Language :: Python :: 2',
+        # 'Programming Language :: Python :: 2.7',
+        # 'Programming Language :: Python :: 3',
+        # 'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
     ],
@@ -79,7 +84,8 @@ setup(
                       'scikit-learn>=0.18',
                       'cachetools>=2.0.0',
                       'click>=6.6',
-                      'click-plugins>=1.0.3'],
+                      'click-plugins>=1.0.3',
+                      'PyYAML>=3.12'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
@@ -93,6 +99,7 @@ setup(
                  'pytest-profiling>=1.1.1',
                  'gprof2dot>=2015.12.1',
                  'pytest-watch>=4.1.0'],
+        'dev': ['jupyter',],
     },
 
     setup_requires=['pytest-runner', 'pip'],
@@ -104,7 +111,10 @@ setup(
     # package_data={
     #    'sample': ['package_data.dat'],
     # },
-
+    package_data={
+        'ccd': ['parameters.yaml'],
+    },
+    
     # Although 'package_data' is the preferred approach, in some case you may
     # need to place data files outside of your packages. See:
     # http://docs.python.org/3.4/distutils/setupscript.html#installing-additional-files # noqa

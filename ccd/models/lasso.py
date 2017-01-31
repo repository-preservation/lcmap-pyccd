@@ -1,7 +1,10 @@
-from sklearn import linear_model
+from sklearn import linear_model, metrics
 import numpy as np
-from cachetools import cached
-from cachetools import LRUCache
+from cachetools import cached, LRUCache
+
+from ccd.models import FittedModel
+from ccd.math_utils import calc_rmse
+from ccd.app import defaults
 
 cache = LRUCache(maxsize=1000)
 
@@ -10,34 +13,50 @@ def __coefficient_cache_key(observation_dates):
     return tuple(observation_dates)
 
 
-@cached(cache=cache, key=__coefficient_cache_key)
-def coefficient_matrix(observation_dates):
-    """c1 * sin(t/365.25) + c2 * cos(t/365.25) + c3*t + c4 * 1
+# @cached(cache=cache, key=__coefficient_cache_key)
+def coefficient_matrix(dates, num_coefficients=4,
+                       avg_days_yr=defaults.AVG_DAYS_YR):
+    """
+    Fourier transform function to be used for the matrix of inputs for
+    model fitting
 
     Args:
-        observation_dates: list of ordinal dates
+        dates: list of ordinal dates
+        num_coefficients: how many coefficients to use to build the matrix
 
     Returns:
         Populated numpy array with coefficient values
     """
-    # c1 = np.array([np.sin(t/365.25) for t in observation_dates])
-    # c2 = np.array([np.cos(t/365.25) for t in observation_dates])
-    # c3 = np.array([t for t in observation_dates])
-    # c4 = np.ones(len(c1))
+    w = 2 * np.pi / avg_days_yr
 
-    matrix = np.ones(shape=(len(observation_dates), 4))
-    matrix[:, 0] = [np.sin(2*np.pi*t/365.25) for t in observation_dates]
-    matrix[:, 1] = [np.cos(2*np.pi*t/365.25) for t in observation_dates]
-    matrix[:, 2] = [t for t in observation_dates]
+    matrix = np.zeros(shape=(len(dates), 7), order='F')
+
+    matrix[:, 0] = dates
+    matrix[:, 1] = np.cos(w * dates)
+    matrix[:, 2] = np.sin(w * dates)
+
+    if num_coefficients == 6:
+        matrix[:, 3] = np.cos(2 * w * dates)
+        matrix[:, 4] = np.sin(2 * w * dates)
+
+    if num_coefficients == 8:
+        matrix[:, 5] = np.cos(3 * w * dates)
+        matrix[:, 6] = np.sin(3 * w * dates)
+
     return matrix
 
 
-def fitted_model(observation_dates, observations):
+def fitted_model(dates, spectra_obs, num_coefficients=4,
+                 max_iter=defaults.LASSO_MAX_ITER):
     """Create a fully fitted lasso model.
 
     Args:
-        observation_dates: list or ordinal observation dates
-        observations: list of values corresponding to observation_dates
+        dates: list or ordinal observation dates
+        spectra_obs: list of values corresponding to the observation dates for
+            a single spectral band
+        num_coefficients: how many coefficients to use for the fit
+        max_iter: maximum number of iterations that the coefficients
+            undergo to find the convergence point.
 
     Returns:
         sklearn.linear_model.Lasso().fit(observation_dates, observations)
@@ -45,6 +64,18 @@ def fitted_model(observation_dates, observations):
     Example:
         fitted_model(dates, obs).predict(...)
     """
-    # pmodel = partial_model(observation_dates)
-    lasso = linear_model.Lasso(alpha=0.1)
-    return lasso.fit(coefficient_matrix(observation_dates), observations)
+    coef_matrix = coefficient_matrix(dates, num_coefficients)
+
+    lasso = linear_model.Lasso(max_iter=max_iter)
+    model = lasso.fit(coef_matrix, spectra_obs)
+
+    predictions = model.predict(coef_matrix)
+    rmse, residuals = calc_rmse(spectra_obs, predictions)
+
+    return FittedModel(fitted_model=model, rmse=rmse, residual=residuals)
+
+
+def predict(model, dates):
+    coef_matrix = coefficient_matrix(dates, 8)
+
+    return model.fitted_model.predict(coef_matrix)

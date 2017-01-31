@@ -1,15 +1,15 @@
-from ccd.change import detect as __detect
-from ccd.filter import preprocess as __preprocess
+import time
+
+from ccd.procedures import fit_procedure as __determine_fit_procedure
 import numpy as np
 from ccd import app
 import importlib
+from .version import __version__
+from .version import __algorithm__
+from .version import __name
 
-# Versions should comply with PEP440.
-__version__ = '1.0.0.a1'
-__name__ = 'pyccd'
-__algorithm__ = ':'.join([__name__, __version__])
-
-logger = app.logging.getLogger(__name__)
+logger = app.logging.getLogger(__name)
+defaults = app.defaults
 
 
 def attr_from_str(value):
@@ -30,86 +30,61 @@ def attr_from_str(value):
         return None
 
 
-def __result_to_detection(change_tuple):
-    """Transforms results of change.detect to the detections dict.
-
-    Args: A tuple as returned from change.detect
-            (start_day, end_day, models, errors_, magnitudes_)
-
-    Returns: A dict representing a change detection
-
-        {algorithm:'pyccd:x.x.x',
-         start_day:int,
-         end_day:int, observation_count:int,
-         red:      {magnitudes:float,
-                    rmse:float,
-                    coefficients:(float, float, ...),
-                    intercept:float},
-         green:    {magnitudes:float,
-                    rmse:float,
-                    coefficients:(float, float, ...),
-                    intercept:float},
-         blue:     {magnitudes:float,
-                    rmse:float,
-                    coefficients:(float, float, ...),
-                    intercept:float},
-         nir:     {magnitudes:float,
-                    rmse:float,
-                    coefficients:(float, float, ...),
-                    intercept:float},
-         swir1:   {magnitudes:float,
-                    rmse:float,
-                    coefficients:(float, float, ...),
-                    intercept:float},
-         swir2:    {magnitudes:float,
-                    rmse:float,
-                    coefficients:(float, float, ...),
-                    intercept:float},
-        }
+def __attach_metadata(procedure_results, procedure):
     """
-    spectra = ((0, 'red'), (1, 'green'), (2, 'blue'), (3, 'nir'),
-               (4, 'swir1'), (5, 'swir2'))
+    Attach some information on the algorithm version, what procedure was used,
+    and which inputs were used
 
-    # get the start and end time for each detection period
-    detection = {'algorithm': __algorithm__,
-                 'start_day': int(change_tuple[0]),
-                 'end_day': int(change_tuple[1]),
-                 'observation_count': None,  # dummy value for now
-                 'category': None}           # dummy value for now
+    Returns:
+        A dict representing the change detection results
 
-    # gather the results for each spectra
-    for ix, name in spectra:
-        model, error, mags = change_tuple[2], change_tuple[3], change_tuple[4]
-        _band = {'magnitude': float(mags[ix]),
-                 'rmse': float(error[ix]),
-                 'coefficients': tuple([float(x) for x in model[ix].coef_]),
-                 'intercept': float(model[ix].intercept_)}
-
-        # assign _band to the subdict
-        detection[name] = _band
-
-    # build the namedtuple from the dict and return
-    return detection
-
-
-def __as_detections(detect_tuple):
-    """Transforms results of change.detect to the detections namedtuple.
-
-    Args: A tuple of dicts as returned from change.detect
-        (
-            (start_day, end_day, models, errors_, magnitudes_),
-            (start_day, end_day, models, errors_, magnitudes_),
-            (start_day, end_day, models, errors_, magnitudes_)
-        )
-
-    Returns: A tuple of dicts representing change detections
-        (
-            {},{},{}}
-        )
+    {algorithm: 'pyccd:x.x.x',
+     processing_mask: (bool, bool, ...),
+     procedure: string,
+     change_models: [
+         {start_day: int,
+          end_day: int,
+          break_day: int,
+          observation_count: int,
+          change_probability: float,
+          num_coefficients: int,
+          blue:      {magnitude: float,
+                     rmse: float,
+                     coefficients: (float, float, ...),
+                     intercept: float},
+          green:    {magnitude: float,
+                     rmse: float,
+                     coefficients: (float, float, ...),
+                     intercept: float},
+          red:     {magnitude: float,
+                     rmse: float,
+                     coefficients: (float, float, ...),
+                     intercept: float},
+          nir:      {magnitude: float,
+                     rmse: float,
+                     coefficients: (float, float, ...),
+                     intercept: float},
+          swir1:    {magnitude: float,
+                     rmse: float,
+                     coefficients: (float, float, ...),
+                     intercept: float},
+          swir2:    {magnitude: float,
+                     rmse: float,
+                     coefficients: (float, float, ...),
+                     intercept: float},
+          thermal:  {magnitude: float,
+                     rmse: float,
+                     coefficients: (float, float, ...),
+                     intercept: float}}
+                    ]
+    }
     """
-    # iterate over each detection, build the result and return as tuple of
-    # dicts
-    return tuple([__result_to_detection(t) for t in detect_tuple])
+    change_models, processing_mask = procedure_results
+
+    return {'algorithm': __algorithm__,
+            'processing_mask': processing_mask,
+            'procedure': procedure.__name__,
+            'change_models': change_models}
 
 
 def __split_dates_spectra(matrix):
@@ -117,38 +92,63 @@ def __split_dates_spectra(matrix):
     return matrix[0], matrix[1:7]
 
 
-def detect(dates, reds, greens, blues, nirs,
-           swir1s, swir2s, thermals, qas, preprocess=True):
+def __sort_dates(dates):
+    """ Sort the values chronologically """
+    return np.argsort(dates)
+
+
+def __unique_indices(dates):
+    """ Find the index locations of the first occurrence of a value"""
+    _, indices = np.unique(dates, return_index=True)
+    return indices
+
+
+def detect(dates, blues, greens, reds, nirs,
+           swir1s, swir2s, thermals, quality,
+           duplicate_dates=True):
     """Entry point call to detect change
 
+    No filtering up-front as different procedures may do things
+    differently
+
     Args:
-        dates:    numpy array of ordinal date values
-        reds:     numpy array of red band values
-        greens:   numpy array of green band values
-        blues:    numpy array of blue band values
-        nirs:     numpy array of nir band values
-        swir1s:   numpy array of swir1 band values
-        swir2s:   numpy array of swir2 band values
-        thermals: numpy array of thermal band values
-        qas:      numpy array of qa band values
+        dates:    1d-array or list of ordinal date values
+        blues:    1d-array or list of blue band values
+        greens:   1d-array or list of green band values
+        reds:     1d-array or list of red band values
+        nirs:     1d-array or list of nir band values
+        swir1s:   1d-array or list of swir1 band values
+        swir2s:   1d-array or list of swir2 band values
+        thermals: 1d-array or list of thermal band values
+        quality:  1d-array or list of qa band values
+        duplicate_dates: boolean value if the input data is suspected of having
+            multiple observations for a single date, many to one, this will
+            also sort based on the ordinal date value as well
 
     Returns:
         Tuple of ccd.detections namedtuples
     """
+    t1 = time.time()
+    dates = np.asarray(dates)
 
-    __matrix = np.array([dates, reds, greens,
-                         blues, nirs, swir1s,
-                         swir2s, thermals, qas])
+    spectra = np.stack((blues, greens,
+                        reds, nirs, swir1s,
+                        swir2s, thermals))
 
-    # get the spectra separately so we can call detect
-    if preprocess is True:
-        __dates, __spectra = __split_dates_spectra(__preprocess(__matrix))
-    else:
-        __dates, __spectra = __split_dates_spectra(__matrix)
+    if duplicate_dates:
+        indices = __unique_indices(dates)
+        dates = dates[indices]
+        spectra = spectra[:, indices]
+        quality = quality[indices]
 
-    # load the fitter_fn from app.FITTER_FN
-    __fitter_fn = attr_from_str(app.FITTER_FN)
+    # load the fitter_fn
+    fitter_fn = attr_from_str(defaults.FITTER_FN)
+
+    # Determine which procedure to use for the detection
+    procedure = __determine_fit_procedure(quality)
+
+    results = procedure(dates, spectra, fitter_fn, quality)
+    logger.debug('Total time for algorithm: %s', time.time() - t1)
 
     # call detect and return results as the detections namedtuple
-    return __as_detections(__detect(__dates, __spectra, __fitter_fn,
-                                    app.MEOW_SIZE, app.PEEK_SIZE))
+    return __attach_metadata(results, procedure)
