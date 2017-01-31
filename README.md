@@ -4,46 +4,52 @@ pyccd exists to provide the simplest possible implementation of ccd.
 ## Using PyCCD
 ```python
 >>> import ccd
->>> results = ccd.detect(dates, reds, greens, blues, nirs, swir1s, swir2s, thermals, qas)
+>>> results = ccd.detect(dates, blues, greens, reds, nirs, swir1s, swir2s, thermals, qas)
 >>>
 >>> type(results)
-<class 'tuple'>
->>>
->>> type(results[0])
 <class 'dict'>
 >>>
 >>> results
-(
-{algorithm:'pyccd:x.x.x'
- start_day:int,
- end_day:int,
- observation_count:int,
- red:      {magnitude:float,
-            rmse:float,
-            coefficients:(float, float, ...),
-            intercept:float},
- green:    {magnitude:float,
-            rmse:float,
-            coefficients:(float, float, ...),
-            intercept:float},
- blue:     {magnitude:float,
-            rmse:float,
-            coefficients:(float, float, ...),
-            intercept:float},
- nir:      {magnitude:float,
-            rmse:float,
-            coefficients:(float, float, ...),
-            intercept:float},
-swir1:    {magnitude:float,
-           rmse:float,
-           coefficients:(float, float, ...),
-           intercept:float},
-swir2:    {magnitude:float,
-           rmse:float,
-           coefficients:(float, float, ...),
-           intercept:float}
-},
-)
+{algorithm: 'pyccd:x.x.x',
+ processing_mask: (bool, bool, ...),
+ procedure: string,
+ change_models: [
+     {start_day: int,
+      end_day: int,
+      break_day: int,
+      observation_count: int,
+      change_probability: float,
+      num_coefficients: int,
+      blue:      {magnitude: float,
+                  rmse: float,
+                  coefficients: (float, float, ...),
+                  intercept: float},
+      green:     {magnitude: float,
+                  rmse: float,
+                  coefficients: (float, float, ...),
+                  intercept: float},
+      red:       {magnitude: float,
+                  rmse: float,
+                  coefficients: (float, float, ...),
+                  intercept: float},
+      nir:       {magnitude: float,
+                  rmse: float,
+                  coefficients: (float, float, ...),
+                  intercept: float},
+      swir1:     {magnitude: float,
+                  rmse: float,
+                  coefficients: (float, float, ...),
+                  intercept: float},
+      swir2:     {magnitude: float,
+                  rmse: float,
+                  coefficients: (float, float, ...),
+                  intercept: float},
+      thermal:   {magnitude: float,
+                  rmse: float,
+                  coefficients: (float, float, ...),
+                  intercept: float}}
+                 ]
+}
 ```
 
 ## Installing
