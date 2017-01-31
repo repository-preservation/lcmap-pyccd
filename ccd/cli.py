@@ -17,6 +17,7 @@ import click
 import json
 import numpy as np
 import time
+import timeit
 
 
 logger = app.logging.getLogger(__name__)
@@ -40,9 +41,9 @@ def sample(path, format):
 
     logger.debug("Building change model...")
 
-    t1 = time.time()
+    start_time = timeit.default_timer()
     results = ccd.detect(*samples)
-    print ("ElapsedTime: ", "%.3f"%(time.time() - t1))
+    print("ElapsedTime: ", round((timeit.default_timer() - start_time), 3))
 
     if format == 'table':
         click.echo(results_to_table(results))
