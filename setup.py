@@ -27,7 +27,7 @@ setup(
     # __version__ is defined in version.py
     version=__version__,
 
-    description='Python implementation of change detection',
+    description='Python implementation of Continuous Change Detection',
     long_description=long_description,
 
     # The project's main homepage.
@@ -38,7 +38,7 @@ setup(
     author_email='',
 
     # Choose your license
-    license='MIT',
+    license='',
 
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
@@ -46,12 +46,12 @@ setup(
         #   3 - Alpha
         #   4 - Beta
         #   5 - Production/Stable
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
 
         # Indicate who your project is intended for
         'Intended Audience :: Developers',
         # Pick your license as you wish (should match "license" above)
-        'License :: OSI Approved :: MIT License',
+        'License :: OSI Approved :: ',
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
@@ -111,9 +111,9 @@ setup(
     # package_data={
     #    'sample': ['package_data.dat'],
     # },
-    package_data={
-        'ccd': ['parameters.yaml'],
-    },
+    # package_data={
+    #     'ccd': ['parameters.yaml'],
+    # },
     
     # Although 'package_data' is the preferred approach, in some case you may
     # need to place data files outside of your packages. See:
@@ -125,9 +125,9 @@ setup(
     # "scripts" keyword. Entry points provide cross-platform support and allow
     # pip to create the appropriate form of executable for the target platform.
     # entry_points={'console_scripts': ['pyccd-detect=ccd.cli:detect', ], },
-    entry_points='''
-        [core_package.cli_plugins]
-        sample=ccd.cli:sample
-        another_subcommand=ccd.cli:another_subcommand
-    ''',
+    # entry_points='''
+    #     [core_package.cli_plugins]
+    #     sample=ccd.cli:sample
+    #     another_subcommand=ccd.cli:another_subcommand
+    # ''',
 )
