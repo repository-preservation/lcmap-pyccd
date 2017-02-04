@@ -5,9 +5,9 @@ python:
   - "3.5"
 
 install:
-  - "pip install .[test]"
+  - "pip install USGS-EROS/lcmap-pyccd/[test]"
 
-script: python -m pytest
+script: pytest
 
 notifications:
   slack:
