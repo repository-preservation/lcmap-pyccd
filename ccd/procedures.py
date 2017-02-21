@@ -53,7 +53,8 @@ def fit_procedure(quality):
 
 
 def permanent_snow_procedure(dates, observations, fitter_fn, quality,
-                             meow_size=defaults.MEOW_SIZE):
+                             meow_size=defaults.MEOW_SIZE,
+                             curve_qa=defaults.CURVE_QA['PERSIST_SNOW']):
     """
     Snow procedure for when there is a significant amount snow represented
     in the quality information
@@ -98,13 +99,14 @@ def permanent_snow_procedure(dates, observations, fitter_fn, quality,
                                     magnitudes=magnitudes,
                                     observation_count=np.sum(processing_mask),
                                     change_probability=0,
-                                    num_coefficients=4)
+                                    curve_qa=curve_qa)
 
     return (result,), processing_mask
 
 
 def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
-                                 meow_size=defaults.MEOW_SIZE):
+                                 meow_size=defaults.MEOW_SIZE,
+                                 curve_qa=defaults.CURVE_QA['INSUF_CLEAR']):
     """
     insufficient clear procedure for when there is an insufficient quality
     observations
@@ -148,7 +150,7 @@ def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
                                     magnitudes=magnitudes,
                                     observation_count=np.sum(processing_mask),
                                     change_probability=0,
-                                    num_coefficients=4)
+                                    curve_qa=curve_qa)
 
     return (result,), processing_mask
 
@@ -156,7 +158,8 @@ def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
 def standard_procedure(dates, observations, fitter_fn, quality,
                        meow_size=defaults.MEOW_SIZE,
                        peek_size=defaults.PEEK_SIZE,
-                       thermal_idx=defaults.THERMAL_IDX):
+                       thermal_idx=defaults.THERMAL_IDX,
+                       curve_qa=defaults.CURVE_QA):
     """
     Runs the core change detection algorithm.
 
@@ -235,6 +238,10 @@ def standard_procedure(dates, observations, fitter_fn, quality,
     model_window = slice(0, meow_size)
     previous_end = 0
 
+    # Only capture general curve at the beginning, and not in the middle of
+    # two stable time segments
+    start = True
+
     # Calculate the variogram/madogram that will be used in subsequent
     # processing steps. See algorithm documentation for further information.
     variogram = calculate_variogram(observations[:, processing_mask])
@@ -273,12 +280,14 @@ def standard_procedure(dates, observations, fitter_fn, quality,
         # Step 3: catch
         # If we have moved > peek_size from the previous break point
         # then we fit a generalized model to those points.
-        if model_window.start - previous_end > peek_size:
-                results.append(catch(dates,
-                                     observations,
-                                     fitter_fn,
-                                     processing_mask,
-                                     slice(previous_end, model_window.start)))
+        if model_window.start - previous_end > peek_size and start is True:
+            results.append(catch(dates,
+                                 observations,
+                                 fitter_fn,
+                                 processing_mask,
+                                 slice(previous_end, model_window.start),
+                                 curve_qa=curve_qa['START']))
+            start = False
 
         # Step 4: lookforward
         log.debug('Extend change model')
@@ -304,7 +313,8 @@ def standard_procedure(dates, observations, fitter_fn, quality,
     if previous_end + peek_size < dates[processing_mask].shape[0]:
         model_window = slice(previous_end, dates[processing_mask].shape[0])
         results.append(catch(dates, observations, fitter_fn,
-                             processing_mask, model_window))
+                             processing_mask, model_window,
+                             curve_qa=curve_qa['END']))
 
     log.debug("change detection complete")
 
