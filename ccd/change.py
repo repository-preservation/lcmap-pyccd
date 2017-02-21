@@ -572,7 +572,7 @@ def lookforward(dates, observations, model_window, peek_size, fitter_fn,
                                     observation_count=(
                                     model_window.stop - model_window.start),
                                     change_probability=change,
-                                    num_coefficients=num_coefs)
+                                    curve_qa=num_coefs)
 
     return result, processing_mask, model_window
 
@@ -663,7 +663,7 @@ def lookback(dates, observations, model_window, peek_size, models,
     return model_window, processing_mask
 
 
-def catch(dates, observations, fitter_fn, processing_mask, model_window):
+def catch(dates, observations, fitter_fn, processing_mask, model_window, curve_qa):
     """
     Handle special cases where general models just need to be fitted and return
     their results.
@@ -706,6 +706,6 @@ def catch(dates, observations, fitter_fn, processing_mask, model_window):
                                     observation_count=(
                                         model_window.stop - model_window.start),
                                     change_probability=0,
-                                    num_coefficients=4)
+                                    curve_qa=curve_qa)
 
     return result

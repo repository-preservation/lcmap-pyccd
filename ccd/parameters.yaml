@@ -52,6 +52,15 @@ QA_SNOW: 3
 QA_CLOUD: 4
 
 ############################
+# Representative values for the curve QA
+############################
+CURVE_QA:
+  PERSIST_SNOW: 54
+  INSUF_CLEAR: 44
+  START: 14
+  END: 24
+
+############################
 # Threshold values used
 ############################
 CLEAR_OBSERVATION_THRESHOLD: 3
