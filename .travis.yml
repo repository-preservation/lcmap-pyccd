@@ -21,7 +21,6 @@ deploy:
   password:
     secure: F/24kis1e5y35lX//3f9ASpJFVVrXIOn0pOYY008brOhNU5joT6BY0urW6QPbb7nocR4iRE+SVAH9DX+x8SnVwsvEonts46QNakaUc12f15EDkSdX5b1SOwbDC/s44BDdM8f3oFP46C6myqqHJ/5qKJpfmJI8Dy3C6xzB6ZhY5eMaLuUlNkKS+D9FRLNNT3zMqwVFeOo9+M/welCSWoOh9YMZom1ZWAbH6k2EFa8HRed9kF+EISZ+lJgT+A6gFY7O3nlHCN2HiRXb3JqgVsb4ZQ290FEAP8F8OUK1JfiwLL51qzUsKC2Fbg+jHy0sHsSanOwvrGwe9yN0vaU4yi0Ob1P2i6fZzoyKGO95x5bkIGPQyiuLMiwFUPE4M5dPUsxbtpNAEv8W4K1aPYiRx6uBxeI/ul5aQ4MZ5XrcaAX7t4cGfqoQilJmPeeStvx0Qvtr1ikPivrQKNW7GTOZs179dIe+u9F/qMbxpIsf4cZlY4b+AfXtWjvpILKoVY/v16kK3CYgc8JJFRiPFazyK7JzY3dQNH75sWYcN2EV9d0Ikc2Foko7vv0P09xoT1gF5HxpRQaZ6bKNOF4smIhIDOZAFFieQV1moZUYqzS/ll/7VmnNqRo9d5mL19iIGrSItn8gidjqyzSiPwL4c+QOjR+zIC7EMDSs71zM6xA5boQo7Y=
   on:
-    tags: true
     distributions: sdist bdist_wheel
     repo: USGS-EROS/lcmap-pyccd
     branch: master
