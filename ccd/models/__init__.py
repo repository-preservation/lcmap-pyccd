@@ -55,7 +55,7 @@ ChangeModel = namedtuple('ChangeModel', ['start_day',
                                          'break_day',
                                          'observation_count',
                                          'change_probability',
-                                         'num_coefficients',
+                                         'curve_qa',
                                          'blue',
                                          'green',
                                          'red',
@@ -67,7 +67,7 @@ ChangeModel = namedtuple('ChangeModel', ['start_day',
 
 
 def results_to_changemodel(fitted_models, start_day, end_day, break_day, magnitudes,
-                           observation_count, change_probability, num_coefficients):
+                           observation_count, change_probability, curve_qa):
     """
     Helper method to consolidate results into a concise, self documenting data structure
 
@@ -78,7 +78,7 @@ def results_to_changemodel(fitted_models, start_day, end_day, break_day, magnitu
         break_day:
         observation_count:
         change_probability:
-        num_coefficients:
+        curve_qa:
 
     Returns:
 
@@ -95,7 +95,7 @@ def results_to_changemodel(fitted_models, start_day, end_day, break_day, magnitu
                        break_day=break_day,
                        observation_count=observation_count,
                        change_probability=change_probability,
-                       num_coefficients=num_coefficients,
+                       curve_qa=curve_qa,
                        blue=spectral_models[0],
                        green=spectral_models[1],
                        red=spectral_models[2],
