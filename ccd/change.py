@@ -568,7 +568,7 @@ def lookforward(dates, observations, model_window, peek_size, fitter_fn,
                                     start_day=period[model_window.start],
                                     end_day=period[model_window.stop - 1],
                                     break_day=period[peek_window.start],
-                                    magnitudes=magnitude,
+                                    magnitudes=np.median(residuals, axis=1),
                                     observation_count=(
                                     model_window.stop - model_window.start),
                                     change_probability=change,

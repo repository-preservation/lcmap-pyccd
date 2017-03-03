@@ -47,7 +47,7 @@ def __attach_metadata(procedure_results, procedure):
           break_day: int,
           observation_count: int,
           change_probability: float,
-          num_coefficients: int,
+          curve_qa: int,
           blue:      {magnitude: float,
                      rmse: float,
                      coefficients: (float, float, ...),
