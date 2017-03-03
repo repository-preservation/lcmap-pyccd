@@ -16,7 +16,7 @@ FittedModel = namedtuple('FittedModel', ['fitted_model', 'residual', 'rmse'])
 #               break_day: int,
 #               observation_count: int,
 #               change_probability: float,
-#               num_coefficients: int,
+#               curve_qa: int,
 #               blue:     {magnitude: float,
 #                          rmse: float,
 #                          coefficients: (float, float, ...),
@@ -48,7 +48,8 @@ FittedModel = namedtuple('FittedModel', ['fitted_model', 'residual', 'rmse'])
 
 SpectralModel = namedtuple('SpectralModel', ['rmse',
                                              'coefficients',
-                                             'intercept'])
+                                             'intercept',
+                                             'magnitude'])
 
 ChangeModel = namedtuple('ChangeModel', ['start_day',
                                          'end_day',
@@ -62,8 +63,7 @@ ChangeModel = namedtuple('ChangeModel', ['start_day',
                                          'nir',
                                          'swir1',
                                          'swir2',
-                                         'thermal',
-                                         'median_resids'])
+                                         'thermal'])
 
 
 def results_to_changemodel(fitted_models, start_day, end_day, break_day, magnitudes,
@@ -87,7 +87,8 @@ def results_to_changemodel(fitted_models, start_day, end_day, break_day, magnitu
     for ix, model in enumerate(fitted_models):
         spectral = SpectralModel(rmse=model.rmse,
                                  coefficients=model.fitted_model.coef_,
-                                 intercept=model.fitted_model.intercept_)
+                                 intercept=model.fitted_model.intercept_,
+                                 magnitude=magnitudes[ix])
         spectral_models.append(spectral)
 
     return ChangeModel(start_day=start_day,
@@ -102,6 +103,4 @@ def results_to_changemodel(fitted_models, start_day, end_day, break_day, magnitu
                        nir=spectral_models[3],
                        swir1=spectral_models[4],
                        swir2=spectral_models[5],
-                       thermal=spectral_models[6],
-                       median_resids=magnitudes)
-
+                       thermal=spectral_models[6])
