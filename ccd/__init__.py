@@ -5,7 +5,7 @@ import numpy as np
 from ccd import app
 import importlib
 from .version import __version__
-from .version import __algorithm__
+from .version import __algorithm__ as algorithm
 from .version import __name
 
 logger = app.logging.getLogger(__name)
@@ -47,7 +47,7 @@ def __attach_metadata(procedure_results, procedure):
           break_day: int,
           observation_count: int,
           change_probability: float,
-          num_coefficients: int,
+          curve_qa: int,
           blue:      {magnitude: float,
                      rmse: float,
                      coefficients: (float, float, ...),
@@ -81,7 +81,7 @@ def __attach_metadata(procedure_results, procedure):
     """
     change_models, processing_mask = procedure_results
 
-    return {'algorithm': __algorithm__,
+    return {'algorithm': algorithm,
             'processing_mask': processing_mask,
             'procedure': procedure.__name__,
             'change_models': change_models}
