@@ -10,6 +10,7 @@ stand-alone. I.e. it should not import any other piece of the overall project.
 from functools import wraps
 
 import numpy as np
+from scipy.stats import mode
 
 # TODO: Cache timings
 # TODO: Numba timings
@@ -27,17 +28,35 @@ def ensure_ndarray_input(func):
 
 
 @ensure_ndarray_input
-def adjusted_variogram(vector):
+def adjusted_variogram(dates, observations):
     """
-    Calculate a modified first order variogram/madogram
+    Calculate a modified first order variogram/madogram.
+
+    This method differentiates from the standard calculate_variogram in that
+    it attempts to only use observations that are greater than 30 days apart.
+
+    This attempts to combat commission error due to temporal autocorrelation.
 
     Args:
-        vector: 1-d array of values
+        dates: 1-d array of values representing ordinal day
+        observations: 2-d array of spectral observations corresponding to the
+            dates array
 
     Returns:
-        float
+        1-d ndarray of floats
     """
-    return np.median(np.abs(np.diff(vector)))
+    indices = np.ones_like(dates, dtype=np.bool)
+
+    for idx, _ in enumerate(dates):
+        var = dates[1 + idx:] - dates[:-idx - 1]
+
+        majority = mode(var)[0][0]
+
+        if majority > 30:
+            indices = var > 30
+            break
+
+    return calculate_variogram(observations[:, indices])
 
 
 @ensure_ndarray_input
