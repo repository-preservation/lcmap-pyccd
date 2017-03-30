@@ -21,7 +21,7 @@ from ccd import qa
 from ccd.app import logging, defaults
 from ccd.change import initialize, lookforward, lookback, catch
 from ccd.models import results_to_changemodel
-from ccd.math_utils import kelvin_to_celsius, calculate_variogram
+from ccd.math_utils import kelvin_to_celsius, adjusted_variogram
 
 
 log = logging.getLogger(__name__)
@@ -244,7 +244,8 @@ def standard_procedure(dates, observations, fitter_fn, quality,
 
     # Calculate the variogram/madogram that will be used in subsequent
     # processing steps. See algorithm documentation for further information.
-    variogram = calculate_variogram(observations[:, processing_mask])
+    variogram = adjusted_variogram(dates[processing_mask],
+                                   observations[:, processing_mask])
     log.debug('Variogram values: %s', variogram)
 
     # Only build models as long as sufficient data exists.
