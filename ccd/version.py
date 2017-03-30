@@ -13,5 +13,7 @@ __name = 'lcmap-pyccd'
 __algorithm_version__ = '1.3.0'
 __local_version__ = ''
 
-__algorithm__ = ':'.join([__name, __algorithm_version__, __local_version__])
-__version__ = '.'.join([__algorithm_version__, __local_version__])
+# __algorithm__ = ':'.join([__name, __algorithm_version__, __local_version__])
+__algorithm__ = ':'.join([__name, __algorithm_version__])
+__version__ = __algorithm_version__
+# __version__ = '.'.join([__algorithm_version__, __local_version__])
