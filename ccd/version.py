@@ -11,7 +11,7 @@ __name = 'lcmap-pyccd'
 # that actually gets reported with results, and a release version for pypi
 # and system integration purposes.
 __algorithm_version__ = '1.1.0'
-__local_version__ = 'dev1+data-density'
+__local_version__ = 'dev2+tmask-robust'
 
 __algorithm__ = ':'.join([__name, __algorithm_version__, __local_version__])
 __version__ = '.'.join([__algorithm_version__, __local_version__])

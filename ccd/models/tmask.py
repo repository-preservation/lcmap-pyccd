@@ -1,7 +1,7 @@
 import numpy as np
 import sklearn.linear_model as lm
 from ccd.app import logging, defaults
-from ccd.math_utils import calculate_variogram
+from ccd.models import robust_fit
 
 
 log = logging.getLogger(__name__)
@@ -46,7 +46,8 @@ def tmask(dates, observations, variogram, bands=defaults.TMASK_BANDS,
     """
     # variogram = calculate_variogram(observations)
     # Time and expected values using a four-part matrix of coefficients.
-    regression = lm.LinearRegression()
+    # regression = lm.LinearRegression()
+    regression = robust_fit.RLM(maxiter=5)
 
     tmask_matrix = tmask_coefficient_matrix(dates)
 
