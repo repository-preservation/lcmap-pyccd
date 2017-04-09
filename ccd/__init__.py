@@ -2,7 +2,7 @@ import time
 
 from ccd.procedures import fit_procedure as __determine_fit_procedure
 import numpy as np
-from ccd import app
+from ccd import app, math_utils
 import importlib
 from .version import __version__
 from .version import __algorithm__ as algorithm
@@ -97,15 +97,9 @@ def __sort_dates(dates):
     return np.argsort(dates)
 
 
-def __unique_indices(dates):
-    """ Find the index locations of the first occurrence of a value"""
-    _, indices = np.unique(dates, return_index=True)
-    return indices
-
-
+@math_utils.ensure_ndarray_input(keywords=False)
 def detect(dates, blues, greens, reds, nirs,
-           swir1s, swir2s, thermals, quality,
-           duplicate_dates=True):
+           swir1s, swir2s, thermals, quality):
     """Entry point call to detect change
 
     No filtering up-front as different procedures may do things
@@ -121,25 +115,20 @@ def detect(dates, blues, greens, reds, nirs,
         swir2s:   1d-array or list of swir2 band values
         thermals: 1d-array or list of thermal band values
         quality:  1d-array or list of qa band values
-        duplicate_dates: boolean value if the input data is suspected of having
-            multiple observations for a single date, many to one, this will
-            also sort based on the ordinal date value as well
 
     Returns:
         Tuple of ccd.detections namedtuples
     """
     t1 = time.time()
-    dates = np.asarray(dates)
 
     spectra = np.stack((blues, greens,
                         reds, nirs, swir1s,
                         swir2s, thermals))
 
-    if duplicate_dates:
-        indices = __unique_indices(dates)
-        dates = dates[indices]
-        spectra = spectra[:, indices]
-        quality = quality[indices]
+    indices = __sort_dates(dates)
+    dates = dates[indices]
+    spectra = spectra[:, indices]
+    quality = quality[indices]
 
     # load the fitter_fn
     fitter_fn = attr_from_str(defaults.FITTER_FN)
