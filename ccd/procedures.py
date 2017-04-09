@@ -78,7 +78,7 @@ def permanent_snow_procedure(dates, observations, fitter_fn, quality,
         1-d ndarray: processing mask indicating which values were used
             for model fitting
     """
-    processing_mask = qa.snow_procedure_filter(observations, quality)
+    processing_mask = qa.snow_procedure_filter(observations, quality, dates)
 
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
@@ -130,7 +130,7 @@ def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
         1-d ndarray: processing mask indicating which values were used
             for model fitting
         """
-    processing_mask = qa.insufficient_clear_filter(observations, quality)
+    processing_mask = qa.insufficient_clear_filter(observations, quality, dates)
 
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
@@ -222,7 +222,7 @@ def standard_procedure(dates, observations, fitter_fn, quality,
     # The masked module from numpy does not seem to really add anything of
     # benefit to what we need to do, plus scikit may still be incompatible
     # with them.
-    processing_mask = qa.standard_procedure_filter(observations, quality)
+    processing_mask = qa.standard_procedure_filter(observations, quality, dates)
 
     obs_count = np.sum(processing_mask)
 
