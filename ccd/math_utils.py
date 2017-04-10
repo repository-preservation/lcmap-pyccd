@@ -10,37 +10,62 @@ stand-alone. I.e. it should not import any other piece of the overall project.
 from functools import wraps
 
 import numpy as np
+from scipy.stats import mode
 
 # TODO: Cache timings
 # TODO: Numba timings
 
 
-def ensure_ndarray_input(func):
+def ensure_ndarray_input(keywords=True):
     """
     Wrapper to ensure inputs to a method are of type ndarray
     This cleans up subsequent code that might need to check for this
     """
-    @wraps(func)
-    def f(*args, **kwargs):
-        return func(*(np.asarray(_) for _ in args), **kwargs)
-    return f
+    def outer(func):
+        def inner(*args, **kwargs):
+
+            if keywords is True:
+                return func(*(np.asarray(_) for _ in args), **kwargs)
+            else:
+                return func(*(np.asarray(_) for _ in args))
+
+        return inner
+    return outer
 
 
-@ensure_ndarray_input
-def adjusted_variogram(vector):
+@ensure_ndarray_input(keywords=False)
+def adjusted_variogram(dates, observations):
     """
-    Calculate a modified first order variogram/madogram
+    Calculate a modified first order variogram/madogram.
+
+    This method differentiates from the standard calculate_variogram in that
+    it attempts to only use observations that are greater than 30 days apart.
+
+    This attempts to combat commission error due to temporal autocorrelation.
 
     Args:
-        vector: 1-d array of values
+        dates: 1-d array of values representing ordinal day
+        observations: 2-d array of spectral observations corresponding to the
+            dates array
 
     Returns:
-        float
+        1-d ndarray of floats
     """
-    return np.median(np.abs(np.diff(vector)))
+    vario = calculate_variogram(observations)
+
+    for idx in range(dates.shape[0]):
+        var = dates[1 + idx:] - dates[:-idx - 1]
+
+        majority = mode(var)[0][0]
+
+        if majority > 30:
+            vario = np.median(np.abs(observations[:, 1 + idx:] - observations[:, :-idx - 1]), axis=1)
+            break
+
+    return vario
 
 
-@ensure_ndarray_input
+@ensure_ndarray_input(keywords=False)
 def euclidean_norm(vector):
     """
     Calculate the euclidean norm across a vector
@@ -56,7 +81,7 @@ def euclidean_norm(vector):
     return np.sum(vector ** 2) ** .5
 
 
-@ensure_ndarray_input
+@ensure_ndarray_input(keywords=True)
 def euclidean_norm_sq(vector, axis=None):
     """
     Return the square of the euclidean norm, essentially removes
@@ -75,12 +100,12 @@ def euclidean_norm_sq(vector, axis=None):
     return np.sum(vector ** 2, axis=axis)
 
 
-@ensure_ndarray_input
+@ensure_ndarray_input(keywords=True)
 def sum_of_squares(vector, axis=None):
     return np.sum(vector ** 2, axis=axis)
 
 
-@ensure_ndarray_input
+@ensure_ndarray_input(keywords=False)
 def calc_rmse(actual, predicted):
     """
     Calculate the root mean square of error for the given inputs
@@ -98,7 +123,7 @@ def calc_rmse(actual, predicted):
     return (residuals ** 2).mean() ** 0.5, residuals
 
 
-@ensure_ndarray_input
+@ensure_ndarray_input(keywords=False)
 def calc_median(vector):
     """
     Calculate the median value of the given vector
@@ -112,7 +137,7 @@ def calc_median(vector):
     return np.median(vector)
 
 
-@ensure_ndarray_input
+@ensure_ndarray_input(keywords=False)
 def calc_residuals(actual, predicted):
     """
     Helper method to make other code portions clearer
@@ -127,7 +152,7 @@ def calc_residuals(actual, predicted):
     return actual - predicted
 
 
-@ensure_ndarray_input
+@ensure_ndarray_input(keywords=True)
 def kelvin_to_celsius(thermals, scale=10):
     """
     Convert kelvin values to celsius
@@ -150,7 +175,7 @@ def kelvin_to_celsius(thermals, scale=10):
     return thermals * scale - 27315
 
 
-@ensure_ndarray_input
+@ensure_ndarray_input(keywords=False)
 def calculate_variogram(observations):
     """
     Calculate the first order variogram/madogram across all bands

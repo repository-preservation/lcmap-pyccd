@@ -91,6 +91,28 @@ def mask_clear_or_water(quality):
     return mask_clear(quality) | mask_water(quality)
 
 
+def mask_duplicate_values(vector):
+    """
+    Mask out duplicate values.
+    
+    Mainly used for removing duplicate observation dates from the dataset.
+    Just because there are duplicate observation dates, doesn't mean that 
+    both have valid data.
+    
+    Generally this should be applied after other masks.
+
+    Arg:
+        vector: 1-2 ndarray, ordinal date values
+
+    Returns:
+        1-d boolean ndarray
+    """
+    mask = np.zeros_like(vector, dtype=np.bool)
+    mask[np.unique(vector, return_index=True)[1]] = 1
+
+    return mask
+
+
 def count_clear_or_water(quality):
     """Count clear or water data.
 
@@ -258,7 +280,8 @@ def filter_thermal_celsius(thermal, min_celsius=-9320, max_celsius=7070):
             (thermal < max_celsius))
 
 
-def standard_procedure_filter(observations, quality, thermal_idx=defaults.THERMAL_IDX):
+def standard_procedure_filter(observations, quality, dates,
+                              thermal_idx=defaults.THERMAL_IDX):
     """
     Filter for the initial stages of the standard procedure.
 
@@ -268,19 +291,27 @@ def standard_procedure_filter(observations, quality, thermal_idx=defaults.THERMA
     Temperatures are expected to be in celsius
     Args:
         observations: 2-d ndarray, spectral observations
-        quality: 1-d ndarray quality information
+        quality: 1-d ndarray observation quality information
+        dates: 1-d ndarray ordinal observation dates
         thermal_idx: int value identifying the thermal band in the observations
 
     Returns:
         1-d boolean ndarray
-
     """
-    return (mask_clear_or_water(quality) &
+    mask = (mask_clear_or_water(quality) &
             filter_thermal_celsius(observations[thermal_idx]) &
             filter_saturated(observations))
 
+    date_mask = mask_duplicate_values(dates[mask])
 
-def snow_procedure_filter(observations, quality, thermal_idx=defaults.THERMAL_IDX):
+    mask[mask] = date_mask
+
+    return mask
+
+
+def snow_procedure_filter(observations, quality, dates,
+                          thermal_idx=defaults.THERMAL_IDX,
+                          qa_snow=defaults.QA_SNOW):
     """
     Filter for initial stages of the snow procedure
 
@@ -290,16 +321,24 @@ def snow_procedure_filter(observations, quality, thermal_idx=defaults.THERMAL_ID
     Args:
         observations: 2-d ndarray, spectral observations
         quality: 1-d ndarray quality information
+        dates: 1-d ndarray ordinal observation dates
         thermal_idx: int value identifying the thermal band in the observations
 
     Returns:
         1-d boolean ndarray
     """
-    return (standard_procedure_filter(observations, quality, thermal_idx) |
-            mask_snow(quality))
+    mask = (mask_clear_or_water(quality) &
+            filter_thermal_celsius(observations[thermal_idx]) &
+            filter_saturated(observations)) | mask_snow(quality, qa_snow)
+
+    date_mask = mask_duplicate_values(dates[mask])
+
+    mask[mask] = date_mask
+
+    return mask
 
 
-def insufficient_clear_filter(observations, quality,
+def insufficient_clear_filter(observations, quality, dates,
                               green_idx=defaults.GREEN_IDX,
                               thermal_idx=defaults.THERMAL_IDX):
     """
@@ -311,6 +350,7 @@ def insufficient_clear_filter(observations, quality,
     Args:
         observations: 2-d ndarray, spectral observations
         quality: 1-d ndarray quality information
+        dates: 1-d ndarray ordinal observation dates
         green_idx: int value identifying the green band in the observations
         thermal_idx: int value identifying the thermal band in the observations
 
@@ -321,5 +361,8 @@ def insufficient_clear_filter(observations, quality,
     green_mask = filter_median_green(observations[:, standard_mask][green_idx])
 
     standard_mask[standard_mask] &= green_mask
+
+    date_mask = mask_duplicate_values(dates[standard_mask])
+    standard_mask[standard_mask] = date_mask
 
     return standard_mask
