@@ -252,6 +252,8 @@ def standard_procedure(dates, observations, fitter_fn, quality,
     while model_window.stop <= dates[processing_mask].shape[0] - meow_size:
         # Step 1: Initialize
         log.debug('Initialize for change model #: %s', len(results) + 1)
+        if len(results) > 0:
+            start = False
 
         model_window, init_models, processing_mask = initialize(dates,
                                                                 observations,
