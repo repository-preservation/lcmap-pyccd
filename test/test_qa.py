@@ -3,9 +3,7 @@ Tests for the basic masking and filtering operations
 """
 import numpy as np
 
-import pytest
 from ccd.qa import *
-from ccd.app import defaults
 
 
 def test_mask_snow():
@@ -118,3 +116,11 @@ def test_filter_median_green():
                     True, True, True, False, False])
 
     assert np.array_equal(ans, filter_median_green(arr, 3))
+
+
+def test_duplicate_values():
+    arr = np.array([1, 2, 2, 3, 4, 5, 5])
+    ans = np.array([True, True, False, True, True,
+                    True, False], dtype=bool)
+
+    assert np.array_equal(ans, mask_duplicate_values(arr))

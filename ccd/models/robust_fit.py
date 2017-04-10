@@ -171,7 +171,7 @@ class RLM(sklearn.base.BaseEstimator):
         # self.coef_ = numpy.linalg.lstsq(R,(Q.T.dot(y)))[0]
         # self.coef_, resid = _weight_fit(X, y, numpy.ones_like(y))
         # U,s,v = numpy.linalg.svd(X)
-        print(self.coef_)
+        # print(self.coef_)
 
         if self.scale < EPS:
             return self
