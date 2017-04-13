@@ -97,7 +97,6 @@ def __sort_dates(dates):
     return np.argsort(dates)
 
 
-@math_utils.ensure_ndarray_input(keywords=False)
 def detect(dates, blues, greens, reds, nirs,
            swir1s, swir2s, thermals, quality):
     """Entry point call to detect change
