@@ -63,6 +63,16 @@ def euclidean_norm(vector):
 
 
 def sum_of_squares(vector, axis=None):
+    """
+    Squares the values, then adds them up
+    
+    Args:
+        vector: 1-d array of values, or n-d array with an axis set
+        axis: numpy axis to operate on in cases of more than 1-d array
+
+    Returns:
+        float
+    """
     return np.sum(vector ** 2, axis=axis)
 
 
