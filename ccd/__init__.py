@@ -120,6 +120,9 @@ def detect(dates, blues, greens, reds, nirs,
     """
     t1 = time.time()
 
+    dates = np.asarray(dates)
+    quality = np.asarray(quality)
+
     spectra = np.stack((blues, greens,
                         reds, nirs, swir1s,
                         swir2s, thermals))
