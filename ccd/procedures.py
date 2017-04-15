@@ -18,7 +18,7 @@ For more information please refer to the `pyccd Algorithm Description Document`.
 import numpy as np
 
 from ccd import qa
-from ccd.app import logging, defaults
+from ccd.app import logging, params
 from ccd.change import initialize, lookforward, lookback, catch
 from ccd.models import results_to_changemodel
 from ccd.math_utils import kelvin_to_celsius, adjusted_variogram
@@ -53,8 +53,8 @@ def fit_procedure(quality):
 
 
 def permanent_snow_procedure(dates, observations, fitter_fn, quality,
-                             meow_size=defaults.MEOW_SIZE,
-                             curve_qa=defaults.CURVE_QA['PERSIST_SNOW']):
+                             meow_size=params.MEOW_SIZE,
+                             curve_qa=params.CURVE_QA['PERSIST_SNOW']):
     """
     Snow procedure for when there is a significant amount snow represented
     in the quality information
@@ -105,8 +105,8 @@ def permanent_snow_procedure(dates, observations, fitter_fn, quality,
 
 
 def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
-                                 meow_size=defaults.MEOW_SIZE,
-                                 curve_qa=defaults.CURVE_QA['INSUF_CLEAR']):
+                                 meow_size=params.MEOW_SIZE,
+                                 curve_qa=params.CURVE_QA['INSUF_CLEAR']):
     """
     insufficient clear procedure for when there is an insufficient quality
     observations
@@ -156,10 +156,10 @@ def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
 
 
 def standard_procedure(dates, observations, fitter_fn, quality,
-                       meow_size=defaults.MEOW_SIZE,
-                       peek_size=defaults.PEEK_SIZE,
-                       thermal_idx=defaults.THERMAL_IDX,
-                       curve_qa=defaults.CURVE_QA):
+                       meow_size=params.MEOW_SIZE,
+                       peek_size=params.PEEK_SIZE,
+                       thermal_idx=params.THERMAL_IDX,
+                       curve_qa=params.CURVE_QA):
     """
     Runs the core change detection algorithm.
 

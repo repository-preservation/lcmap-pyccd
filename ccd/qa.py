@@ -12,11 +12,11 @@ This module currently uses explicit values from the Landsat CFMask:
 """
 import numpy as np
 
-from ccd.app import defaults
+from ccd.app import params
 from ccd.math_utils import calc_median
 
 
-def mask_snow(quality, snow=defaults.QA_SNOW):
+def mask_snow(quality, snow=params.QA_SNOW):
     """
     Filter all indices that are not snow
 
@@ -31,7 +31,7 @@ def mask_snow(quality, snow=defaults.QA_SNOW):
     return quality == snow
 
 
-def mask_clear(quality, clear=defaults.QA_CLEAR):
+def mask_clear(quality, clear=params.QA_CLEAR):
     """
     Filter all indices that are not clear
 
@@ -46,7 +46,7 @@ def mask_clear(quality, clear=defaults.QA_CLEAR):
     return quality == clear
 
 
-def mask_water(quality, water=defaults.QA_WATER):
+def mask_water(quality, water=params.QA_WATER):
     """
     Filter all indices that are not water
 
@@ -61,7 +61,7 @@ def mask_water(quality, water=defaults.QA_WATER):
     return quality == water
 
 
-def mask_fill(quality, fill=defaults.QA_FILL):
+def mask_fill(quality, fill=params.QA_FILL):
     """
     Filter all indices that are not fill
 
@@ -196,7 +196,7 @@ def ratio_snow(quality):
     return count_snow(quality) / (clear_count + snowy_count + 0.01)
 
 
-def enough_clear(quality, threshold=defaults.CLEAR_PCT_THREHOLD):
+def enough_clear(quality, threshold=params.CLEAR_PCT_THREHOLD):
     """Determine if clear observations exceed threshold.
 
     Useful when selecting mathematical model for detection. More clear
@@ -212,7 +212,7 @@ def enough_clear(quality, threshold=defaults.CLEAR_PCT_THREHOLD):
     return ratio_clear(quality) >= threshold
 
 
-def enough_snow(quality, threshold=defaults.SNOW_PCT_THRESHOLD):
+def enough_snow(quality, threshold=params.SNOW_PCT_THRESHOLD):
     """Determine if snow observations exceed threshold.
 
     Useful when selecting detection algorithm.
@@ -227,7 +227,7 @@ def enough_snow(quality, threshold=defaults.SNOW_PCT_THRESHOLD):
     return ratio_snow(quality) >= threshold
 
 
-def filter_median_green(green, filter_range=defaults.MEDIAN_GREEN_FILTER):
+def filter_median_green(green, filter_range=params.MEDIAN_GREEN_FILTER):
     """
     Filter values based on the median value + some range
 
@@ -281,7 +281,7 @@ def filter_thermal_celsius(thermal, min_celsius=-9320, max_celsius=7070):
 
 
 def standard_procedure_filter(observations, quality, dates,
-                              thermal_idx=defaults.THERMAL_IDX):
+                              thermal_idx=params.THERMAL_IDX):
     """
     Filter for the initial stages of the standard procedure.
 
@@ -310,8 +310,8 @@ def standard_procedure_filter(observations, quality, dates,
 
 
 def snow_procedure_filter(observations, quality, dates,
-                          thermal_idx=defaults.THERMAL_IDX,
-                          qa_snow=defaults.QA_SNOW):
+                          thermal_idx=params.THERMAL_IDX,
+                          qa_snow=params.QA_SNOW):
     """
     Filter for initial stages of the snow procedure
 
@@ -339,8 +339,8 @@ def snow_procedure_filter(observations, quality, dates,
 
 
 def insufficient_clear_filter(observations, quality, dates,
-                              green_idx=defaults.GREEN_IDX,
-                              thermal_idx=defaults.THERMAL_IDX):
+                              green_idx=params.GREEN_IDX,
+                              thermal_idx=params.THERMAL_IDX):
     """
     Filter for the initial stages of the insufficient clear procedure.
 

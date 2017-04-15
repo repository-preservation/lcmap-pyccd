@@ -4,7 +4,7 @@ from cachetools import cached, LRUCache
 
 from ccd.models import FittedModel
 from ccd.math_utils import calc_rmse
-from ccd.app import defaults
+from ccd.app import params
 
 cache = LRUCache(maxsize=1000)
 
@@ -15,7 +15,7 @@ def __coefficient_cache_key(observation_dates):
 
 # @cached(cache=cache, key=__coefficient_cache_key)
 def coefficient_matrix(dates, num_coefficients=4,
-                       avg_days_yr=defaults.AVG_DAYS_YR):
+                       avg_days_yr=params.AVG_DAYS_YR):
     """
     Fourier transform function to be used for the matrix of inputs for
     model fitting
@@ -47,7 +47,7 @@ def coefficient_matrix(dates, num_coefficients=4,
 
 
 def fitted_model(dates, spectra_obs, num_coefficients=4,
-                 max_iter=defaults.LASSO_MAX_ITER):
+                 max_iter=params.LASSO_MAX_ITER):
     """Create a fully fitted lasso model.
 
     Args:

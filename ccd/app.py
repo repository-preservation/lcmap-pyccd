@@ -17,10 +17,10 @@ from cachetools import LRUCache
 
 
 # Simplify parameter setting and make it easier for adjustment
-class Defaults(dict):
+class Parameters(dict):
     def __init__(self, config_path='parameters.yaml'):
         with open(config_path, 'r') as f:
-            super(Defaults, self).__init__(yaml.load(f.read()))
+            super(Parameters, self).__init__(yaml.load(f.read()))
 
     def __getattr__(self, name):
         if name in self:
@@ -44,7 +44,7 @@ def numpy_hashkey(array):
     return hashlib.sha1(array).hexdigest()
 
 # Configuration/parameter defaults
-defaults = Defaults(os.path.join(os.path.dirname(__file__), 'parameters.yaml'))
+params = Parameters(os.path.join(os.path.dirname(__file__), 'parameters.yaml'))
 
 
 # Logging system
@@ -70,3 +70,17 @@ cache = LRUCache(maxsize=2000)
 # Cannot import and supply the function directly or we'll get a
 # circular dependency
 FITTER_FN = 'ccd.models.lasso.fitted_model'
+
+
+def update_params(parameters):
+    """
+    Update the parameters read in from parameters.yaml
+    
+    This is needed so that someone could change the values when calling
+    ccd.detect, rather than having to edit the parameters.yaml file
+    
+    Args:
+        parameters: python dict
+
+    """
+    params.update(parameters)

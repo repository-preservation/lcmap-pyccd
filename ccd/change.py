@@ -11,7 +11,7 @@ from ccd.models import tmask, lasso, results_to_changemodel
 from ccd.math_utils import euclidean_norm, sum_of_squares
 
 log = app.logging.getLogger(__name__)
-defaults = app.defaults
+defaults = app.params
 
 
 def stable(models, dates, variogram,

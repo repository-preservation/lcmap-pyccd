@@ -1,13 +1,13 @@
 import numpy as np
 import sklearn.linear_model as lm
-from ccd.app import logging, defaults
+from ccd.app import logging, params
 from ccd.models import robust_fit
 
 
 log = logging.getLogger(__name__)
 
 
-def tmask_coefficient_matrix(dates, avg_days_yr=defaults.AVG_DAYS_YR):
+def tmask_coefficient_matrix(dates, avg_days_yr=params.AVG_DAYS_YR):
     """Coefficient matrix that is used for Tmask modeling
 
     Args:
@@ -28,8 +28,8 @@ def tmask_coefficient_matrix(dates, avg_days_yr=defaults.AVG_DAYS_YR):
     return matrix
 
 
-def tmask(dates, observations, variogram, bands=defaults.TMASK_BANDS,
-          t_const=defaults.T_CONST):
+def tmask(dates, observations, variogram, bands=params.TMASK_BANDS,
+          t_const=params.T_CONST):
     """Produce an index for filtering outliers.
 
     Arguments:

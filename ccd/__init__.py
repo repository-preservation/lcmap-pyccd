@@ -9,7 +9,7 @@ from .version import __algorithm__ as algorithm
 from .version import __name
 
 logger = app.logging.getLogger(__name)
-defaults = app.defaults
+proc_params = app.params
 
 
 def attr_from_str(value):
@@ -99,7 +99,8 @@ def __sort_dates(dates):
 
 @math_utils.ensure_ndarray_input(keywords=False)
 def detect(dates, blues, greens, reds, nirs,
-           swir1s, swir2s, thermals, quality):
+           swir1s, swir2s, thermals, quality,
+           params=None):
     """Entry point call to detect change
 
     No filtering up-front as different procedures may do things
@@ -115,11 +116,16 @@ def detect(dates, blues, greens, reds, nirs,
         swir2s:   1d-array or list of swir2 band values
         thermals: 1d-array or list of thermal band values
         quality:  1d-array or list of qa band values
+        params: python dictionary to change module wide processing
+            parameters
 
     Returns:
         Tuple of ccd.detections namedtuples
     """
     t1 = time.time()
+
+    if params is not None:
+        app.update_params(params)
 
     spectra = np.stack((blues, greens,
                         reds, nirs, swir1s,
@@ -131,7 +137,7 @@ def detect(dates, blues, greens, reds, nirs,
     quality = quality[indices]
 
     # load the fitter_fn
-    fitter_fn = attr_from_str(defaults.FITTER_FN)
+    fitter_fn = attr_from_str(proc_params.FITTER_FN)
 
     # Determine which procedure to use for the detection
     procedure = __determine_fit_procedure(quality)
