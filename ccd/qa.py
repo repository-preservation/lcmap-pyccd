@@ -1,19 +1,76 @@
 """Filters for pre-processing change model inputs.
-
-# TODO finish fixing this
-This module currently uses explicit values from the Landsat CFMask:
-
-    - 0: clear
-    - 1: water
-    - 2: cloud_shadow
-    - 3: snow
-    - 4: cloud
-    - 255: fill
 """
 import numpy as np
 
 from ccd.app import params
 from ccd.math_utils import calc_median
+
+
+def checkbit(packedint, offset):
+    """
+    Check for a bit flag in a given int value.
+    
+    Args:
+        packedint: bit packed int
+        offset: binary offset to check
+
+    Returns:
+        bool
+    """
+    bit = 1 << offset
+
+    return (packedint & bit) > 0
+
+
+def qabitval(packedint, fill=params.QA_FILL, clear=params.QA_CLEAR,
+             water=params.QA_WATER, shadow=params.QA_SHADOW,
+             snow=params.QA_SNOW, cloud=params.QA_CLOUD):
+    """
+    Institute a hierarchy of qa values that may be flagged in the bitpacked
+    value.
+    
+    fill > cloud > shadow > snow > water > clear
+    
+    Args:
+        packedint: int value to bit check
+        fill: QA fill offset value
+        clear: QA clear offset value
+        water: QA water offset value
+        shadow: QA shadow offset value
+        snow: QA snow offset value
+        cloud: QA cloud offset value
+
+    Returns:
+        offset value to use
+    """
+    if checkbit(packedint, fill):
+        return fill
+    elif checkbit(packedint, cloud):
+        return cloud
+    elif checkbit(packedint, shadow):
+        return shadow
+    elif checkbit(packedint, snow):
+        return snow
+    elif checkbit(packedint, water):
+        return water
+    elif checkbit(packedint, clear):
+        return clear
+    else:
+        raise ValueError('Unsupported bitpacked QA value {}'.format(packedint))
+
+
+def unpackqa(quality):
+    """
+    Transform the bit-packed QA values into their bit offset.
+    
+    Args:
+        quality: 1-d array or list of bit-packed QA values
+
+    Returns:
+        1-d ndarray
+    """
+
+    return np.array([qabitval(q) for q in quality])
 
 
 def mask_snow(quality, snow=params.QA_SNOW):

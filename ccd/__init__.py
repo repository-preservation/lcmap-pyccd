@@ -2,7 +2,7 @@ import time
 
 from ccd.procedures import fit_procedure as __determine_fit_procedure
 import numpy as np
-from ccd import app, math_utils
+from ccd import app, math_utils, qa
 import importlib
 from .version import __version__
 from .version import __algorithm__ as algorithm
@@ -124,7 +124,7 @@ def detect(dates, blues, greens, reds, nirs,
     """
     t1 = time.time()
 
-    if params is not None:
+    if params:
         app.update_params(params)
 
     spectra = np.stack((blues, greens,
@@ -138,6 +138,9 @@ def detect(dates, blues, greens, reds, nirs,
 
     # load the fitter_fn
     fitter_fn = attr_from_str(proc_params.FITTER_FN)
+
+    if proc_params.QA_BITPACKED is True:
+        quality = qa.unpackqa(quality)
 
     # Determine which procedure to use for the detection
     procedure = __determine_fit_procedure(quality)
