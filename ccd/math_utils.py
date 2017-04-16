@@ -16,24 +16,6 @@ from scipy.stats import mode
 # TODO: Numba timings
 
 
-def ensure_ndarray_input(keywords=True):
-    """
-    Wrapper to ensure inputs to a method are of type ndarray
-    This cleans up subsequent code that might need to check for this
-    """
-    def outer(func):
-        def inner(*args, **kwargs):
-
-            if keywords is True:
-                return func(*(np.asarray(_) for _ in args), **kwargs)
-            else:
-                return func(*(np.asarray(_) for _ in args))
-
-        return inner
-    return outer
-
-
-@ensure_ndarray_input(keywords=False)
 def adjusted_variogram(dates, observations):
     """
     Calculate a modified first order variogram/madogram.
@@ -65,7 +47,6 @@ def adjusted_variogram(dates, observations):
     return vario
 
 
-@ensure_ndarray_input(keywords=False)
 def euclidean_norm(vector):
     """
     Calculate the euclidean norm across a vector
@@ -81,18 +62,13 @@ def euclidean_norm(vector):
     return np.sum(vector ** 2) ** .5
 
 
-@ensure_ndarray_input(keywords=True)
-def euclidean_norm_sq(vector, axis=None):
+def sum_of_squares(vector, axis=None):
     """
-    Return the square of the euclidean norm, essentially removes
-    the square root
-
-    This is used to simplify some math used during
-    change detection processing
-
+    Squares the values, then adds them up
+    
     Args:
-        vector: 1-d array of values
-        axis: axis along which to perform the summation process
+        vector: 1-d array of values, or n-d array with an axis set
+        axis: numpy axis to operate on in cases of more than 1-d array
 
     Returns:
         float
@@ -100,12 +76,6 @@ def euclidean_norm_sq(vector, axis=None):
     return np.sum(vector ** 2, axis=axis)
 
 
-@ensure_ndarray_input(keywords=True)
-def sum_of_squares(vector, axis=None):
-    return np.sum(vector ** 2, axis=axis)
-
-
-@ensure_ndarray_input(keywords=False)
 def calc_rmse(actual, predicted):
     """
     Calculate the root mean square of error for the given inputs
@@ -123,7 +93,6 @@ def calc_rmse(actual, predicted):
     return (residuals ** 2).mean() ** 0.5, residuals
 
 
-@ensure_ndarray_input(keywords=False)
 def calc_median(vector):
     """
     Calculate the median value of the given vector
@@ -137,7 +106,6 @@ def calc_median(vector):
     return np.median(vector)
 
 
-@ensure_ndarray_input(keywords=False)
 def calc_residuals(actual, predicted):
     """
     Helper method to make other code portions clearer
@@ -152,7 +120,6 @@ def calc_residuals(actual, predicted):
     return actual - predicted
 
 
-@ensure_ndarray_input(keywords=True)
 def kelvin_to_celsius(thermals, scale=10):
     """
     Convert kelvin values to celsius
@@ -175,7 +142,6 @@ def kelvin_to_celsius(thermals, scale=10):
     return thermals * scale - 27315
 
 
-@ensure_ndarray_input(keywords=False)
 def calculate_variogram(observations):
     """
     Calculate the first order variogram/madogram across all bands
@@ -189,6 +155,3 @@ def calculate_variogram(observations):
         1-d ndarray representing the variogram values
     """
     return np.median(np.abs(np.diff(observations)), axis=1)
-
-
-

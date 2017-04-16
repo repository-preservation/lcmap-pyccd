@@ -43,7 +43,7 @@ def stable(models, dates, variogram,
 
         check_vals.append(check_val)
 
-    euc_norm = sum_of_squares(check_vals)
+    euc_norm = sum_of_squares(np.array(check_vals))
     log.debug('Stability norm: %s, Check against: %s', euc_norm, t_cg)
 
     return euc_norm < t_cg

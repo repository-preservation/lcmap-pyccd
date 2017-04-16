@@ -97,7 +97,6 @@ def __sort_dates(dates):
     return np.argsort(dates)
 
 
-@math_utils.ensure_ndarray_input(keywords=False)
 def detect(dates, blues, greens, reds, nirs,
            swir1s, swir2s, thermals, quality,
            params=None):
@@ -126,6 +125,9 @@ def detect(dates, blues, greens, reds, nirs,
 
     if params:
         app.update_params(params)
+
+    dates = np.asarray(dates)
+    quality = np.asarray(quality)
 
     spectra = np.stack((blues, greens,
                         reds, nirs, swir1s,
