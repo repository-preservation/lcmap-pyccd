@@ -18,7 +18,7 @@ For more information please refer to the `pyccd Algorithm Description Document`.
 import numpy as np
 
 from ccd import qa
-from ccd.app import logging, params
+from ccd.app import logging
 from ccd.change import initialize, lookforward, lookback, catch
 from ccd.models import results_to_changemodel
 from ccd.math_utils import kelvin_to_celsius, adjusted_variogram
@@ -27,7 +27,7 @@ from ccd.math_utils import kelvin_to_celsius, adjusted_variogram
 log = logging.getLogger(__name__)
 
 
-def fit_procedure(quality):
+def fit_procedure(quality, proc_params):
     """Determine which curve fitting method to use
 
     This is based on information from the QA band
@@ -38,8 +38,16 @@ def fit_procedure(quality):
     Returns:
         method: the corresponding method that will be use to generate the curves
     """
-    if not qa.enough_clear(quality):
-        if qa.enough_snow(quality):
+    # TODO do this better
+    clear = proc_params.QA_CLEAR
+    water = proc_params.QA_WATER
+    fill = proc_params.QA_FILL
+    snow = proc_params.QA_SNOW
+    clear_thresh = proc_params.CLEAR_PCT_THRESHOLD
+    snow_thresh = proc_params.SNOW_PCT_THRESHOLD
+
+    if not qa.enough_clear(quality, clear, water, fill, clear_thresh):
+        if qa.enough_snow(quality, clear, water, snow, snow_thresh):
             func = permanent_snow_procedure
         else:
             func = insufficient_clear_procedure
@@ -52,9 +60,7 @@ def fit_procedure(quality):
     return func
 
 
-def permanent_snow_procedure(dates, observations, fitter_fn, quality,
-                             meow_size=params.MEOW_SIZE,
-                             curve_qa=params.CURVE_QA['PERSIST_SNOW']):
+def permanent_snow_procedure(dates, observations, fitter_fn, quality, proc_params):
     """
     Snow procedure for when there is a significant amount snow represented
     in the quality information
@@ -78,7 +84,11 @@ def permanent_snow_procedure(dates, observations, fitter_fn, quality,
         1-d ndarray: processing mask indicating which values were used
             for model fitting
     """
-    processing_mask = qa.snow_procedure_filter(observations, quality, dates)
+    meow_size = proc_params.MEOW_SIZE
+    curve_qa = proc_params.CURVE_QA['PERSIST_SNOW']
+
+    processing_mask = qa.snow_procedure_filter(observations, quality,
+                                               dates, proc_params)
 
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
@@ -104,9 +114,7 @@ def permanent_snow_procedure(dates, observations, fitter_fn, quality,
     return (result,), processing_mask
 
 
-def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
-                                 meow_size=params.MEOW_SIZE,
-                                 curve_qa=params.CURVE_QA['INSUF_CLEAR']):
+def insufficient_clear_procedure(dates, observations, fitter_fn, quality, proc_params):
     """
     insufficient clear procedure for when there is an insufficient quality
     observations
@@ -130,6 +138,9 @@ def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
         1-d ndarray: processing mask indicating which values were used
             for model fitting
         """
+    meow_size = proc_params.MEOW_SIZE,
+    curve_qa = proc_params.CURVE_QA['INSUF_CLEAR']
+
     processing_mask = qa.insufficient_clear_filter(observations, quality, dates)
 
     period = dates[processing_mask]
@@ -155,11 +166,7 @@ def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
     return (result,), processing_mask
 
 
-def standard_procedure(dates, observations, fitter_fn, quality,
-                       meow_size=params.MEOW_SIZE,
-                       peek_size=params.PEEK_SIZE,
-                       thermal_idx=params.THERMAL_IDX,
-                       curve_qa=params.CURVE_QA):
+def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
     """
     Runs the core change detection algorithm.
 
@@ -199,6 +206,10 @@ def standard_procedure(dates, observations, fitter_fn, quality,
         1-d ndarray: processing mask indicating which values were used
             for model fitting
     """
+    meow_size = proc_params.MEOW_SIZE
+    peek_size = proc_params.PEEK_SIZE
+    thermal_idx = proc_params.THERMAL_IDX
+    curve_qa = proc_params.CURVE_QA
 
     log.debug('Build change models - dates: %s, obs: %s, '
               'meow_size: %s, peek_size: %s',

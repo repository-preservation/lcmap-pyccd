@@ -72,6 +72,10 @@ cache = LRUCache(maxsize=2000)
 FITTER_FN = 'ccd.models.lasso.fitted_model'
 
 
+def get_default_params():
+    return {k: v for k, v in params.items()}
+
+
 def update_params(parameters):
     """
     Update the parameters read in from parameters.yaml

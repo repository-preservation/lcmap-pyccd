@@ -2,8 +2,7 @@
 """
 import numpy as np
 
-from ccd.app import params
-from ccd.math_utils import calc_median
+from ccd.math_utils import calc_median, mask_value, count_value, mask_duplicate_values
 
 
 def checkbit(packedint, offset):
@@ -22,9 +21,7 @@ def checkbit(packedint, offset):
     return (packedint & bit) > 0
 
 
-def qabitval(packedint, fill=params.QA_FILL, clear=params.QA_CLEAR,
-             water=params.QA_WATER, shadow=params.QA_SHADOW,
-             snow=params.QA_SNOW, cloud=params.QA_CLOUD):
+def qabitval(packedint, proc_params):
     """
     Institute a hierarchy of qa values that may be flagged in the bitpacked
     value.
@@ -33,258 +30,153 @@ def qabitval(packedint, fill=params.QA_FILL, clear=params.QA_CLEAR,
     
     Args:
         packedint: int value to bit check
-        fill: QA fill offset value
-        clear: QA clear offset value
-        water: QA water offset value
-        shadow: QA shadow offset value
-        snow: QA snow offset value
-        cloud: QA cloud offset value
+        proc_params: dictionary of processing parameters
 
     Returns:
         offset value to use
     """
-    if checkbit(packedint, fill):
-        return fill
-    elif checkbit(packedint, cloud):
-        return cloud
-    elif checkbit(packedint, shadow):
-        return shadow
-    elif checkbit(packedint, snow):
-        return snow
-    elif checkbit(packedint, water):
-        return water
-    elif checkbit(packedint, clear):
-        return clear
+    if checkbit(packedint, proc_params.QA_FILL):
+        return proc_params.QA_FILL
+    elif checkbit(packedint, proc_params.QA_CLOUD):
+        return proc_params.QA_CLOUD
+    elif checkbit(packedint, proc_params.QA_SHADOW):
+        return proc_params.QA_SHADOW
+    elif checkbit(packedint, proc_params.QA_SNOW):
+        return proc_params.QA_SNOW
+    elif checkbit(packedint, proc_params.QA_WATER):
+        return proc_params.QA_WATER
+    elif checkbit(packedint, proc_params.QA_CLEAR):
+        return proc_params.QA_CLEAR
     else:
         raise ValueError('Unsupported bitpacked QA value {}'.format(packedint))
 
 
-def unpackqa(quality):
+def unpackqa(quality, proc_params):
     """
     Transform the bit-packed QA values into their bit offset.
     
     Args:
         quality: 1-d array or list of bit-packed QA values
+        proc_params: dictionary of processing parameters
 
     Returns:
         1-d ndarray
     """
 
-    return np.array([qabitval(q) for q in quality])
+    return np.array([qabitval(q, proc_params) for q in quality])
 
 
-def mask_snow(quality, snow=params.QA_SNOW):
+def count_clear_or_water(quality, clear, water):
     """
-    Filter all indices that are not snow
-
-    Args:
-        quality: 1-d ndarray of values representing the quality of the
-            associated spectral observations
-        snow: int value that denotes snow
-
-    Returns:
-        1-d boolean ndarray showing which values are snow
-    """
-    return quality == snow
-
-
-def mask_clear(quality, clear=params.QA_CLEAR):
-    """
-    Filter all indices that are not clear
-
-    Args:
-        quality: 1-d ndarray of values representing the quality of the
-            associated spectral observations
-        clear: int value that denotes clear
-
-    Returns:
-        1-d boolean ndarray showing which values are clear
-    """
-    return quality == clear
-
-
-def mask_water(quality, water=params.QA_WATER):
-    """
-    Filter all indices that are not water
-
-    Args:
-        quality: 1-d ndarray of values representing the quality of the
-            associated spectral observations
-        water: int value that denotes water
-
-    Returns:
-        1-d boolean ndarray showing which values are water
-    """
-    return quality == water
-
-
-def mask_fill(quality, fill=params.QA_FILL):
-    """
-    Filter all indices that are not fill
-
-    Args:
-        quality: 1-d ndarray of values representing the quality of the
-            associated spectral observations
-        fill: int value that denotes fill
-
-    Returns:
-        1-d boolean ndarray showing which values are fill
-    """
-    return quality == fill
-
-
-def mask_clear_or_water(quality):
-    """
-    Filter all indices that are not fill
-
-    Args:
-        quality: 1-d ndarray of values representing the quality of the
-            associated spectral observations
-        fill: int value that denotes fill
-
-    Returns:
-        1-d boolean ndarray showing which values are fill
-    """
-    return mask_clear(quality) | mask_water(quality)
-
-
-def mask_duplicate_values(vector):
-    """
-    Mask out duplicate values.
-    
-    Mainly used for removing duplicate observation dates from the dataset.
-    Just because there are duplicate observation dates, doesn't mean that 
-    both have valid data.
-    
-    Generally this should be applied after other masks.
-
-    Arg:
-        vector: 1-2 ndarray, ordinal date values
-
-    Returns:
-        1-d boolean ndarray
-    """
-    mask = np.zeros_like(vector, dtype=np.bool)
-    mask[np.unique(vector, return_index=True)[1]] = 1
-
-    return mask
-
-
-def count_clear_or_water(quality):
-    """Count clear or water data.
+    Count clear or water data.
 
     Arguments:
         quality: quality band values.
+        clear: value that represents clear
+        water: value that represents water
 
     Returns:
-        integer: number of clear or water observation implied by QA data.
+        int
     """
-    return np.sum([mask_clear(quality), mask_water(quality)])
+    return count_value(quality, clear) + count_value(quality, water)
 
 
-def count_fill(quality):
-    """Count fill data.
-
-    Arguments:
-        quality: quality band values.
-
-    Returns:
-        integer: number of filled observation implied by QA data.
+def count_total(quality, fill):
     """
-    return np.sum(mask_fill(quality))
-
-
-def count_snow(quality):
-    """Count snow data.
-
-    Useful for determining ratio of snow:clear pixels.
-
-    Arguments:
-        quality: quality band values.
-
-    Returns:
-        integer: number of snow pixels implied by QA data
-    """
-    return np.sum(mask_snow(quality))
-
-
-def count_total(quality):
-    """Count non-fill data.
+    Count non-fill data.
 
     Useful for determining ratio of clear:total pixels.
 
     Arguments:
         quality: quality band values.
+        fill: value that represents fill
 
     Returns:
-        integer: number of non-fill pixels implied by QA data.
+        int
     """
-    return np.sum(~mask_fill(quality))
+    return np.sum(~mask_value(quality, fill))
 
 
-def ratio_clear(quality):
-    """Calculate ratio of clear to non-clear pixels; exclude, fill data.
+def ratio_clear(quality, clear, water, fill):
+    """
+    Calculate ratio of clear to non-clear pixels; exclude, fill data.
 
     Useful for determining ratio of clear:total pixels.
 
     Arguments:
         quality: quality band values.
+        clear: value that represents clear
+        water: value that represents water
+        fill: value that represents fill
 
     Returns:
-        integer: number of non-fill pixels implied by QA data.
+        int
     """
-    return count_clear_or_water(quality) / count_total(quality)
+    return (count_clear_or_water(quality, clear, water) /
+            count_total(quality, fill))
 
 
-def ratio_snow(quality):
+def ratio_snow(quality, clear, water, snow):
     """Calculate ratio of snow to clear pixels; exclude fill and non-clear data.
 
     Useful for determining ratio of snow:clear pixels.
 
     Arguments:
         quality: CFMask quality band values.
+        clear: value that represents clear
+        water: value that represents water
+        snow: value that represents snow
 
     Returns:
         float: Value between zero and one indicating amount of
             snow-observations.
     """
-    snowy_count = count_snow(quality)
-    clear_count = count_clear_or_water(quality)
-    return count_snow(quality) / (clear_count + snowy_count + 0.01)
+    snowy_count = count_value(quality, snow)
+    clear_count = count_clear_or_water(quality, clear, water)
+
+    return snowy_count / (clear_count + snowy_count + 0.01)
 
 
-def enough_clear(quality, threshold=params.CLEAR_PCT_THREHOLD):
-    """Determine if clear observations exceed threshold.
+def enough_clear(quality, clear, water, fill, threshold):
+    """
+    Determine if clear observations exceed threshold.
 
     Useful when selecting mathematical model for detection. More clear
     observations allow for models with more coefficients.
 
     Arguments:
         quality: quality band values.
+        clear: value that represents clear
+        water: value that represents water
+        fill: value that represents fill
         threshold: minimum ratio of clear/water to not-clear/water values.
 
     Returns:
         boolean: True if >= threshold
     """
-    return ratio_clear(quality) >= threshold
+    return ratio_clear(quality, clear, water, fill) >= threshold
 
 
-def enough_snow(quality, threshold=params.SNOW_PCT_THRESHOLD):
-    """Determine if snow observations exceed threshold.
+def enough_snow(quality, clear, water, snow, threshold):
+    """
+    Determine if snow observations exceed threshold.
 
     Useful when selecting detection algorithm.
 
     Arguments:
         quality: quality band values.
+        clear: value that represents clear
+        water: value that represents water
+        snow: value that represents snow
         threshold: minimum ratio of snow to clear/water values.
 
     Returns:
         boolean: True if >= threshold
     """
-    return ratio_snow(quality) >= threshold
+    return ratio_snow(quality, clear, water, snow) >= threshold
 
 
-def filter_median_green(green, filter_range=params.MEDIAN_GREEN_FILTER):
+def filter_median_green(green, filter_range):
     """
     Filter values based on the median value + some range
 
@@ -302,13 +194,17 @@ def filter_median_green(green, filter_range=params.MEDIAN_GREEN_FILTER):
 
 
 def filter_saturated(observations):
-    """bool index for unsaturated obserervations between 0..10,000
+    """
+    bool index for unsaturated obserervations between 0..10,000
 
     Useful for efficiently filtering noisy-data from arrays.
 
     Arguments:
-        observations: time/spectra/qa major nd-array, assumed to be shaped as
-            (9,n-moments) of unscaled data.
+        observations: spectra nd-array, assumed to be shaped as
+            (6,n-moments) of unscaled data.
+            
+    Returns:
+        1-d bool ndarray
 
     """
     unsaturated = ((0 < observations[1, :]) & (observations[1, :] < 10000) &
@@ -321,7 +217,8 @@ def filter_saturated(observations):
 
 
 def filter_thermal_celsius(thermal, min_celsius=-9320, max_celsius=7070):
-    """Provide an index of observations within a brightness temperature range.
+    """
+    Provide an index of observations within a brightness temperature range.
 
     Thermal min/max must be provided as a scaled value in degrees celsius.
 
@@ -332,13 +229,15 @@ def filter_thermal_celsius(thermal, min_celsius=-9320, max_celsius=7070):
         thermal: 1-d array of thermal values
         min_celsius: minimum temperature in degrees celsius
         max_celsius: maximum temperature in degrees celsius
+        
+    Returns:
+        1-d bool ndarray
     """
     return ((thermal > min_celsius) &
             (thermal < max_celsius))
 
 
-def standard_procedure_filter(observations, quality, dates,
-                              thermal_idx=params.THERMAL_IDX):
+def standard_procedure_filter(observations, quality, dates, proc_params):
     """
     Filter for the initial stages of the standard procedure.
 
@@ -350,12 +249,16 @@ def standard_procedure_filter(observations, quality, dates,
         observations: 2-d ndarray, spectral observations
         quality: 1-d ndarray observation quality information
         dates: 1-d ndarray ordinal observation dates
-        thermal_idx: int value identifying the thermal band in the observations
+        proc_params: dictionary of processing parameters
 
     Returns:
         1-d boolean ndarray
     """
-    mask = (mask_clear_or_water(quality) &
+    thermal_idx = proc_params.THERMAL_IDX
+    clear = proc_params.QA_CLEAR
+    water = proc_params.QA_WATER
+
+    mask = ((mask_value(quality, water) | mask_value(quality, clear)) &
             filter_thermal_celsius(observations[thermal_idx]) &
             filter_saturated(observations))
 
@@ -366,9 +269,7 @@ def standard_procedure_filter(observations, quality, dates,
     return mask
 
 
-def snow_procedure_filter(observations, quality, dates,
-                          thermal_idx=params.THERMAL_IDX,
-                          qa_snow=params.QA_SNOW):
+def snow_procedure_filter(observations, quality, dates, proc_params):
     """
     Filter for initial stages of the snow procedure
 
@@ -380,13 +281,19 @@ def snow_procedure_filter(observations, quality, dates,
         quality: 1-d ndarray quality information
         dates: 1-d ndarray ordinal observation dates
         thermal_idx: int value identifying the thermal band in the observations
+        proc_params: dictionary of processing parameters
 
     Returns:
         1-d boolean ndarray
     """
-    mask = (mask_clear_or_water(quality) &
+    thermal_idx = proc_params.THERMAL_IDX
+    clear = proc_params.QA_CLEAR
+    water = proc_params.QA_WATER
+    snow = proc_params.QA_SNOW
+
+    mask = ((mask_value(quality, water) | mask_value(quality, clear)) &
             filter_thermal_celsius(observations[thermal_idx]) &
-            filter_saturated(observations)) | mask_snow(quality, qa_snow)
+            filter_saturated(observations)) | mask_value(quality, snow)
 
     date_mask = mask_duplicate_values(dates[mask])
 
@@ -395,9 +302,7 @@ def snow_procedure_filter(observations, quality, dates,
     return mask
 
 
-def insufficient_clear_filter(observations, quality, dates,
-                              green_idx=params.GREEN_IDX,
-                              thermal_idx=params.THERMAL_IDX):
+def insufficient_clear_filter(observations, quality, dates, proc_params):
     """
     Filter for the initial stages of the insufficient clear procedure.
 
@@ -408,14 +313,16 @@ def insufficient_clear_filter(observations, quality, dates,
         observations: 2-d ndarray, spectral observations
         quality: 1-d ndarray quality information
         dates: 1-d ndarray ordinal observation dates
-        green_idx: int value identifying the green band in the observations
-        thermal_idx: int value identifying the thermal band in the observations
+        proc_params: dictionary of processing parameters
 
     Returns:
         1-d boolean ndarray
     """
-    standard_mask = standard_procedure_filter(observations, quality, thermal_idx)
-    green_mask = filter_median_green(observations[:, standard_mask][green_idx])
+    green_idx = proc_params.GREEN_IDX
+    filter_range = proc_params.MEDIAN_GREEN_FILTER
+
+    standard_mask = standard_procedure_filter(observations, quality, dates, proc_params)
+    green_mask = filter_median_green(observations[:, standard_mask][green_idx], filter_range)
 
     standard_mask[standard_mask] &= green_mask
 

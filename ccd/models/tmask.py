@@ -1,6 +1,5 @@
 import numpy as np
-import sklearn.linear_model as lm
-from ccd.app import logging, params
+from ccd.app import logging
 from ccd.models import robust_fit
 
 

@@ -9,7 +9,6 @@ from .version import __algorithm__ as algorithm
 from .version import __name
 
 logger = app.logging.getLogger(__name)
-proc_params = app.params
 
 
 def attr_from_str(value):
@@ -123,8 +122,10 @@ def detect(dates, blues, greens, reds, nirs,
     """
     t1 = time.time()
 
+    proc_params = app.get_default_params()
+
     if params:
-        app.update_params(params)
+        proc_params.update(params)
 
     dates = np.asarray(dates)
     quality = np.asarray(quality)
@@ -142,12 +143,12 @@ def detect(dates, blues, greens, reds, nirs,
     fitter_fn = attr_from_str(proc_params.FITTER_FN)
 
     if proc_params.QA_BITPACKED is True:
-        quality = qa.unpackqa(quality)
+        quality = qa.unpackqa(quality, proc_params)
 
     # Determine which procedure to use for the detection
-    procedure = __determine_fit_procedure(quality)
+    procedure = __determine_fit_procedure(quality, proc_params)
 
-    results = procedure(dates, spectra, fitter_fn, quality)
+    results = procedure(dates, spectra, fitter_fn, quality, proc_params)
     logger.debug('Total time for algorithm: %s', time.time() - t1)
 
     # call detect and return results as the detections namedtuple

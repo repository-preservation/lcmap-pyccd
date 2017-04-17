@@ -155,3 +155,53 @@ def calculate_variogram(observations):
         1-d ndarray representing the variogram values
     """
     return np.median(np.abs(np.diff(observations)), axis=1)
+
+
+def mask_duplicate_values(vector):
+    """
+    Mask out duplicate values.
+
+    Mainly used for removing duplicate observation dates from the dataset.
+    Just because there are duplicate observation dates, doesn't mean that 
+    both have valid data.
+
+    Generally this should be applied after other masks.
+
+    Arg:
+        vector: 1-d ndarray, ordinal date values
+
+    Returns:
+        1-d boolean ndarray
+    """
+    mask = np.zeros_like(vector, dtype=np.bool)
+    mask[np.unique(vector, return_index=True)[1]] = 1
+
+    return mask
+
+
+def mask_value(vector, val):
+    """
+    Build a boolean mask around a certain value in the vector.
+    
+    Args:
+        vector: 1-d ndarray of values
+        val: values to mask on
+
+    Returns:
+        1-d boolean ndarray
+    """
+    return vector == val
+
+
+def count_value(vector, val):
+    """
+    Count the number of occurrences of a value in the vector.
+    
+    Args:
+        vector: 1-d ndarray of values
+        val: value to count
+
+    Returns:
+        int
+    """
+    return np.sum(mask_value(vector, val))

@@ -1,10 +1,9 @@
-from sklearn import linear_model, metrics
+from sklearn import linear_model
 import numpy as np
-from cachetools import cached, LRUCache
+from cachetools import LRUCache
 
 from ccd.models import FittedModel
 from ccd.math_utils import calc_rmse
-from ccd.app import params
 
 cache = LRUCache(maxsize=1000)
 
