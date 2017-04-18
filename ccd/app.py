@@ -43,10 +43,6 @@ class Parameters(dict):
 def numpy_hashkey(array):
     return hashlib.sha1(array).hexdigest()
 
-# Configuration/parameter defaults
-params = Parameters(os.path.join(os.path.dirname(__file__), 'parameters.yaml'))
-
-
 # Logging system
 #
 # To use the logging from any module:
@@ -73,18 +69,4 @@ FITTER_FN = 'ccd.models.lasso.fitted_model'
 
 
 def get_default_params():
-    return {k: v for k, v in params.items()}
-
-
-def update_params(parameters):
-    """
-    Update the parameters read in from parameters.yaml
-    
-    This is needed so that someone could change the values when calling
-    ccd.detect, rather than having to edit the parameters.yaml file
-    
-    Args:
-        parameters: python dict
-
-    """
-    params.update(parameters)
+    return Parameters(os.path.join(os.path.dirname(__file__), 'parameters.yaml'))

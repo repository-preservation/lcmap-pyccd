@@ -13,8 +13,7 @@ def __coefficient_cache_key(observation_dates):
 
 
 # @cached(cache=cache, key=__coefficient_cache_key)
-def coefficient_matrix(dates, num_coefficients=4,
-                       avg_days_yr=params.AVG_DAYS_YR):
+def coefficient_matrix(dates, avg_days_yr, num_coefficients):
     """
     Fourier transform function to be used for the matrix of inputs for
     model fitting
@@ -45,8 +44,7 @@ def coefficient_matrix(dates, num_coefficients=4,
     return matrix
 
 
-def fitted_model(dates, spectra_obs, num_coefficients=4,
-                 max_iter=params.LASSO_MAX_ITER):
+def fitted_model(dates, spectra_obs, max_iter, avg_days_yr, num_coefficients):
     """Create a fully fitted lasso model.
 
     Args:
@@ -63,7 +61,7 @@ def fitted_model(dates, spectra_obs, num_coefficients=4,
     Example:
         fitted_model(dates, obs).predict(...)
     """
-    coef_matrix = coefficient_matrix(dates, num_coefficients)
+    coef_matrix = coefficient_matrix(dates, avg_days_yr, num_coefficients)
 
     lasso = linear_model.Lasso(max_iter=max_iter)
     model = lasso.fit(coef_matrix, spectra_obs)
@@ -74,7 +72,7 @@ def fitted_model(dates, spectra_obs, num_coefficients=4,
     return FittedModel(fitted_model=model, rmse=rmse, residual=residuals)
 
 
-def predict(model, dates):
-    coef_matrix = coefficient_matrix(dates, 8)
+def predict(model, dates, avg_days_yr):
+    coef_matrix = coefficient_matrix(dates, avg_days_yr, 8)
 
     return model.fitted_model.predict(coef_matrix)
