@@ -312,7 +312,7 @@ def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
                                  fitter_fn,
                                  processing_mask,
                                  slice(previous_end, model_window.start),
-                                 curve_qa=curve_qa['START']))
+                                 curve_qa['START'], proc_params))
             start = False
 
         # Step 4: lookforward
@@ -386,8 +386,11 @@ def initialize(dates, observations, fitter_fn, model_window, processing_mask,
         # will increment if the model isn't stable, incrementing only
         # the window stop in lock-step does not guarantee a 1-year+
         # time-range.
-        stop = find_time_index(dates, model_window, meow_size, day_delta)
-        model_window = slice(model_window.start, stop)
+        if not enough_time(period[model_window], day_delta):
+            model_window = slice(model_window.start, model_window.stop + 1)
+            continue
+        # stop = find_time_index(dates, model_window, meow_size, day_delta)
+        # model_window = slice(model_window.start, stop)
         log.debug('Checking window: %s', model_window)
 
         # Count outliers in the window, if there are too many outliers then
