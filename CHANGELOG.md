@@ -1,7 +1,7 @@
 # pyccd change log
 All notable changes to this project will be documented in this file.
 
-## [1.4.0] - TBD
+## 1.4.0 - TBD
 ### Added
  - this file
  - can now pass a processing parameter dictionary to ccd.detect, key/values will override parameters.yaml
@@ -53,6 +53,9 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0.b1] - 2017-01-31
  - Initial beta release for evaluation efforts
+ - Change tracking start
 
-## [1.0.0.a1] - 2016-10-13
+## 1.0.0.a1 - 2016-10-13
  - Proof of concept for moving the CCDC code base to python
+
+[1.0.0.b1]: https://github.com/usgs-eros/lcmap-pyccd/compare/1.0.0.a1...1.0.0.b1
