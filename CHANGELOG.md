@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file. Changes bef
 ### Bug Fixes
  - reference period array rather than original dates array for the model window in the initialize method
  - simplified logic and removed find_time_index method
+ - changed adjusted variogram logic to match the Matlab approach 1:1
 
 ## [1.3.1] - 2017-4-10
 ### Changed
