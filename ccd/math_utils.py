@@ -41,7 +41,10 @@ def adjusted_variogram(dates, observations):
         majority = mode(var)[0][0]
 
         if majority > 30:
-            vario = np.median(np.abs(observations[:, 1 + idx:] - observations[:, :-idx - 1]), axis=1)
+            diff = observations[:, 1 + idx:] - observations[:, :-idx - 1]
+            ids = var > 30
+
+            vario = np.median(np.abs(diff[:, ids]), axis=1)
             break
 
     return vario
