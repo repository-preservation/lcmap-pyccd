@@ -53,6 +53,20 @@ pyccd exists to provide the simplest possible implementation of ccd.
 
 ```
 
+Default processing parameters can be over-ridden using a dictionary (see parameters.yaml for valid keys):  
+
+```python
+>>> import ccd
+>>> params = {'QA_BITPACKED': False,
+              'QA_FILL': 255,
+              'QA_CLEAR': 0,
+              'QA_WATER': 1,
+              'QA_SHADOW': 2,
+              'QA_SNOW': 3,
+              'QA_CLOUD': 4}
+>>> results = ccd.detect(dates, blues, greens, reds, nirs, swir1s, swir2s, thermals, qas, params=params)
+```
+
 ## Installing
 System requirements (Ubuntu)
 * python3-dev
@@ -111,11 +125,6 @@ $ pytest --profile-svg
 $ ptw
 ```
 
-##### Running via command-line
-```bash
-$ python ./ccd/cli.py sample test/resources/sample_2.csv
-```
-
 ## Contributing
 Contributions to pyccd are most welcome, just be sure to thoroughly review the guidelines first.
 
@@ -155,17 +164,6 @@ PyCCD's version is defined by the ```ccd/version.py/__version__``` attribute
 ONLY.
 
 ## References
-
-### ATBD
-1. Obtain minimum number of clear observations
-2. Run regression against this set (n)
-3. Continue adding observations
-4. If three additional consecutive observations falls outside predicted
-   values for any band, a change has occurred for all bands
-   and a new regression model is started.
-5. If next three observations are not outside the range, an outlier has
-    has been detected.
-* Outliers are flagged and omitted from the regression fitting
 
 Links
 * [Test Data](docs/TestData.md)
