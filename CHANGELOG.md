@@ -24,7 +24,7 @@ All notable changes to this project will be documented in this file. Changes bef
  
 ### Bug Fixes
  - removed errant print statement
- - changed the adjusted variogram calculation to a different approach as the original way was just wrong
+ - fixed the adjusted variogram calculation introduced last version
 
 ## [1.3.0] - 2017-3-30
 ### Changed
