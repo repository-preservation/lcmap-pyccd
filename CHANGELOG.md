@@ -1,5 +1,5 @@
 # pyccd change log
-All notable changes to this project will be documented in this file.
+All notable changes to this project will be documented in this file. Changes before 1.0.0.b1 are not tracked.  
 
 ## 1.4.0 - TBD
 ### Added
@@ -41,7 +41,7 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.4.b1] - 2017-02-24
 ### Added
- - travis-ci automated testing and deployment
+ - travis-ci automated testing and deployment setup
  - better pypi interactions
  
 ### Changed
@@ -59,3 +59,8 @@ All notable changes to this project will be documented in this file.
  - Proof of concept for moving the CCDC code base to python
 
 [1.0.0.b1]: https://github.com/usgs-eros/lcmap-pyccd/compare/1.0.0.a1...1.0.0.b1
+[1.0.4.b1]: https://github.com/usgs-eros/lcmap-pyccd/compare/1.0.0.b1...v1.0.4.b1
+[1.1.0]: https://github.com/usgs-eros/lcmap-pyccd/compare/v1.0.4.b1...1.1.0
+[1.3.0]: https://github.com/usgs-eros/lcmap-pyccd/compare/1.1.0...1.3.0
+[1.3.1]: https://github.com/usgs-eros/lcmap-pyccd/compare/1.3.0...1.3.1
+[1.4.0]: https://github.com/usgs-eros/lcmap-pyccd/compare/1.3.1...HEAD
