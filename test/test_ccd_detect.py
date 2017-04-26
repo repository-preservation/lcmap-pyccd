@@ -22,10 +22,19 @@ def test_sample_data_sets():
                'test/resources/sample_WA_grid08_row999_col1_normal.csv',
                'test/resources/test_3657_3610_observations.csv']
 
+    params = {'QA_BITPACKED': False,
+              'QA_FILL': 255,
+              'QA_CLEAR': 0,
+              'QA_WATER': 1,
+              'QA_SHADOW': 2,
+              'QA_SNOW': 3,
+              'QA_CLOUD': 4}
+
     for sample in samples:
         data = read_data(sample)
         results = ccd.detect(data[0], data[1], data[2], data[3], data[4],
-                             data[5], data[6], data[7], data[8])
+                             data[5], data[6], data[7], data[8],
+                             params=params)
 
 
 def test_sort_dates():

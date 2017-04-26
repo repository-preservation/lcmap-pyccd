@@ -1,15 +1,15 @@
 import time
+import logging
 
 from ccd.procedures import fit_procedure as __determine_fit_procedure
 import numpy as np
-from ccd import app, math_utils
+from ccd import app, math_utils, qa
 import importlib
 from .version import __version__
 from .version import __algorithm__ as algorithm
 from .version import __name
 
-logger = app.logging.getLogger(__name)
-defaults = app.defaults
+log = logging.getLogger(__name)
 
 
 def attr_from_str(value):
@@ -26,7 +26,7 @@ def attr_from_str(value):
         obj = importlib.import_module(module)
         return getattr(obj, target)
     except (ImportError, AttributeError) as e:
-        logger.debug(e)
+        log.debug(e)
         return None
 
 
@@ -97,9 +97,9 @@ def __sort_dates(dates):
     return np.argsort(dates)
 
 
-@math_utils.ensure_ndarray_input(keywords=False)
 def detect(dates, blues, greens, reds, nirs,
-           swir1s, swir2s, thermals, quality):
+           swir1s, swir2s, thermals, quality,
+           params=None):
     """Entry point call to detect change
 
     No filtering up-front as different procedures may do things
@@ -115,11 +115,21 @@ def detect(dates, blues, greens, reds, nirs,
         swir2s:   1d-array or list of swir2 band values
         thermals: 1d-array or list of thermal band values
         quality:  1d-array or list of qa band values
+        params: python dictionary to change module wide processing
+            parameters
 
     Returns:
         Tuple of ccd.detections namedtuples
     """
     t1 = time.time()
+
+    proc_params = app.get_default_params()
+
+    if params:
+        proc_params.update(params)
+
+    dates = np.asarray(dates)
+    quality = np.asarray(quality)
 
     spectra = np.stack((blues, greens,
                         reds, nirs, swir1s,
@@ -131,13 +141,16 @@ def detect(dates, blues, greens, reds, nirs,
     quality = quality[indices]
 
     # load the fitter_fn
-    fitter_fn = attr_from_str(defaults.FITTER_FN)
+    fitter_fn = attr_from_str(proc_params.FITTER_FN)
+
+    if proc_params.QA_BITPACKED is True:
+        quality = qa.unpackqa(quality, proc_params)
 
     # Determine which procedure to use for the detection
-    procedure = __determine_fit_procedure(quality)
+    procedure = __determine_fit_procedure(quality, proc_params)
 
-    results = procedure(dates, spectra, fitter_fn, quality)
-    logger.debug('Total time for algorithm: %s', time.time() - t1)
+    results = procedure(dates, spectra, fitter_fn, quality, proc_params)
+    log.debug('Total time for algorithm: %s', time.time() - t1)
 
     # call detect and return results as the detections namedtuple
     return __attach_metadata(results, procedure)

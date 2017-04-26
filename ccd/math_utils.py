@@ -16,24 +16,6 @@ from scipy.stats import mode
 # TODO: Numba timings
 
 
-def ensure_ndarray_input(keywords=True):
-    """
-    Wrapper to ensure inputs to a method are of type ndarray
-    This cleans up subsequent code that might need to check for this
-    """
-    def outer(func):
-        def inner(*args, **kwargs):
-
-            if keywords is True:
-                return func(*(np.asarray(_) for _ in args), **kwargs)
-            else:
-                return func(*(np.asarray(_) for _ in args))
-
-        return inner
-    return outer
-
-
-@ensure_ndarray_input(keywords=False)
 def adjusted_variogram(dates, observations):
     """
     Calculate a modified first order variogram/madogram.
@@ -59,13 +41,15 @@ def adjusted_variogram(dates, observations):
         majority = mode(var)[0][0]
 
         if majority > 30:
-            vario = np.median(np.abs(observations[:, 1 + idx:] - observations[:, :-idx - 1]), axis=1)
+            diff = observations[:, 1 + idx:] - observations[:, :-idx - 1]
+            ids = var > 30
+
+            vario = np.median(np.abs(diff[:, ids]), axis=1)
             break
 
     return vario
 
 
-@ensure_ndarray_input(keywords=False)
 def euclidean_norm(vector):
     """
     Calculate the euclidean norm across a vector
@@ -81,18 +65,13 @@ def euclidean_norm(vector):
     return np.sum(vector ** 2) ** .5
 
 
-@ensure_ndarray_input(keywords=True)
-def euclidean_norm_sq(vector, axis=None):
+def sum_of_squares(vector, axis=None):
     """
-    Return the square of the euclidean norm, essentially removes
-    the square root
-
-    This is used to simplify some math used during
-    change detection processing
-
+    Squares the values, then adds them up
+    
     Args:
-        vector: 1-d array of values
-        axis: axis along which to perform the summation process
+        vector: 1-d array of values, or n-d array with an axis set
+        axis: numpy axis to operate on in cases of more than 1-d array
 
     Returns:
         float
@@ -100,12 +79,6 @@ def euclidean_norm_sq(vector, axis=None):
     return np.sum(vector ** 2, axis=axis)
 
 
-@ensure_ndarray_input(keywords=True)
-def sum_of_squares(vector, axis=None):
-    return np.sum(vector ** 2, axis=axis)
-
-
-@ensure_ndarray_input(keywords=False)
 def calc_rmse(actual, predicted):
     """
     Calculate the root mean square of error for the given inputs
@@ -123,7 +96,6 @@ def calc_rmse(actual, predicted):
     return (residuals ** 2).mean() ** 0.5, residuals
 
 
-@ensure_ndarray_input(keywords=False)
 def calc_median(vector):
     """
     Calculate the median value of the given vector
@@ -137,7 +109,6 @@ def calc_median(vector):
     return np.median(vector)
 
 
-@ensure_ndarray_input(keywords=False)
 def calc_residuals(actual, predicted):
     """
     Helper method to make other code portions clearer
@@ -152,7 +123,6 @@ def calc_residuals(actual, predicted):
     return actual - predicted
 
 
-@ensure_ndarray_input(keywords=True)
 def kelvin_to_celsius(thermals, scale=10):
     """
     Convert kelvin values to celsius
@@ -175,7 +145,6 @@ def kelvin_to_celsius(thermals, scale=10):
     return thermals * scale - 27315
 
 
-@ensure_ndarray_input(keywords=False)
 def calculate_variogram(observations):
     """
     Calculate the first order variogram/madogram across all bands
@@ -191,4 +160,51 @@ def calculate_variogram(observations):
     return np.median(np.abs(np.diff(observations)), axis=1)
 
 
+def mask_duplicate_values(vector):
+    """
+    Mask out duplicate values.
 
+    Mainly used for removing duplicate observation dates from the dataset.
+    Just because there are duplicate observation dates, doesn't mean that 
+    both have valid data.
+
+    Generally this should be applied after other masks.
+
+    Arg:
+        vector: 1-d ndarray, ordinal date values
+
+    Returns:
+        1-d boolean ndarray
+    """
+    mask = np.zeros_like(vector, dtype=np.bool)
+    mask[np.unique(vector, return_index=True)[1]] = 1
+
+    return mask
+
+
+def mask_value(vector, val):
+    """
+    Build a boolean mask around a certain value in the vector.
+    
+    Args:
+        vector: 1-d ndarray of values
+        val: values to mask on
+
+    Returns:
+        1-d boolean ndarray
+    """
+    return vector == val
+
+
+def count_value(vector, val):
+    """
+    Count the number of occurrences of a value in the vector.
+    
+    Args:
+        vector: 1-d ndarray of values
+        val: value to count
+
+    Returns:
+        int
+    """
+    return np.sum(mask_value(vector, val))
