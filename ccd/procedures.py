@@ -22,12 +22,11 @@ For more information please refer to the pyccd Algorithm Description Document.
 .. _Algorithm Description Document:
    https://drive.google.com/drive/folders/0BzELHvbrg1pDREJlTF8xOHBZbEU
 """
-
+import logging
 import numpy as np
 
 from ccd import qa
-from ccd.app import logging
-from ccd.change import find_time_index, enough_samples, enough_time,\
+from ccd.change import enough_samples, enough_time,\
     update_processing_mask, stable, determine_num_coefs, calc_residuals, \
     find_closest_doy, change_magnitude, detect_change, detect_outlier
 from ccd.models import results_to_changemodel, tmask

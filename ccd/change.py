@@ -5,14 +5,13 @@ method.
 
 These should be as close to the functional paradigm as possible.
 """
-
+import logging
 import numpy as np
 
-from ccd import app
-from ccd.models import lasso, results_to_changemodel
+from ccd.models import lasso
 from ccd.math_utils import sum_of_squares
 
-log = app.logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def stable(models, dates, variogram, t_cg, detection_bands):

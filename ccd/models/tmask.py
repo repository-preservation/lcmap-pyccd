@@ -1,5 +1,6 @@
+import logging
 import numpy as np
-from ccd.app import logging
+
 from ccd.models import robust_fit
 
 

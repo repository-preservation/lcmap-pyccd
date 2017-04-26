@@ -11,7 +11,7 @@ Module level constructs are only evaluated once in a Python application's
 lifecycle, usually at the time of first import. This pattern is borrowed
 from Flask.
 """
-import logging, sys, yaml, os, hashlib
+import yaml, os, hashlib
 
 from cachetools import LRUCache
 
@@ -42,22 +42,6 @@ class Parameters(dict):
 # mainly here as reference
 def numpy_hashkey(array):
     return hashlib.sha1(array).hexdigest()
-
-# Logging system
-#
-# To use the logging from any module:
-# import app
-# logger = app.logging.getLogger(__name__)
-#
-# To alter where log messages go or how they are represented,
-# configure the logging system below.
-# iso8601 date format
-__format = '%(asctime)s %(module)-10s::%(funcName)-20s - [%(lineno)-3d]%(message)s'
-logging.basicConfig(#stream=sys.stderr,
-                    level=logging.DEBUG,
-                    format=__format,
-                    datefmt='%Y-%m-%d %H:%M:%S')
-
 
 # Configure caching
 cache = LRUCache(maxsize=2000)

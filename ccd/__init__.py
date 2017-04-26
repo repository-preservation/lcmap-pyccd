@@ -1,4 +1,5 @@
 import time
+import logging
 
 from ccd.procedures import fit_procedure as __determine_fit_procedure
 import numpy as np
@@ -8,7 +9,7 @@ from .version import __version__
 from .version import __algorithm__ as algorithm
 from .version import __name
 
-logger = app.logging.getLogger(__name)
+log = logging.getLogger(__name)
 
 
 def attr_from_str(value):
@@ -25,7 +26,7 @@ def attr_from_str(value):
         obj = importlib.import_module(module)
         return getattr(obj, target)
     except (ImportError, AttributeError) as e:
-        logger.debug(e)
+        log.debug(e)
         return None
 
 
@@ -149,7 +150,7 @@ def detect(dates, blues, greens, reds, nirs,
     procedure = __determine_fit_procedure(quality, proc_params)
 
     results = procedure(dates, spectra, fitter_fn, quality, proc_params)
-    logger.debug('Total time for algorithm: %s', time.time() - t1)
+    log.debug('Total time for algorithm: %s', time.time() - t1)
 
     # call detect and return results as the detections namedtuple
     return __attach_metadata(results, procedure)
