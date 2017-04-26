@@ -44,12 +44,22 @@ TMASK_BANDS:
 ############################
 # Representative values in the QA band
 ############################
-QA_FILL: 255
-QA_CLEAR: 0
-QA_WATER: 1
-QA_SHADOW: 2
-QA_SNOW: 3
-QA_CLOUD: 4
+QA_BITPACKED: true
+# original CFMask values
+#QA_FILL: 255
+#QA_CLEAR: 0
+#QA_WATER: 1
+#QA_SHADOW: 2
+#QA_SNOW: 3
+#QA_CLOUD: 4
+# ARD bitpacked offsets
+QA_FILL: 0
+QA_CLEAR: 1
+QA_WATER: 2
+QA_SHADOW: 3
+QA_SNOW: 4
+QA_CLOUD: 5
+
 
 ############################
 # Representative values for the curve QA
@@ -64,7 +74,7 @@ CURVE_QA:
 # Threshold values used
 ############################
 CLEAR_OBSERVATION_THRESHOLD: 3
-CLEAR_PCT_THREHOLD: 0.25
+CLEAR_PCT_THRESHOLD: 0.25
 SNOW_PCT_THRESHOLD: 0.75
 OUTLIER_THRESHOLD: 35.888186879610423
 CHANGE_THRESHOLD: 15.086272469388987

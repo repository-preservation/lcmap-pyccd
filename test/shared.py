@@ -1,10 +1,10 @@
 import numpy as np
 import datetime
+import logging
 import aniso8601
-from ccd import app
 
 
-log = app.logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def two_change_data():

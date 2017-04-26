@@ -1,67 +1,39 @@
 """
 Tests for the basic masking and filtering operations
 """
-import numpy as np
-
 from ccd.qa import *
 
 
-def test_mask_snow():
-    arr = np.arange(5)
-    ans = np.array([False, False, False, True, False])
-
-    assert np.array_equal(ans, mask_snow(arr, 3))
-
-
-def test_mask_clear():
-    arr = np.arange(5)
-    ans = np.array([True, False, False, False, False])
-
-    assert np.array_equal(ans, mask_clear(arr, 0))
+clear = 0
+water = 1
+fill = 255
+snow = 3
+clear_thresh = 0.25
+snow_thresh = 0.75
 
 
-def test_mask_water():
-    arr = np.arange(5)
-    ans = np.array([False, True, False, False, False])
+def test_checkbit():
+    packint = 1
+    offset = 0
 
-    assert np.array_equal(ans, mask_water(arr, 1))
+    assert checkbit(packint, offset)
 
+    offset = 1
 
-def test_mask_fill():
-    arr = np.arange(5)
-    arr[-1] = 255
-    ans = np.array([False, False, False, False, True])
-
-    assert np.array_equal(ans, mask_fill(arr, 255))
+    assert not checkbit(packint, offset)
 
 
-def test_mask_clear_or_water():
-    arr = np.arange(5)
-    ans = np.array([True, True, False, False, False])
-
-    assert np.array_equal(ans, mask_clear_or_water(arr))
+# def test_qabitval():
+#     packint = 3
+#
+#     assert qabitval(packint, params) == fill
 
 
 def test_count_clear_or_water():
     arr = np.arange(5)
     ans = 2
 
-    assert ans == count_clear_or_water(arr)
-
-
-def test_count_fill():
-    arr = np.arange(5)
-    arr[-1] = 255
-    ans = 1
-
-    assert ans == count_fill(arr)
-
-
-def test_count_snow():
-    arr = np.arange(5)
-    ans = 1
-
-    assert ans == count_snow(arr)
+    assert ans == count_clear_or_water(arr, clear, water)
 
 
 def test_count_total():
@@ -69,7 +41,7 @@ def test_count_total():
     arr[-1] = 255
     ans = 4
 
-    assert ans == count_total(arr)
+    assert ans == count_total(arr, fill)
 
 
 def test_ratio_clear():
@@ -77,37 +49,36 @@ def test_ratio_clear():
     arr[-1] = 255
     ans = 0.5
 
-    assert ans == ratio_clear(arr)
+    assert ans == ratio_clear(arr, clear, water, fill)
 
 
 def test_ratio_snow():
     arr = np.arange(5)
-    arr[-1] = 255
     ans = 1/3.01
 
-    assert ans == ratio_snow(arr)
+    assert ans == ratio_snow(arr, clear, water, snow)
 
 
 def test_enough_clear():
     arr = np.arange(5)
     ans = True
 
-    assert ans == enough_clear(arr)
+    assert ans == enough_clear(arr, clear, water, fill, clear_thresh)
 
-    arr[1:] = 4
+    arr[1:] = snow
     ans = False
-    assert ans == enough_clear(arr)
+    assert ans == enough_clear(arr, clear, water, fill, clear_thresh)
 
 
 def test_enough_snow():
     arr = np.arange(5)
     ans = False
 
-    assert ans == enough_snow(arr)
+    assert ans == enough_snow(arr, clear, water, snow, snow_thresh)
 
-    arr[1:] = 3
+    arr[1:] = snow
     ans = True
-    assert ans == enough_snow(arr)
+    assert ans == enough_snow(arr, clear, water, snow, snow_thresh)
 
 
 def test_filter_median_green():

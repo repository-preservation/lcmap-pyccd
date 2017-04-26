@@ -1,13 +1,13 @@
+import logging
 import numpy as np
-import sklearn.linear_model as lm
-from ccd.app import logging, defaults
+
 from ccd.models import robust_fit
 
 
 log = logging.getLogger(__name__)
 
 
-def tmask_coefficient_matrix(dates, avg_days_yr=defaults.AVG_DAYS_YR):
+def tmask_coefficient_matrix(dates, avg_days_yr):
     """Coefficient matrix that is used for Tmask modeling
 
     Args:
@@ -28,8 +28,7 @@ def tmask_coefficient_matrix(dates, avg_days_yr=defaults.AVG_DAYS_YR):
     return matrix
 
 
-def tmask(dates, observations, variogram, bands=defaults.TMASK_BANDS,
-          t_const=defaults.T_CONST):
+def tmask(dates, observations, variogram, bands, t_const, avg_days_yr):
     """Produce an index for filtering outliers.
 
     Arguments:
@@ -49,7 +48,7 @@ def tmask(dates, observations, variogram, bands=defaults.TMASK_BANDS,
     # regression = lm.LinearRegression()
     regression = robust_fit.RLM(maxiter=5)
 
-    tmask_matrix = tmask_coefficient_matrix(dates)
+    tmask_matrix = tmask_coefficient_matrix(dates, avg_days_yr)
 
     # Accumulator for outliers. This starts off as a list of False values
     # because we don't assume anything is an outlier.
