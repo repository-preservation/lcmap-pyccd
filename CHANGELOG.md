@@ -1,7 +1,7 @@
 # pyccd change log
 All notable changes to this project will be documented in this file. Changes before 1.0.0.b1 are not tracked.  
 
-## 1.4.0 - TBD
+## 1.4.0 - 2017-4-26
 ### Added
  - this file
  - can now pass a processing parameter dictionary to ccd.detect, key/values will override parameters.yaml
@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file. Changes bef
  - tried to remove all default argument values for all methods
  - adjusted many internal method signatures
  - removed ensure_ndarray_input decorator
+ - logging is less global and listens to what imports ccd
  
 ### Bug Fixes
  - reference period array rather than original dates array for the model window in the initialize method
@@ -64,4 +65,4 @@ All notable changes to this project will be documented in this file. Changes bef
 [1.1.0]: https://github.com/usgs-eros/lcmap-pyccd/compare/v1.0.4.b1...v1.1.0
 [1.3.0]: https://github.com/usgs-eros/lcmap-pyccd/compare/v1.1.0...v1.3.0
 [1.3.1]: https://github.com/usgs-eros/lcmap-pyccd/compare/v1.3.0...v1.3.1
-[1.4.0]: https://github.com/usgs-eros/lcmap-pyccd/compare/v1.3.1...HEAD
+[1.4.0]: https://github.com/usgs-eros/lcmap-pyccd/compare/v1.3.1...v1.4.0
