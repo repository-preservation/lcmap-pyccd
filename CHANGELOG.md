@@ -1,7 +1,11 @@
 # pyccd change log
 All notable changes to this project will be documented in this file. Changes before 1.0.0.b1 are not tracked.  
 
-## 1.4.0 - 2017-4-26
+## RC
+### Added
+ - check the inputs to make sure that they are appropriately sized relative to each-other 
+
+## [1.4.0] - 2017-4-26
 ### Added
  - this file
  - can now pass a processing parameter dictionary to ccd.detect, key/values will override parameters.yaml

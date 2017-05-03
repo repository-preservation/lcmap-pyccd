@@ -97,6 +97,23 @@ def __sort_dates(dates):
     return np.argsort(dates)
 
 
+def __check_inputs(dates, quality, spectra):
+    """
+    Make sure the inputs are of the correct relative size to each-other.
+    
+    Args:
+        dates: 1-d ndarray
+        quality: 1-d ndarray
+        spectra: 2-d ndarray
+    """
+    # Make sure we only have one dimension
+    assert dates.ndim == 1
+    # Make sure quality is the same
+    assert dates.shape == quality.shape
+    # Make sure there is spectral data for each date
+    assert dates.shape[0] == spectra.shape[1]
+
+
 def detect(dates, blues, greens, reds, nirs,
            swir1s, swir2s, thermals, quality,
            params=None):
@@ -134,6 +151,8 @@ def detect(dates, blues, greens, reds, nirs,
     spectra = np.stack((blues, greens,
                         reds, nirs, swir1s,
                         swir2s, thermals))
+
+    __check_inputs(dates, quality, spectra)
 
     indices = __sort_dates(dates)
     dates = dates[indices]
