@@ -19,7 +19,7 @@ def tmask_coefficient_matrix(dates, avg_days_yr):
     annual_cycle = 2*np.pi/avg_days_yr
     observation_cycle = annual_cycle / np.ceil((dates[-1] - dates[0]) / avg_days_yr)
 
-    matrix = np.zeros(shape=(dates.shape[0], 4), order='F')
+    matrix = np.ones(shape=(dates.shape[0], 5), order='F')
     matrix[:, 0] = np.cos(annual_cycle * dates)
     matrix[:, 1] = np.sin(annual_cycle * dates)
     matrix[:, 2] = np.cos(observation_cycle * dates)
