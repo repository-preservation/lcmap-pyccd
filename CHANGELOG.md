@@ -1,6 +1,10 @@
 # pyccd change log
 All notable changes to this project will be documented in this file. Changes before 1.0.0.b1 are not tracked.  
 
+## [2017.06.20]
+### Bug Fixes
+ - The lasso coefficient matrix was not being populated correctly when the number of requested coefficients was 8.
+
 ## [2017.6.8]
 ### Added
  - Check the inputs to make sure that they are appropriately sized relative to each-other
@@ -77,3 +81,4 @@ All notable changes to this project will be documented in this file. Changes bef
 [1.3.1]: https://github.com/usgs-eros/lcmap-pyccd/compare/v1.3.0...v1.3.1
 [1.4.0]: https://github.com/usgs-eros/lcmap-pyccd/compare/v1.3.1...v1.4.0
 [2017.6.8]: https://github.com/usgs-eros/lcmap-pyccd/compare/v1.4.0...v2017.6.8
+[2017.06.20]: https://github.com/usgs-eros/lcmap-pyccd/compare/v2017.6.8...v2017.06.20
