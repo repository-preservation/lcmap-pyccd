@@ -33,11 +33,11 @@ def coefficient_matrix(dates, avg_days_yr, num_coefficients):
     matrix[:, 1] = np.cos(w * dates)
     matrix[:, 2] = np.sin(w * dates)
 
-    if num_coefficients == 6:
+    if num_coefficients >= 6:
         matrix[:, 3] = np.cos(2 * w * dates)
         matrix[:, 4] = np.sin(2 * w * dates)
 
-    if num_coefficients == 8:
+    if num_coefficients >= 8:
         matrix[:, 5] = np.cos(3 * w * dates)
         matrix[:, 6] = np.sin(3 * w * dates)
 
