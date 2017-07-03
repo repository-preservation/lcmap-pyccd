@@ -75,7 +75,8 @@ setup(
                  'pytest>=3.0.2',
                  'pytest-profiling>=1.1.1',
                  'gprof2dot>=2015.12.1',
-                 'pytest-watch>=4.1.0'],
+                 'pytest-watch>=4.1.0',
+                 'requests'],
         'dev': ['jupyter',],
     },
 
