@@ -78,6 +78,7 @@ setup(
                  'pytest-watch>=4.1.0',
                  'requests>=2.13.0',
                  'aniso8601>=1.2.1',
+                 'xarray>=0.9.1',
                  ],
         'dev': ['jupyter',],
     },
