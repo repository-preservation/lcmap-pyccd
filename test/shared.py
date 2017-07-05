@@ -1,10 +1,13 @@
 import aniso8601
+import itertools
+import os
 import base64
+import json
+import glob
 from datetime import datetime
 import logging
 import math
 import numpy as np
-import requests
 import xarray as xr
 
 log = logging.getLogger(__name__)
@@ -140,9 +143,54 @@ def snap(x, y, chip_spec={'shift_y': -195.0, 'shift_x': 2415.0, 'chip_x': 3000, 
     return int(chip[0]), int(chip[1])
 
 
-def get_request(url, params=None):
-    """ Return json response for a give url """
-    return requests.get(url, params=params).json()
+def flatten(iterable):
+    """
+    Reduce dimensionality of iterable containing iterables
+    """
+    return itertools.chain.from_iterable(iterable)
+
+
+def f_read(path):
+    """
+    helper function for reading file contents
+    """
+    with open(path, 'r+') as handle:
+        return handle.read()
+
+
+def return_key(value, kmap):
+    """
+    return the key of a dict whose value contains arg
+    """
+    for k in kmap:
+        if value in kmap[k]:
+            return k
+
+
+def chips(spectra, ubid, x, y, root_dir="test/resources/test-data/chips/band-json"):
+    """
+    Return chips for named spectra
+    :param spectra: red, green, blue, nir, swir1, swir2, thermal or cfmask
+    :type spectra: string
+    :returns: sequence of chips
+    """
+    path = ''.join([root_dir, os.sep, "*", spectra, '*', str(x), '*', str(y), '*'])
+    filenames = glob.glob(path)
+    all_chips = flatten([json.loads(f_read(filename)) for filename in filenames])
+    chips = [i for i in all_chips if i['ubid'] == ubid]
+    return tuple(chips)
+
+
+def chip_specs(spectra, root_dir="test/resources/test-data/chip-specs"):
+    """
+    Returns chip specs for the named spectra.
+    :param spectra: red, green, blue, nir, swir1, swir2, thermal or cfmask
+    :type spectra: string
+    :returns: sequence of chip specs
+    """
+    path = ''.join([root_dir, os.sep, '*', spectra, '*'])
+    filenames = glob.glob(path)
+    return json.loads(f_read(filenames[0]))
 
 
 def spectral_map(specs_url):
@@ -154,22 +202,10 @@ def spectral_map(specs_url):
 
     try:
         for spectra in _map:
-            if isinstance(_map[spectra], str):
-                _tags = ["tags:" + _map[spectra]]
-            else:
-                _tags = ["tags:"+i for i in _map[spectra]]
-            _qs = " AND ".join(_tags)
-            url = "{specurl}?q=({tags})".format(specurl=specs_url, tags=_qs)
-            _start = datetime.now()
-            resp = get_request(url)
-            dur = datetime.now() - _start
-            print("request for {} took {} seconds to fulfill".format(url, dur.total_seconds()))
+            resp = chip_specs(spectra)
             # value needs to be a list, make it unique using set()
             _spec_map[spectra] = list(set([i['ubid'] for i in resp]))
-        _start_whole = datetime.now()
-        _spec_whole = get_request(specs_url)
-        _dur_whole = datetime.now() - _start_whole
-        print("request for whole spec response to {}, took {} seconds".format(specs_url, _dur_whole.total_seconds()))
+        _spec_whole = chip_specs('all')
     except Exception as e:
         raise Exception("Problem generating spectral map from api query, specs_url: {}\n message: {}".format(specs_url, e))
     return _spec_map, _spec_whole
@@ -220,12 +256,8 @@ def rainbow(x, y, t, specs_url, chips_url, requested_ubids):
     for (spectrum, ubids) in spec_map.items():
         for ubid in ubids:
             if ubid in requested_ubids:
-                params = {'ubid': ubid, 'x': x, 'y': y, 'acquired': t}
-                _chip_start = datetime.now()
-                chips_resp = get_request(chips_url, params=params)
-                _chip_dur = datetime.now() - _chip_start
-                print("chip request for ubid, x, y, acquired: {}, {}, {}, {} "
-                      "took: {} seconds".format(ubid, x, y, t, _chip_dur.total_seconds()))
+                spectra = return_key(ubid, spec_map)
+                chips_resp = chips(spectra, ubid, x, y)
                 if chips_resp:
                     band = landsat_dataset(spectrum, ubid, spec_whole, chips_resp)
                     if band:
