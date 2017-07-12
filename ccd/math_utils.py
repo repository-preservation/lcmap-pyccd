@@ -11,11 +11,13 @@ from functools import wraps
 
 import numpy as np
 from scipy.stats import mode
+import numba
 
 # TODO: Cache timings
 # TODO: Numba timings
 
 
+@numba.jit
 def adjusted_variogram(dates, observations):
     """
     Calculate a modified first order variogram/madogram.
@@ -50,6 +52,7 @@ def adjusted_variogram(dates, observations):
     return vario
 
 
+@numba.jit(nopython=True, nogil=True, cache=True)
 def euclidean_norm(vector):
     """
     Calculate the euclidean norm across a vector
@@ -65,6 +68,7 @@ def euclidean_norm(vector):
     return np.sum(vector ** 2) ** .5
 
 
+@numba.jit
 def sum_of_squares(vector, axis=None):
     """
     Squares the values, then adds them up
@@ -79,6 +83,7 @@ def sum_of_squares(vector, axis=None):
     return np.sum(vector ** 2, axis=axis)
 
 
+@numba.jit(nopython=True, nogil=True, cache=True)
 def calc_rmse(actual, predicted):
     """
     Calculate the root mean square of error for the given inputs
@@ -96,6 +101,7 @@ def calc_rmse(actual, predicted):
     return (residuals ** 2).mean() ** 0.5, residuals
 
 
+@numba.jit(nopython=True, nogil=True, cache=True)
 def calc_median(vector):
     """
     Calculate the median value of the given vector
@@ -109,6 +115,7 @@ def calc_median(vector):
     return np.median(vector)
 
 
+@numba.jit(nopython=True, nogil=True, cache=True)
 def calc_residuals(actual, predicted):
     """
     Helper method to make other code portions clearer
@@ -123,6 +130,7 @@ def calc_residuals(actual, predicted):
     return actual - predicted
 
 
+@numba.jit(nopython=True, nogil=True, cache=True)
 def kelvin_to_celsius(thermals, scale=10):
     """
     Convert kelvin values to celsius
@@ -145,6 +153,7 @@ def kelvin_to_celsius(thermals, scale=10):
     return thermals * scale - 27315
 
 
+@numba.jit(nopython=True, nogil=True, cache=True)
 def calculate_variogram(observations):
     """
     Calculate the first order variogram/madogram across all bands
@@ -157,9 +166,13 @@ def calculate_variogram(observations):
     Returns:
         1-d ndarray representing the variogram values
     """
-    return np.median(np.abs(np.diff(observations)), axis=1)
+    # http://numba.pydata.org/numba-doc/dev/reference/numpysupported.html#reductions
+    # axis kwarg not supported by numba, need to verify validity
+    #return np.median(np.abs(np.diff(observations)), axis=1)
+    return np.median(np.abs(np.diff(observations)))
 
 
+@numba.jit
 def mask_duplicate_values(vector):
     """
     Mask out duplicate values.
@@ -182,6 +195,7 @@ def mask_duplicate_values(vector):
     return mask
 
 
+@numba.jit(nopython=True, nogil=True, cache=True)
 def mask_value(vector, val):
     """
     Build a boolean mask around a certain value in the vector.
@@ -196,6 +210,7 @@ def mask_value(vector, val):
     return vector == val
 
 
+@numba.jit(nopython=True, nogil=True, cache=True)
 def count_value(vector, val):
     """
     Count the number of occurrences of a value in the vector.

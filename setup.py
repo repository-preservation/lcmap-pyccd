@@ -66,7 +66,8 @@ setup(
                       'cachetools>=2.0.0',
                       'click>=6.6',
                       'click-plugins>=1.0.3',
-                      'PyYAML>=3.12'],
+                      'PyYAML>=3.12',
+                      'numba>=0.34.0'],
 
     extras_require={
         'test': ['aniso8601>=1.1.0',

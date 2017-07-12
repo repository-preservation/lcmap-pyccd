@@ -5,14 +5,18 @@ from cachetools import LRUCache
 from ccd.models import FittedModel
 from ccd.math_utils import calc_rmse
 
+import numba
+
 cache = LRUCache(maxsize=1000)
 
 
+@numba.jit(nopython=True, nogil=True, cache=True)
 def __coefficient_cache_key(observation_dates):
     return tuple(observation_dates)
 
 
 # @cached(cache=cache, key=__coefficient_cache_key)
+@numba.jit(nopython=True, nogil=True, cache=True)
 def coefficient_matrix(dates, avg_days_yr, num_coefficients):
     """
     Fourier transform function to be used for the matrix of inputs for
@@ -27,7 +31,10 @@ def coefficient_matrix(dates, avg_days_yr, num_coefficients):
     """
     w = 2 * np.pi / avg_days_yr
 
-    matrix = np.zeros(shape=(len(dates), 7), order='F')
+    # http://numba.pydata.org/numba-doc/dev/reference/numpysupported.html#other-functions
+    # order kwarg not supported by numba, need to verify
+    #matrix = np.zeros(shape=(len(dates), 7), order='F')
+    matrix = np.zeros(shape=(len(dates), 7))
 
     matrix[:, 0] = dates
     matrix[:, 1] = np.cos(w * dates)
@@ -44,6 +51,7 @@ def coefficient_matrix(dates, avg_days_yr, num_coefficients):
     return matrix
 
 
+@numba.jit(cache=True)
 def fitted_model(dates, spectra_obs, max_iter, avg_days_yr, num_coefficients):
     """Create a fully fitted lasso model.
 
@@ -72,6 +80,7 @@ def fitted_model(dates, spectra_obs, max_iter, avg_days_yr, num_coefficients):
     return FittedModel(fitted_model=model, rmse=rmse, residual=residuals)
 
 
+@numba.jit(cache=True)
 def predict(model, dates, avg_days_yr):
     coef_matrix = coefficient_matrix(dates, avg_days_yr, 8)
 

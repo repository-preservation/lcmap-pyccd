@@ -11,9 +11,12 @@ import numpy as np
 from ccd.models import lasso
 from ccd.math_utils import sum_of_squares
 
+import numba
+
 log = logging.getLogger(__name__)
 
 
+@numba.jit(cache=True)
 def stable(models, dates, variogram, t_cg, detection_bands):
     """Determine if we have a stable model to start building with
 
@@ -47,6 +50,7 @@ def stable(models, dates, variogram, t_cg, detection_bands):
     return euc_norm < t_cg
 
 
+@numba.jit(cache=True)
 def change_magnitude(residuals, variogram, comparison_rmse):
     """
     Calculate the magnitude of change for multiple points in time.
@@ -68,11 +72,13 @@ def change_magnitude(residuals, variogram, comparison_rmse):
 
     change_mag = sum_of_squares(magnitudes, axis=0)
 
-    log.debug('Magnitudes of change: %s', change_mag)
+    # to keep log.debug, remove nopython=True from jit decorator
+    #log.debug('Magnitudes of change: %s', change_mag)
 
     return change_mag
 
 
+@numba.jit(cache=True)
 def calc_residuals(dates, observations, model, avg_days_yr):
     """
     Calculate the residuals using the fitted model.
@@ -90,6 +96,7 @@ def calc_residuals(dates, observations, model, avg_days_yr):
     return np.abs(observations - lasso.predict(model, dates, avg_days_yr))
 
 
+@numba.jit(nopython=True, nogil=True, cache=True)
 def detect_change(magnitudes, change_threshold):
     """
     Convenience function to check if the minimum magnitude surpasses the
@@ -105,6 +112,7 @@ def detect_change(magnitudes, change_threshold):
     return np.min(magnitudes) > change_threshold
 
 
+@numba.jit(nopython=True, nogil=True, cache=True)
 def detect_outlier(magnitude, outlier_threshold):
     """
     Convenience function to check if any of the magnitudes surpass the
@@ -122,6 +130,7 @@ def detect_outlier(magnitude, outlier_threshold):
     return magnitude > outlier_threshold
 
 
+@numba.jit(nopython=True, nogil=True, cache=True)
 def find_time_index(dates, window, meow_size, day_delta):
     """Find index in times at least one year from time at meow_ix.
     Args:
@@ -163,6 +172,7 @@ def find_time_index(dates, window, meow_size, day_delta):
     return end_ix
 
 
+@numba.jit(nopython=True, nogil=True, cache=True)
 def enough_samples(dates, meow_size):
     """Change detection requires a minimum number of samples (as specified
     by meow size).
@@ -182,6 +192,7 @@ def enough_samples(dates, meow_size):
     return len(dates) >= meow_size
 
 
+@numba.jit(nopython=True, nogil=True, cache=True)
 def enough_time(dates, day_delta):
     """Change detection requires a minimum amount of time (as specified by
     day_delta).
@@ -201,6 +212,7 @@ def enough_time(dates, day_delta):
     return (dates[-1] - dates[0]) >= day_delta
 
 
+@numba.jit(nopython=True, nogil=True, cache=True)
 def determine_num_coefs(dates, min_coef, mid_coef, max_coef, num_obs_factor):
     """
     Determine the number of coefficients to use for the main fit procedure
@@ -230,6 +242,7 @@ def determine_num_coefs(dates, min_coef, mid_coef, max_coef, num_obs_factor):
         return max_coef
 
 
+@numba.jit(cache=True)
 def update_processing_mask(mask, index, window=None):
     """
     Update the persistent processing mask.
@@ -266,6 +279,7 @@ def update_processing_mask(mask, index, window=None):
     return new_mask
 
 
+@numba.jit(cache=True)
 def find_closest_doy(dates, date_idx, window, num):
     """
     Find the closest n dates based on day of year.

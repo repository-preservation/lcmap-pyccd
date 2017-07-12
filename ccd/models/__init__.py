@@ -1,5 +1,7 @@
 from collections import namedtuple
 
+from numba import jit
+
 # TODO: establish standardize object for handling models used for general
 # regression purposes. This will truly make the code much more modular.
 
@@ -66,6 +68,7 @@ ChangeModel = namedtuple('ChangeModel', ['start_day',
                                          'thermal'])
 
 
+@jit(cache=True)
 def results_to_changemodel(fitted_models, start_day, end_day, break_day, magnitudes,
                            observation_count, change_probability, curve_qa):
     """
