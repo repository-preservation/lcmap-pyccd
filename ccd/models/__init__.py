@@ -46,24 +46,24 @@ FittedModel = namedtuple('FittedModel', ['fitted_model', 'residual', 'rmse'])
 #                          coefficients: (float, float, ...),
 #                          intercept: float}}
 
-SpectralModel = namedtuple('SpectralModel', ['rmse',
-                                             'coefficients',
-                                             'intercept',
-                                             'magnitude'])
-
-ChangeModel = namedtuple('ChangeModel', ['start_day',
-                                         'end_day',
-                                         'break_day',
-                                         'observation_count',
-                                         'change_probability',
-                                         'curve_qa',
-                                         'blue',
-                                         'green',
-                                         'red',
-                                         'nir',
-                                         'swir1',
-                                         'swir2',
-                                         'thermal'])
+# SpectralModel = namedtuple('SpectralModel', ['rmse',
+#                                              'coefficients',
+#                                              'intercept',
+#                                              'magnitude'])
+#
+# ChangeModel = namedtuple('ChangeModel', ['start_day',
+#                                          'end_day',
+#                                          'break_day',
+#                                          'observation_count',
+#                                          'change_probability',
+#                                          'curve_qa',
+#                                          'blue',
+#                                          'green',
+#                                          'red',
+#                                          'nir',
+#                                          'swir1',
+#                                          'swir2',
+#                                          'thermal'])
 
 
 def results_to_changemodel(fitted_models, start_day, end_day, break_day, magnitudes,
@@ -85,22 +85,22 @@ def results_to_changemodel(fitted_models, start_day, end_day, break_day, magnitu
     """
     spectral_models = []
     for ix, model in enumerate(fitted_models):
-        spectral = SpectralModel(rmse=model.rmse,
-                                 coefficients=model.fitted_model.coef_,
-                                 intercept=model.fitted_model.intercept_,
-                                 magnitude=magnitudes[ix])
+        spectral = {'rmse': model.rmse,
+                    'coefficients': model.fitted_model.coef_,
+                    'intercept': model.fitted_model.intercept_,
+                    'magnitude': magnitudes[ix]}
         spectral_models.append(spectral)
 
-    return ChangeModel(start_day=start_day,
-                       end_day=end_day,
-                       break_day=break_day,
-                       observation_count=observation_count,
-                       change_probability=change_probability,
-                       curve_qa=curve_qa,
-                       blue=spectral_models[0],
-                       green=spectral_models[1],
-                       red=spectral_models[2],
-                       nir=spectral_models[3],
-                       swir1=spectral_models[4],
-                       swir2=spectral_models[5],
-                       thermal=spectral_models[6])
+    return {'start_day': start_day,
+            'end_day': end_day,
+            'break_day': break_day,
+            'observation_count': observation_count,
+            'change_probability': change_probability,
+            'curve_qa': curve_qa,
+            'blue': spectral_models[0],
+            'green': spectral_models[1],
+            'red': spectral_models[2],
+            'nir': spectral_models[3],
+            'swir1': spectral_models[4],
+            'swir2': spectral_models[5],
+            'thermal': spectral_models[6]}
