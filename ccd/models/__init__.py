@@ -9,78 +9,28 @@ from collections import namedtuple
 # TODO: give better names to avoid model.model.predict nonsense
 FittedModel = namedtuple('FittedModel', ['fitted_model', 'residual', 'rmse'])
 
-# Structure to store the results, this works better than a simple
-# list or tuple as it clearly states what is what
-# {start_day: int,
-#               end_day: int,
-#               break_day: int,
-#               observation_count: int,
-#               change_probability: float,
-#               curve_qa: int,
-#               blue:     {magnitude: float,
-#                          rmse: float,
-#                          coefficients: (float, float, ...),
-#                          intercept: float},
-#               green:    {magnitude: float,
-#                          rmse: float,
-#                          coefficients: (float, float, ...),
-#                          intercept: float},
-#               red:      {magnitude: float,
-#                          rmse: float,
-#                          coefficients: (float, float, ...),
-#                          intercept: float},
-#               nir:      {magnitude: float,
-#                          rmse: float,
-#                          coefficients: (float, float, ...),
-#                          intercept: float},
-#               swir1:    {magnitude: float,
-#                          rmse: float,
-#                          coefficients: (float, float, ...),
-#                          intercept: float},
-#               swir2:    {magnitude: float,
-#                          rmse: float,
-#                          coefficients: (float, float, ...),
-#                          intercept: float},
-#               thermal:  {magnitude: float,
-#                          rmse: float,
-#                          coefficients: (float, float, ...),
-#                          intercept: float}}
 
-# SpectralModel = namedtuple('SpectralModel', ['rmse',
-#                                              'coefficients',
-#                                              'intercept',
-#                                              'magnitude'])
-#
-# ChangeModel = namedtuple('ChangeModel', ['start_day',
-#                                          'end_day',
-#                                          'break_day',
-#                                          'observation_count',
-#                                          'change_probability',
-#                                          'curve_qa',
-#                                          'blue',
-#                                          'green',
-#                                          'red',
-#                                          'nir',
-#                                          'swir1',
-#                                          'swir2',
-#                                          'thermal'])
-
-
-def results_to_changemodel(fitted_models, start_day, end_day, break_day, magnitudes,
-                           observation_count, change_probability, curve_qa):
+def results_to_changemodel(fitted_models, start_day, end_day, break_day,
+                           magnitudes, observation_count, change_probability,
+                           curve_qa):
     """
-    Helper method to consolidate results into a concise, self documenting data structure
+    Helper method to consolidate results into a concise, self documenting data
+    structure.
 
-    Args:
-        fitted_models:
-        start_day:
-        end_day:
-        break_day:
-        observation_count:
-        change_probability:
-        curve_qa:
+    {start_day: int,
+     end_day: int,
+     break_day: int,
+     observation_count: int,
+     change_probability: float,
+     curve_qa: int,
+     blue:  {magnitude: float,
+             rmse: float,
+             coefficients: (float, float, ...),
+             intercept: float},
+     etc...
 
     Returns:
+        dict
 
     """
     spectral_models = []
