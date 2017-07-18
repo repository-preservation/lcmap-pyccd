@@ -36,11 +36,12 @@ def stable(models, dates, variogram, t_cg, detection_bands):
     # future
     check_vals = []
     for idx in detection_bands:
-        rmse_norm = max(variogram[idx], models[idx].rmse)
-        slope = models[idx].fitted_model.coef_[0] * (dates[-1] - dates[0])
+        #rmse_norm = max(variogram[idx], models[idx].rmse)
+        rmse_norm = max(variogram[idx], models[idx]['rmse'])
+        slope = models[idx]['fitted_model'].coef_[0] * (dates[-1] - dates[0])
 
-        check_val = (abs(slope) + abs(models[idx].residual[0]) +
-                     abs(models[idx].residual[-1])) / rmse_norm
+        check_val = (abs(slope) + abs(models[idx]['residual'][0]) +
+                     abs(models[idx]['residual'][-1])) / rmse_norm
 
         check_vals.append(check_val)
 
@@ -212,7 +213,7 @@ def enough_time(dates, day_delta):
     return (dates[-1] - dates[0]) >= day_delta
 
 
-@numba.jit(nopython=True, nogil=True, cache=True)
+@numba.jit(cache=True, nopython=True)
 def determine_num_coefs(dates, min_coef, mid_coef, max_coef, num_obs_factor):
     """
     Determine the number of coefficients to use for the main fit procedure

@@ -169,9 +169,6 @@ def detect(dates, blues, greens, reds, nirs,
     # Determine which procedure to use for the detection
     procedure = __determine_fit_procedure(quality, proc_params)
 
-    #for v in (dates, spectra, fitter_fn, quality, proc_params):
-    #    print(v)
-
     results = procedure(dates, spectra, fitter_fn, quality, proc_params)
     log.debug('Total time for algorithm: %s', time.time() - t1)
 

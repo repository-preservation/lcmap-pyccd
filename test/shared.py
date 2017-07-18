@@ -10,8 +10,6 @@ import math
 import numpy as np
 import xarray as xr
 
-#from numba import jit
-import numba
 
 log = logging.getLogger(__name__)
 
@@ -162,7 +160,7 @@ def snap(x, y, chip_spec={'shift_y': -195.0, 'shift_x': 2415.0, 'chip_x': 3000, 
     chip = point_to_chip(x, y, chip_spec['chip_x'], chip_spec['chip_y'], chip_spec['shift_x'], chip_spec['shift_y'])
     return int(chip[0]), int(chip[1])
 
-@numba.jit
+
 def flatten(iterable):
     """
     Reduce dimensionality of iterable containing iterables
@@ -187,7 +185,6 @@ def return_key(value, kmap):
             return k
 
 
-@numba.jit
 def chips(spectra, ubid, x, y, root_dir="test/resources/test-data/chips/band-json"):
     """
     Return chips for named spectra
@@ -197,17 +194,19 @@ def chips(spectra, ubid, x, y, root_dir="test/resources/test-data/chips/band-jso
     """
     path = ''.join([root_dir, os.sep, "*", spectra, '*', str(x), '*', str(y), '*'])
     filenames = glob.glob(path)
+
     #all_chips = flatten([json.loads(f_read(filename)) for filename in filenames])
     _chip_json = []
     for filename in filenames:
         _chip_json.append(json.loads(f_read(filename)))
     all_chips = flatten(_chip_json)
+
+    # chips = [i for i in all_chips if i['ubid'] == ubid]
     _out_chips = []
     for chip in all_chips:
         if chip['ubid'] == ubid:
             _out_chips.append(chip)
 
-    #chips = [i for i in all_chips if i['ubid'] == ubid]
     #return tuple(chips)
     return tuple(_out_chips)
 
@@ -269,14 +268,28 @@ def landsat_dataset(spectrum, ubid, specs, chips):
         if spec not in uniq_specs:
             uniq_specs.append(spec)
 
-    specs_map = dict([[spec['ubid'], spec] for spec in uniq_specs if spec['ubid'] == ubid])
-    rasters = xr.DataArray([as_numpy_array(chip, specs_map) for chip in chips])
+    #specs_map = dict([[spec['ubid'], spec] for spec in uniq_specs if spec['ubid'] == ubid])
+    _sm = []
+    for spec in uniq_specs:
+        if spec['ubid'] == ubid:
+            _sm.append([spec['ubid'], spec])
+    specs_map = dict(_sm)
+
+    #rasters = xr.DataArray([as_numpy_array(chip, specs_map) for chip in chips])
+    _rast = []
+    for chip in chips:
+        _rast.append(as_numpy_array(chip, specs_map))
+    rasters = xr.DataArray(_rast)
 
     ds = xr.Dataset()
     ds[spectrum] = (('t', 'x', 'y'), rasters)
     ds[spectrum].attrs = {'color': spectrum}
     #ds.coords['t'] = (('t'), pd.to_datetime([t['acquired'] for t in chips]))
-    ds.coords['t'] = (('t'), [t['acquired'] for t in chips])
+    # ds.coords['t'] = (('t'), [t['acquired'] for t in chips])
+    t_acq = []
+    for t in chips:
+        t_acq.append(t['acquired'])
+    ds.coords['t'] = (('t'), t_acq)
     return ds
 
 
@@ -288,6 +301,7 @@ def rainbow(x, y, t, specs_url, chips_url, requested_ubids):
         for ubid in ubids:
             if ubid in requested_ubids:
                 spectra = return_key(ubid, spec_map)
+                #print("spectra is: %s" % spectra)
                 chips_resp = chips(spectra, ubid, x, y)
                 if chips_resp:
                     band = landsat_dataset(spectrum, ubid, spec_whole, chips_resp)

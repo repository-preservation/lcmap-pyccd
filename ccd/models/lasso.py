@@ -16,7 +16,7 @@ def __coefficient_cache_key(observation_dates):
 
 
 # @cached(cache=cache, key=__coefficient_cache_key)
-@numba.jit(nopython=True, nogil=True, cache=True)
+@numba.jit(cache=True)
 def coefficient_matrix(dates, avg_days_yr, num_coefficients):
     """
     Fourier transform function to be used for the matrix of inputs for
@@ -56,7 +56,7 @@ def fitted_model(dates, spectra_obs, max_iter, avg_days_yr, num_coefficients):
     """Create a fully fitted lasso model.
 
     Args:
-        dates: list or ordinal observation dates
+        dates: list of ordinal observation dates
         spectra_obs: list of values corresponding to the observation dates for
             a single spectral band
         num_coefficients: how many coefficients to use for the fit
@@ -77,11 +77,12 @@ def fitted_model(dates, spectra_obs, max_iter, avg_days_yr, num_coefficients):
     predictions = model.predict(coef_matrix)
     rmse, residuals = calc_rmse(spectra_obs, predictions)
 
-    return FittedModel(fitted_model=model, rmse=rmse, residual=residuals)
+    #return FittedModel(fitted_model=model, rmse=rmse, residual=residuals)
+    return {'fitted_model': model, 'rmse': rmse, 'residual': residuals}
 
 
 @numba.jit(cache=True)
 def predict(model, dates, avg_days_yr):
     coef_matrix = coefficient_matrix(dates, avg_days_yr, 8)
-
-    return model.fitted_model.predict(coef_matrix)
+    #return model.fitted_model.predict(coef_matrix)
+    return model['fitted_model'].predict(coef_matrix)
