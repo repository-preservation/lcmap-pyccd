@@ -1,6 +1,7 @@
 from sklearn import linear_model
 import numpy as np
-from cachetools import LRUCache
+from cachetools import LRUCache, cached
+import functools
 
 from ccd.models import FittedModel
 from ccd.math_utils import calc_rmse
@@ -12,7 +13,8 @@ def __coefficient_cache_key(observation_dates):
     return tuple(observation_dates)
 
 
-# @cached(cache=cache, key=__coefficient_cache_key)
+#@cached(cache=cache, key=__coefficient_cache_key)
+#@functools.lru_cache()
 def coefficient_matrix(dates, avg_days_yr, num_coefficients):
     """
     Fourier transform function to be used for the matrix of inputs for
