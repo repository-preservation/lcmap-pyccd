@@ -368,7 +368,7 @@ def initialize(dates, observations, fitter_fn, model_window, processing_mask,
     meow_size = proc_params.MEOW_SIZE
     day_delta = proc_params.DAY_DELTA
     detection_bands = proc_params.DETECTION_BANDS
-    tmask_bands = proc_params.TMASK_BANDS
+    tmask_bands = np.array(proc_params.TMASK_BANDS)
     change_thresh = proc_params.CHANGE_THRESHOLD
     tmask_scale = proc_params.T_CONST
     avg_days_yr = proc_params.AVG_DAYS_YR

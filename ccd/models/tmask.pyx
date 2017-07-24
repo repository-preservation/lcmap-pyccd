@@ -18,9 +18,12 @@ def tmask_coefficient_matrix(np.ndarray dates,
     Returns:
         Populated numpy array with coefficient values
     """
+    #annual_cycle = 2*np.pi/avg_days_yr
+    #observation_cycle = annual_cycle / np.ceil((dates[-1] - dates[0]) / avg_days_yr)
     cdef float annual_cycle = 2*np.pi/avg_days_yr
     cdef float observation_cycle = annual_cycle / np.ceil((dates[-1] - dates[0]) / avg_days_yr)
 
+    #matrix = np.ones(shape=(dates.shape[0], 5))
     cdef np.ndarray matrix = np.ones(shape=(dates.shape[0], 5))
     matrix[:, 0] = np.cos(annual_cycle * dates)
     matrix[:, 1] = np.sin(annual_cycle * dates)
@@ -31,7 +34,7 @@ def tmask_coefficient_matrix(np.ndarray dates,
 
 
 def tmask(np.ndarray dates,
-          observations,
+          np.ndarray observations,
           np.ndarray variogram,
           np.ndarray bands,
           np.float t_const,
@@ -50,11 +53,11 @@ def tmask(np.ndarray dates,
 
     Return: indexed array, excluding outlier observations.
     """
-    print("dates: {}".format(dates))
-    print("observations: {}".format(observations.shape))
-    print("variogram: {}".format(variogram))
-    print("bands: {}".format(bands))
-    print("t_const: {}".format(t_const))
+    #print("dates: {}".format(dates))
+    #print("observations: {}".format(observations.shape))
+    #print("variogram: {}".format(variogram))
+    #print("bands: {}".format(bands))
+    #print("t_const: {}".format(t_const))
     # variogram = calculate_variogram(observations)
     # Time and expected values using a four-part matrix of coefficients.
     # regression = lm.LinearRegression()
@@ -64,8 +67,8 @@ def tmask(np.ndarray dates,
 
     # Accumulator for outliers. This starts off as a list of False values
     # because we don't assume anything is an outlier.
-    #_, sample_count = observations.shape
-    _, sample_count = (7, 12)
+    _, sample_count = np.array((observations.shape[0], observations.shape[1]), dtype=int)
+    #_, sample_count = (7, 12)
     outliers = np.zeros(sample_count, dtype=bool)
 
     # For each band, determine if the delta between predeicted and actual
