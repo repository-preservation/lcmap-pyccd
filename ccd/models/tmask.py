@@ -3,10 +3,12 @@ import numpy as np
 
 from ccd.models import robust_fit
 
+import numba
 
 log = logging.getLogger(__name__)
 
 
+@numba.jit(nopython=True, nogil=True, cache=True)
 def tmask_coefficient_matrix(dates, avg_days_yr):
     """Coefficient matrix that is used for Tmask modeling
 
@@ -19,7 +21,11 @@ def tmask_coefficient_matrix(dates, avg_days_yr):
     annual_cycle = 2*np.pi/avg_days_yr
     observation_cycle = annual_cycle / np.ceil((dates[-1] - dates[0]) / avg_days_yr)
 
-    matrix = np.ones(shape=(dates.shape[0], 5), order='F')
+    # http://numba.pydata.org/numba-doc/dev/reference/numpysupported.html#other-functions
+    # order kwarg not supported by numba, need to verify impact
+    # matrix = np.ones(shape=(dates.shape[0], 5), order='F')
+    matrix = np.ones(shape=(dates.shape[0], 5))
+
     matrix[:, 0] = np.cos(annual_cycle * dates)
     matrix[:, 1] = np.sin(annual_cycle * dates)
     matrix[:, 2] = np.cos(observation_cycle * dates)
@@ -28,6 +34,7 @@ def tmask_coefficient_matrix(dates, avg_days_yr):
     return matrix
 
 
+@numba.jit(cache=True)
 def tmask(dates, observations, variogram, bands, t_const, avg_days_yr):
     """Produce an index for filtering outliers.
 

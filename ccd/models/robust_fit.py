@@ -17,6 +17,7 @@ statsmodels and can reach ~4x faster if Numba is available to accelerate.
 import numpy
 import sklearn
 import scipy
+import numba
 
 # from yatsm.accel import try_jit
 
@@ -25,6 +26,7 @@ EPS = numpy.finfo('float').eps
 
 # Weight scaling methods
 # @try_jit(nopython=True)
+@numba.jit(nopython=True, nogil=True, cache=True)
 def bisquare(resid, c=4.685):
     """
     Returns weighting for each residual using bisquare weight function
@@ -44,6 +46,7 @@ def bisquare(resid, c=4.685):
 
 
 # @try_jit(nopython=True)
+@numba.jit(nopython=True, nogil=True, cache=True)
 def mad(x, c=0.6745):
     """
     Returns Median-Absolute-Deviation (MAD) of some data
@@ -68,6 +71,7 @@ def mad(x, c=0.6745):
 
 # UTILITY FUNCTIONS
 # @try_jit(nopython=True)
+@numba.jit(nopython=True, nogil=True, cache=True)
 def _check_converge(x0, x, tol=1e-8):
     return not numpy.any(numpy.fabs(x0 - x > tol))
 
@@ -75,6 +79,7 @@ def _check_converge(x0, x, tol=1e-8):
 # Broadcast on sw prevents nopython
 # TODO: check implementation https://github.com/numba/numba/pull/1542
 # @try_jit()
+@numba.jit(cache=True)
 def _weight_fit(X, y, w):
     """
     Apply a weighted OLS fit to data
@@ -101,6 +106,7 @@ def _weight_fit(X, y, w):
 
 
 # Robust regression
+# inheritance precludes use of jitclass
 class RLM(sklearn.base.BaseEstimator):
     """ Robust Linear Model using Iterative Reweighted Least Squares (RIRLS)
 
@@ -135,7 +141,7 @@ class RLM(sklearn.base.BaseEstimator):
     def __init__(self, M=bisquare, tune=4.685,
                  scale_est=mad, scale_constant=0.6745,
                  update_scale=True, maxiter=50, tol=1e-8):
-        self.M = M
+        self.M = bisquare
         self.tune = tune
         self.scale_est = scale_est
         self.scale_constant = scale_constant
@@ -146,6 +152,7 @@ class RLM(sklearn.base.BaseEstimator):
         self.coef_ = None
         self.intercept_ = 0.0
 
+    @numba.jit(cache=True)
     def fit(self, X, y):
         """ Fit a model predicting y from X design matrix
 
@@ -199,6 +206,7 @@ class RLM(sklearn.base.BaseEstimator):
         # print resid
         return self
 
+    @numba.jit(cache=True)
     def predict(self, X):
         """ Predict yhat using model
 

@@ -10,6 +10,7 @@ import math
 import numpy as np
 import xarray as xr
 
+
 log = logging.getLogger(__name__)
 
 # sample1 = read_data("test/resources/sample_1.csv")
@@ -17,6 +18,23 @@ log = logging.getLogger(__name__)
 # persistent_snow = read_data("test/resources/sample_WA_grid08_row9_col2267_persistent_snow.csv")
 # standard_procedure = read_data("test/resources/sample_WA_grid08_row999_col1_normal.csv")
 # fmask_fail = read_data("test/resources/sample_WA_grid08_row12_col2265_fmask_fail.csv")
+
+TEST_UBIDS = ['LANDSAT_4/TM/SRB1', 'LANDSAT_4/TM/SRB2', 'LANDSAT_4/TM/SRB3', 'LANDSAT_4/TM/SRB4',
+              'LANDSAT_4/TM/SRB5', 'LANDSAT_4/TM/BTB6', 'LANDSAT_4/TM/SRB7', 'LANDSAT_4/TM/PIXELQA',
+              'LANDSAT_5/TM/SRB1', 'LANDSAT_5/TM/SRB2', 'LANDSAT_5/TM/SRB3', 'LANDSAT_5/TM/SRB4',
+              'LANDSAT_5/TM/SRB5', 'LANDSAT_5/TM/BTB6', 'LANDSAT_5/TM/SRB7', 'LANDSAT_5/TM/PIXELQA',
+              'LANDSAT_7/ETM/SRB1', 'LANDSAT_7/ETM/SRB2', 'LANDSAT_7/ETM/SRB3', 'LANDSAT_7/ETM/SRB4',
+              'LANDSAT_7/ETM/SRB5', 'LANDSAT_7/ETM/BTB6', 'LANDSAT_7/ETM/SRB7', 'LANDSAT_7/ETM/PIXELQA',
+              'LANDSAT_8/OLI_TIRS/SRB2', 'LANDSAT_8/OLI_TIRS/SRB3', 'LANDSAT_8/OLI_TIRS/SRB4',
+              'LANDSAT_8/OLI_TIRS/SRB5', 'LANDSAT_8/OLI_TIRS/SRB6', 'LANDSAT_8/OLI_TIRS/SRB7',
+              'LANDSAT_8/OLI_TIRS/BTB10', 'LANDSAT_8/OLI_TIRS/PIXELQA']
+
+
+def dtstr_to_ordinal(dtstr, iso=True):
+    """ Return ordinal from string formatted date"""
+    _fmt = '%Y-%m-%dT%H:%M:%SZ' if iso else '%Y-%m-%d %H:%M:%S'
+    _dt = datetime.strptime(dtstr, _fmt)
+    return _dt.toordinal()
 
 
 def two_change_data():
@@ -176,9 +194,21 @@ def chips(spectra, ubid, x, y, root_dir="test/resources/test-data/chips/band-jso
     """
     path = ''.join([root_dir, os.sep, "*", spectra, '*', str(x), '*', str(y), '*'])
     filenames = glob.glob(path)
-    all_chips = flatten([json.loads(f_read(filename)) for filename in filenames])
-    chips = [i for i in all_chips if i['ubid'] == ubid]
-    return tuple(chips)
+
+    #all_chips = flatten([json.loads(f_read(filename)) for filename in filenames])
+    _chip_json = []
+    for filename in filenames:
+        _chip_json.append(json.loads(f_read(filename)))
+    all_chips = flatten(_chip_json)
+
+    # chips = [i for i in all_chips if i['ubid'] == ubid]
+    _out_chips = []
+    for chip in all_chips:
+        if chip['ubid'] == ubid:
+            _out_chips.append(chip)
+
+    #return tuple(chips)
+    return tuple(_out_chips)
 
 
 def chip_specs(spectra, root_dir="test/resources/test-data/chip-specs"):
@@ -238,14 +268,28 @@ def landsat_dataset(spectrum, ubid, specs, chips):
         if spec not in uniq_specs:
             uniq_specs.append(spec)
 
-    specs_map = dict([[spec['ubid'], spec] for spec in uniq_specs if spec['ubid'] == ubid])
-    rasters = xr.DataArray([as_numpy_array(chip, specs_map) for chip in chips])
+    #specs_map = dict([[spec['ubid'], spec] for spec in uniq_specs if spec['ubid'] == ubid])
+    _sm = []
+    for spec in uniq_specs:
+        if spec['ubid'] == ubid:
+            _sm.append([spec['ubid'], spec])
+    specs_map = dict(_sm)
+
+    #rasters = xr.DataArray([as_numpy_array(chip, specs_map) for chip in chips])
+    _rast = []
+    for chip in chips:
+        _rast.append(as_numpy_array(chip, specs_map))
+    rasters = xr.DataArray(_rast)
 
     ds = xr.Dataset()
     ds[spectrum] = (('t', 'x', 'y'), rasters)
     ds[spectrum].attrs = {'color': spectrum}
     #ds.coords['t'] = (('t'), pd.to_datetime([t['acquired'] for t in chips]))
-    ds.coords['t'] = (('t'), [t['acquired'] for t in chips])
+    # ds.coords['t'] = (('t'), [t['acquired'] for t in chips])
+    t_acq = []
+    for t in chips:
+        t_acq.append(t['acquired'])
+    ds.coords['t'] = (('t'), t_acq)
     return ds
 
 
@@ -257,6 +301,7 @@ def rainbow(x, y, t, specs_url, chips_url, requested_ubids):
         for ubid in ubids:
             if ubid in requested_ubids:
                 spectra = return_key(ubid, spec_map)
+                #print("spectra is: %s" % spectra)
                 chips_resp = chips(spectra, ubid, x, y)
                 if chips_resp:
                     band = landsat_dataset(spectrum, ubid, spec_whole, chips_resp)

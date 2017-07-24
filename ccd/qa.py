@@ -4,7 +4,10 @@ import numpy as np
 
 from ccd.math_utils import calc_median, mask_value, count_value, mask_duplicate_values
 
+import numba
 
+
+@numba.jit(nopython=True, nogil=True, cache=True)
 def checkbit(packedint, offset):
     """
     Check for a bit flag in a given int value.
@@ -21,6 +24,7 @@ def checkbit(packedint, offset):
     return (packedint & bit) > 0
 
 
+@numba.jit(cache=True)
 def qabitval(packedint, proc_params):
     """
     Institute a hierarchy of qa values that may be flagged in the bitpacked
@@ -51,6 +55,7 @@ def qabitval(packedint, proc_params):
         raise ValueError('Unsupported bitpacked QA value {}'.format(packedint))
 
 
+@numba.jit(cache=True)
 def unpackqa(quality, proc_params):
     """
     Transform the bit-packed QA values into their bit offset.
@@ -62,10 +67,13 @@ def unpackqa(quality, proc_params):
     Returns:
         1-d ndarray
     """
+    _out = []
+    for q in quality:
+        _out.append(qabitval(q, proc_params))
+    #return np.array([qabitval(q, proc_params) for q in quality])
+    return np.array(_out)
 
-    return np.array([qabitval(q, proc_params) for q in quality])
-
-
+@numba.jit(nopython=True, nogil=True, cache=True)
 def count_clear_or_water(quality, clear, water):
     """
     Count clear or water data.
@@ -81,6 +89,7 @@ def count_clear_or_water(quality, clear, water):
     return count_value(quality, clear) + count_value(quality, water)
 
 
+@numba.jit(nopython=True, nogil=True, cache=True)
 def count_total(quality, fill):
     """
     Count non-fill data.
@@ -97,6 +106,7 @@ def count_total(quality, fill):
     return np.sum(~mask_value(quality, fill))
 
 
+@numba.jit(nopython=True, nogil=True, cache=True)
 def ratio_clear(quality, clear, water, fill):
     """
     Calculate ratio of clear to non-clear pixels; exclude, fill data.
@@ -116,6 +126,7 @@ def ratio_clear(quality, clear, water, fill):
             count_total(quality, fill))
 
 
+@numba.jit(nopython=True, nogil=True, cache=True)
 def ratio_snow(quality, clear, water, snow):
     """Calculate ratio of snow to clear pixels; exclude fill and non-clear data.
 
@@ -137,6 +148,7 @@ def ratio_snow(quality, clear, water, snow):
     return snowy_count / (clear_count + snowy_count + 0.01)
 
 
+@numba.jit(nopython=True, nogil=True, cache=True)
 def enough_clear(quality, clear, water, fill, threshold):
     """
     Determine if clear observations exceed threshold.
@@ -157,6 +169,7 @@ def enough_clear(quality, clear, water, fill, threshold):
     return ratio_clear(quality, clear, water, fill) >= threshold
 
 
+@numba.jit(nopython=True, nogil=True, cache=True)
 def enough_snow(quality, clear, water, snow, threshold):
     """
     Determine if snow observations exceed threshold.
@@ -176,6 +189,7 @@ def enough_snow(quality, clear, water, snow, threshold):
     return ratio_snow(quality, clear, water, snow) >= threshold
 
 
+@numba.jit(nopython=True, nogil=True, cache=True)
 def filter_median_green(green, filter_range):
     """
     Filter values based on the median value + some range
@@ -193,6 +207,7 @@ def filter_median_green(green, filter_range):
     return green < median
 
 
+@numba.jit(nopython=True, nogil=True, cache=True)
 def filter_saturated(observations):
     """
     bool index for unsaturated obserervations between 0..10,000
@@ -216,6 +231,7 @@ def filter_saturated(observations):
     return unsaturated
 
 
+@numba.jit(nopython=True, nogil=True, cache=True)
 def filter_thermal_celsius(thermal, min_celsius=-9320, max_celsius=7070):
     """
     Provide an index of observations within a brightness temperature range.
@@ -237,6 +253,7 @@ def filter_thermal_celsius(thermal, min_celsius=-9320, max_celsius=7070):
             (thermal < max_celsius))
 
 
+@numba.jit(cache=True)
 def standard_procedure_filter(observations, quality, dates, proc_params):
     """
     Filter for the initial stages of the standard procedure.
@@ -269,6 +286,7 @@ def standard_procedure_filter(observations, quality, dates, proc_params):
     return mask
 
 
+@numba.jit(cache=True)
 def snow_procedure_filter(observations, quality, dates, proc_params):
     """
     Filter for initial stages of the snow procedure
@@ -302,6 +320,7 @@ def snow_procedure_filter(observations, quality, dates, proc_params):
     return mask
 
 
+@numba.jit(cache=True)
 def insufficient_clear_filter(observations, quality, dates, proc_params):
     """
     Filter for the initial stages of the insufficient clear procedure.

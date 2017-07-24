@@ -9,6 +9,7 @@ from .version import __version__
 from .version import __algorithm__ as algorithm
 from .version import __name
 
+
 log = logging.getLogger(__name)
 
 
