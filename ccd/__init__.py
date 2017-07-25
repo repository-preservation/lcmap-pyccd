@@ -166,9 +166,9 @@ def detect(dates, blues, greens, reds, nirs,
         quality = qa.unpackqa(quality, proc_params)
 
     # Determine which procedure to use for the detection
-    procedure = __determine_fit_procedure(quality, proc_params)
+    procedure = __determine_fit_procedure(quality, dict(proc_params))
 
-    results = procedure(dates, spectra, fitter_fn, quality, proc_params)
+    results = procedure(dates, spectra, quality, dict(proc_params))
     log.debug('Total time for algorithm: %s', time.time() - t1)
 
     # call detect and return results as the detections namedtuple

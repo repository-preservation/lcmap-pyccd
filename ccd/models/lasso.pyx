@@ -18,7 +18,7 @@ from ccd.models import FittedModel
 #    return tuple(observation_dates)
 
 
-def calc_residuals(np.ndarray actual,
+cdef np.ndarray calc_residuals(np.ndarray actual,
                    np.ndarray predicted):
     """
     Helper method to make other code portions clearer
@@ -33,7 +33,7 @@ def calc_residuals(np.ndarray actual,
     return actual - predicted
 
 
-def calc_rmse(np.ndarray actual, np.ndarray predicted):
+cdef tuple calc_rmse(np.ndarray actual, np.ndarray predicted):
     """
     Calculate the root mean square of error for the given inputs
 
@@ -50,9 +50,9 @@ def calc_rmse(np.ndarray actual, np.ndarray predicted):
     return (residuals ** 2).mean() ** 0.5, residuals
 
 
-def coefficient_matrix(np.ndarray dates,
-                       np.float avg_days_yr,
-                       np.int num_coefficients):
+cdef np.ndarray coefficient_matrix(np.ndarray dates,
+                                    np.float avg_days_yr,
+                                    np.int num_coefficients):
     """
     Fourier transform function to be used for the matrix of inputs for
     model fitting
@@ -90,11 +90,11 @@ def coefficient_matrix(np.ndarray dates,
     return matrix
 
 
-def fitted_model(np.ndarray dates,
-                np.ndarray spectra_obs,
-                np.int max_iter,
-                np.float avg_days_yr,
-                np.int num_coefficients):
+cpdef fitted_model(np.ndarray dates,
+                  np.ndarray spectra_obs,
+                  np.int max_iter,
+                  np.float avg_days_yr,
+                  np.int num_coefficients):
 
 
     """Create a fully fitted lasso model.
@@ -125,7 +125,7 @@ def fitted_model(np.ndarray dates,
 
     return FittedModel(fitted_model=model, rmse=rmse, residual=residuals)
 
-def predict(model, dates, avg_days_yr):
+cpdef predict(model, dates, avg_days_yr):
     coef_matrix = coefficient_matrix(dates, avg_days_yr, 8)
 
     return model.fitted_model.predict(coef_matrix)
