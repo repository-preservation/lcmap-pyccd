@@ -25,6 +25,7 @@ For more information please refer to the pyccd Algorithm Description Document.
 import logging
 import numpy as np
 cimport numpy as np
+from libcpp cimport bool as bool_t
 
 from numpy cimport ndarray
 
@@ -650,47 +651,36 @@ cdef tuple lookforward(np.ndarray dates,
 
     return result, processing_mask, model_window
 
+#ATYPE = np.int64
+#BTYPE = np.float64
+#CTYPE = np.bool
+#
+#ctypedef np.int64_t ATYPE_t
+#ctypedef np.float64_t BTYPE_t
+##ctypedef np.bool_t CTYPE_t
+
 
 cdef tuple lookback(np.ndarray dates,
                     np.ndarray observations,
                     slice model_window,
-                    np.ndarray models,
+                    list models,
                     int previous_break,
                     np.ndarray processing_mask,
                     np.ndarray variogram,
                     dict proc_params):
-    """
-    Special case when there is a gap between the start of a time series model
-    and the previous model break point, this can include values that were
-    excluded during the initialization step.
-
-    Args:
-        dates: list of ordinal days
-        observations: spectral values across bands
-        model_window: current window of values that is being considered
-        models: currently fitted models for the model_window
-        previous_break: index value of the previous break point, or the start
-            of the time series if there wasn't one
-        processing_mask: index values that are currently being masked out from
-            processing
-        variogram: 1-d array of variogram values to compare against for the
-            normalization factor
-        proc_params: dictionary of processing parameters
-
-    Returns:
-        slice: window of indices to be used
-        array: indices of data that have been flagged as outliers
-    """
     # TODO do this better
-    peek_size = proc_params['PEEK_SIZE']
-    detection_bands = proc_params['DETECTION_BANDS']
-    change_thresh = proc_params['CHANGE_THRESHOLD']
-    outlier_thresh = proc_params['OUTLIER_THRESHOLD']
-    avg_days_yr = proc_params['AVG_DAYS_YR']
+    cdef int peek_size         = proc_params['PEEK_SIZE']
+    cdef list detection_bands  = proc_params['DETECTION_BANDS']
+    cdef float change_thresh   = proc_params['CHANGE_THRESHOLD']
+    cdef float outlier_thresh  = proc_params['OUTLIER_THRESHOLD']
+    cdef float avg_days_yr     = proc_params['AVG_DAYS_YR']
 
     #log.debug('Previous break: %s model window: %s', previous_break, model_window)
+    #cdef int[:] period = dates[processing_mask]
+    #cdef float[:] spectral_obs = observations[:, processing_mask]
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
+
 
     while model_window.start > previous_break:
         # Three conditions to see how far we want to look back each iteration.

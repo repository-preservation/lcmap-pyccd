@@ -10,6 +10,10 @@ import math
 import base64
 import xarray as xr
 
+from cachetools import LRUCache, cached
+cache = LRUCache(maxsize=100)
+
+
 TEST_UBIDS = ['LANDSAT_4/TM/SRB1', 'LANDSAT_4/TM/SRB2', 'LANDSAT_4/TM/SRB3', 'LANDSAT_4/TM/SRB4',
               'LANDSAT_4/TM/SRB5', 'LANDSAT_4/TM/BTB6', 'LANDSAT_4/TM/SRB7', 'LANDSAT_4/TM/PIXELQA',
               'LANDSAT_5/TM/SRB1', 'LANDSAT_5/TM/SRB2', 'LANDSAT_5/TM/SRB3', 'LANDSAT_5/TM/SRB4',
@@ -293,6 +297,7 @@ def landsat_dataset(spectrum, ubid, specs, chips):
     return ds
 
 
+@cached(cache)
 def rainbow(x, y, t, specs_url, chips_url, requested_ubids):
     """ Return all the landsat data, organized by spectra for a given x, y, and time-span """
     spec_map, spec_whole = spectral_map(specs_url)
