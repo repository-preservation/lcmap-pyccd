@@ -18,8 +18,9 @@ from ccd.models import FittedModel
 #    return tuple(observation_dates)
 
 
-cdef np.ndarray calc_residuals(np.ndarray actual,
-                   np.ndarray predicted):
+cdef np.ndarray[np.float_t, ndim=1] calc_residuals(np.ndarray[np.float_t, ndim=1] actual,
+                                                   np.ndarray[np.float_t, ndim=1] predicted):
+
     """
     Helper method to make other code portions clearer
 
@@ -33,26 +34,22 @@ cdef np.ndarray calc_residuals(np.ndarray actual,
     return actual - predicted
 
 
-cdef tuple calc_rmse(np.ndarray actual, np.ndarray predicted):
+cdef np.float_t calc_rmse(np.ndarray[np.float_t, ndim=1] residuals):
     """
     Calculate the root mean square of error for the given inputs
 
     Args:
-        actual: 1-d array of values, observed
-        predicted: 1-d array of values, predicted
+        residuals: 1-d array of values
 
     Returns:
         float: root mean square value
-        1-d ndarray: residuals
     """
-    cdef np.ndarray residuals = calc_residuals(actual, predicted)
-
-    return (residuals ** 2).mean() ** 0.5, residuals
+    return (residuals ** 2).mean() ** 0.5
 
 
 cdef np.ndarray coefficient_matrix(np.ndarray dates,
-                                    np.float avg_days_yr,
-                                    np.int num_coefficients):
+                                   np.float avg_days_yr,
+                                   np.int num_coefficients):
     """
     Fourier transform function to be used for the matrix of inputs for
     model fitting
@@ -121,7 +118,8 @@ cpdef fitted_model(np.ndarray dates,
     model = lasso.fit(coef_matrix, spectra_obs)
 
     predictions = model.predict(coef_matrix)
-    rmse, residuals = calc_rmse(spectra_obs, predictions)
+    cdef np.ndarray[np.float_t, ndim=1] residuals = calc_residuals(spectra_obs, predictions)
+    cdef np.float_t rmse = calc_rmse(residuals)
 
     return FittedModel(fitted_model=model, rmse=rmse, residual=residuals)
 
