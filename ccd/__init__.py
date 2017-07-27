@@ -1,7 +1,8 @@
 import time
 import logging
 
-from ccd.procedures import fit_procedure as __determine_fit_procedure
+from ccd.procedures import fit_procedure as __determine_fit_procedure, standard_procedure, \
+    insufficient_clear_procedure, permanent_snow_procedure
 import numpy as np
 from ccd import app, math_utils, qa
 import importlib
@@ -83,7 +84,7 @@ def __attach_metadata(procedure_results, procedure):
 
     return {'algorithm': algorithm,
             'processing_mask': processing_mask,
-            'procedure': procedure.__name__,
+            'procedure': procedure,
             'change_models': change_models}
 
 
@@ -166,10 +167,27 @@ def detect(dates, blues, greens, reds, nirs,
         quality = qa.unpackqa(quality, proc_params)
 
     # Determine which procedure to use for the detection
-    procedure = __determine_fit_procedure(quality, dict(proc_params))
+    _proc = __determine_fit_procedure(quality,
+                                          proc_params.QA_CLEAR,
+                                          proc_params.QA_WATER,
+                                          proc_params.QA_FILL,
+                                          proc_params.QA_SNOW,
+                                          proc_params.CLEAR_PCT_THRESHOLD,
+                                          proc_params.SNOW_PCT_THRESHOLD)
+    if _proc is "standard_procedure":
+        results = standard_procedure(dates, spectra, quality,
+                                     proc_params.MEOW_SIZE,
+                                     proc_params.PEEK_SIZE,
+                                     proc_params.THERMAL_IDX,
+                                     proc_params.CURVE_QA['start'],
+                                     proc_params.CURVE_QA['end'])
+    elif _proc is "permanent_snow_procedure":
+        results = permanent_snow_procedure(dates, spectra, quality, dict(proc_params))
+    elif _proc is "insufficient_clear_procedure":
+        results = insufficient_clear_procedure(dates, spectra, quality, dict(proc_params))
+    else:
+        raise Exception("its all gone horribly wrong")
 
-    results = procedure(dates, spectra, quality, dict(proc_params))
     log.debug('Total time for algorithm: %s', time.time() - t1)
-
     # call detect and return results as the detections namedtuple
-    return __attach_metadata(results, procedure)
+    return __attach_metadata(results, _proc)

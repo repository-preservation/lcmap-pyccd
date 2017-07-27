@@ -24,9 +24,9 @@ For more information please refer to the pyccd Algorithm Description Document.
 """
 import logging
 import numpy as np
+
 cimport numpy as np
 from libcpp cimport bool as bool_t
-
 from numpy cimport ndarray
 
 from ccd import qa
@@ -38,10 +38,13 @@ from ccd.models.lasso import fitted_model
 from ccd.math_utils import kelvin_to_celsius, adjusted_variogram, euclidean_norm
 
 
-#log = logging.getLogger(__name__)
-
-
-def fit_procedure(quality, proc_params):
+cdef char* fit_procedure(np.ndarray[np.int64_t, ndim=1] quality,
+                  np.int_t clear,
+                  np.int_t water,
+                  np.int_t fill,
+                  np.int_t snow,
+                  np.float_t clear_thresh,
+                  np.float_t snow_thresh):
     """Determine which curve fitting method to use
 
     This is based on information from the QA band
@@ -54,24 +57,13 @@ def fit_procedure(quality, proc_params):
         method: the corresponding method that will be use to generate
          the curves
     """
-    # TODO do this better
-    clear = proc_params['QA_CLEAR']
-    water = proc_params['QA_WATER']
-    fill = proc_params['QA_FILL']
-    snow = proc_params['QA_SNOW']
-    clear_thresh = proc_params['CLEAR_PCT_THRESHOLD']
-    snow_thresh = proc_params['SNOW_PCT_THRESHOLD']
+    cdef char* func = "standard_procedure"
 
     if not qa.enough_clear(quality, clear, water, fill, clear_thresh):
         if qa.enough_snow(quality, clear, water, snow, snow_thresh):
-            func = permanent_snow_procedure
+            func = "permanent_snow_procedure"
         else:
-            func = insufficient_clear_procedure
-    else:
-        func = standard_procedure
-
-    #log.debug('Procedure selected: %s',
-    #          func.__name__)
+            func = "insufficient_clear_procedure"
 
     return func
 
@@ -116,8 +108,9 @@ def permanent_snow_procedure(dates, observations, quality,
     if np.sum(processing_mask) < meow_size:
         return [], processing_mask
 
-    models = [fitted_model(period, spectrum, fit_max_iter, avg_days_yr, num_coef)
-              for spectrum in spectral_obs]
+    models = []
+    for spectrum in spectral_obs:
+        models.append(fitted_model(period, spectrum, fit_max_iter, avg_days_yr, num_coef))
 
     magnitudes = np.zeros(shape=(observations.shape[0],))
 
@@ -174,8 +167,9 @@ def insufficient_clear_procedure(dates, observations, quality,
     if np.sum(processing_mask) < meow_size:
         return [], processing_mask
 
-    models = [fitted_model(period, spectrum, fit_max_iter, avg_days_yr, num_coef)
-              for spectrum in spectral_obs]
+    models = []
+    for spectrum in spectral_obs:
+        models.append(fitted_model(period, spectrum, fit_max_iter, avg_days_yr, num_coef))
 
     magnitudes = np.zeros(shape=(observations.shape[0],))
 
@@ -192,9 +186,13 @@ def insufficient_clear_procedure(dates, observations, quality,
 
 
 cdef tuple standard_procedure(np.ndarray dates,
-                         np.ndarray observations,
-                         np.ndarray quality,
-                         dict proc_params):
+                              np.ndarray observations,
+                              np.ndarray quality,
+                              int meow_size,
+                              int peek_size,
+                              int thermal_idx,
+                              curve_qa_start,
+                              curve_qa_end):
     """
     Runs the core change detection algorithm.
 
@@ -229,15 +227,6 @@ cdef tuple standard_procedure(np.ndarray dates,
         1-d ndarray: processing mask indicating which values were used
             for model fitting
     """
-    # TODO do this better
-    meow_size   = proc_params['MEOW_SIZE']
-    peek_size   = proc_params['PEEK_SIZE']
-    thermal_idx = proc_params['THERMAL_IDX']
-    curve_qa    = proc_params['CURVE_QA']
-
-    #log.debug('Build change models - dates: %s, obs: %s, '
-    #          'meow_size: %s, peek_size: %s',
-    #          dates.shape[0], observations.shape, meow_size, peek_size)
 
     # First we need to filter the observations based on the spectra values
     # and qa information and convert kelvin to celsius.
@@ -318,7 +307,7 @@ cdef tuple standard_procedure(np.ndarray dates,
                                  observations,
                                  processing_mask,
                                  slice(previous_end, model_window.start),
-                                 curve_qa['START'], proc_params))
+                                 curve_qa_start, proc_params))
             start = False
 
         # Step 4: lookforward
@@ -341,7 +330,7 @@ cdef tuple standard_procedure(np.ndarray dates,
     if previous_end + peek_size < dates[processing_mask].shape[0]:
         model_window = slice(previous_end, dates[processing_mask].shape[0])
         results.append(catch(dates, observations, processing_mask, model_window,
-                             curve_qa['END'], proc_params))
+                             curve_qa_end, proc_params))
 
     #log.debug("change detection complete")
 
@@ -377,14 +366,6 @@ cdef tuple initialize(np.ndarray dates,
         slice: model window that was deemed to be a stable start
         namedtuple: fitted regression models
     """
-    #print("dates: {} {}".format(type(dates), dates))
-    #print("observations: {} {}".format(type(observations), observations))
-    #print("fitter_fn: {} {}".format(type(fitter_fn), fitter_fn))
-    #print("model_window: {} {}".format(type(model_window), model_window))
-    #print("processing_mask: {} {}".format(type(processing_mask), processing_mask))
-    #print("variogram: {} {}".format(type(variogram), variogram))
-    #print("proc_params: {} {}".format(type(proc_params), proc_params))
-
     # TODO do this better
     meow_size = proc_params['MEOW_SIZE']
     day_delta = proc_params['DAY_DELTA']
@@ -651,14 +632,6 @@ cdef tuple lookforward(np.ndarray dates,
 
     return result, processing_mask, model_window
 
-#ATYPE = np.int64
-#BTYPE = np.float64
-#CTYPE = np.bool
-#
-#ctypedef np.int64_t ATYPE_t
-#ctypedef np.float64_t BTYPE_t
-##ctypedef np.bool_t CTYPE_t
-
 
 cdef tuple lookback(np.ndarray dates,
                     np.ndarray observations,
@@ -675,9 +648,6 @@ cdef tuple lookback(np.ndarray dates,
     cdef float outlier_thresh  = proc_params['OUTLIER_THRESHOLD']
     cdef float avg_days_yr     = proc_params['AVG_DAYS_YR']
 
-    #log.debug('Previous break: %s model window: %s', previous_break, model_window)
-    #cdef int[:] period = dates[processing_mask]
-    #cdef float[:] spectral_obs = observations[:, processing_mask]
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
 
