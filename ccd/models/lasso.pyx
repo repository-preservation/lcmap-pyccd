@@ -3,7 +3,7 @@ import numpy as np
 cimport numpy as np
 
 from ccd.models import FittedModel
-#from ccd.math_utils import calc_rmse
+from ccd.math_utils import calc_rmse, calc_residuals
 
 
 #ITYPE = np.int
@@ -16,36 +16,6 @@ from ccd.models import FittedModel
 
 #def __coefficient_cache_key(observation_dates):
 #    return tuple(observation_dates)
-
-
-cdef np.ndarray[np.float_t, ndim=1] calc_residuals(np.ndarray[np.float_t, ndim=1] actual,
-                                                   np.ndarray[np.float_t, ndim=1] predicted):
-
-    """
-    Helper method to make other code portions clearer
-
-    Args:
-        actual: 1-d array of observed values
-        predicted: 1-d array of predicted values
-
-    Returns:
-        ndarray: 1-d array of residual values
-    """
-    return actual - predicted
-
-
-cdef np.float_t calc_rmse(np.ndarray[np.float_t, ndim=1] residuals):
-    """
-    Calculate the root mean square of error for the given inputs
-
-    Args:
-        residuals: 1-d array of values
-
-    Returns:
-        float: root mean square value
-    """
-    return (residuals ** 2).mean() ** 0.5
-
 
 cdef np.ndarray coefficient_matrix(np.ndarray dates,
                                    np.float avg_days_yr,
