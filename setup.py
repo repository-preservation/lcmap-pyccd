@@ -67,7 +67,10 @@ setup(
 
     packages=['ccd', 'ccd.models'],
 
-    ext_modules=cythonize(['ccd/models/*.pyx', 'ccd/procedures.pyx']),
+    ext_modules=cythonize(['ccd/models/*.pyx',
+                           'ccd/procedures.pyx',
+                           'ccd/math_utils.pyx',
+                           'ccd/change.pyx',]),
     include_dirs=[np.get_include()],
     #ext_modules=cythonize(extensions),
 
