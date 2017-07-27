@@ -5,7 +5,11 @@ prof/*
 pyccd.egg-info/*
 pip-selfcheck.json
 *.pyc
-*__pycache__/*
+*__pycache__*
 *.venv/*
 *.ipynb_checkpoints
 .idea/
+*.c
+*.stats
+*.so
+*.dot
