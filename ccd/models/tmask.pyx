@@ -36,7 +36,7 @@ def tmask_coefficient_matrix(np.ndarray dates,
 def tmask(np.ndarray dates,
           np.ndarray observations,
           np.ndarray variogram,
-          np.ndarray bands,
+          list bands,
           np.float t_const,
           np.float avg_days_yr):
     """Produce an index for filtering outliers.

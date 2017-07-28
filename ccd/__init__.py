@@ -174,17 +174,55 @@ def detect(dates, blues, greens, reds, nirs,
                                           proc_params.QA_SNOW,
                                           proc_params.CLEAR_PCT_THRESHOLD,
                                           proc_params.SNOW_PCT_THRESHOLD)
-    if _proc is "standard_procedure":
+
+    if _proc.decode() == "standard_procedure":
         results = standard_procedure(dates, spectra, quality,
                                      proc_params.MEOW_SIZE,
                                      proc_params.PEEK_SIZE,
                                      proc_params.THERMAL_IDX,
-                                     proc_params.CURVE_QA['start'],
-                                     proc_params.CURVE_QA['end'])
-    elif _proc is "permanent_snow_procedure":
-        results = permanent_snow_procedure(dates, spectra, quality, dict(proc_params))
-    elif _proc is "insufficient_clear_procedure":
-        results = insufficient_clear_procedure(dates, spectra, quality, dict(proc_params))
+                                     proc_params.CURVE_QA['START'],
+                                     proc_params.CURVE_QA['END'],
+                                     proc_params.QA_CLEAR,
+                                     proc_params.QA_WATER,
+                                     proc_params.DAY_DELTA,
+                                     proc_params.DETECTION_BANDS,
+                                     proc_params.TMASK_BANDS,
+                                     proc_params.CHANGE_THRESHOLD,
+                                     proc_params.T_CONST,
+                                     proc_params.AVG_DAYS_YR,
+                                     proc_params.LASSO_MAX_ITER,
+                                     proc_params.OUTLIER_THRESHOLD,
+                                     proc_params.COEFFICIENT_MIN,
+                                     proc_params.COEFFICIENT_MID,
+                                     proc_params.COEFFICIENT_MAX,
+                                     proc_params.NUM_OBS_FACTOR)
+    elif _proc.decode() == "permanent_snow_procedure":
+        results = permanent_snow_procedure(dates,
+                                           spectra,
+                                           quality,
+                                           proc_params.MEOW_SIZE,
+                                           proc_params.CURVE_QA['PERSIST_SNOW'],
+                                           proc_params.AVG_DAYS_YR,
+                                           proc_params.LASSO_MAX_ITER,
+                                           proc_params.COEFFICIENT_MIN,
+                                           proc_params.THERMAL_IDX,
+                                           proc_params.QA_CLEAR,
+                                           proc_params.QA_WATER,
+                                           proc_params.QA_SNOW)
+    elif _proc.decode() == "insufficient_clear_procedure":
+        results = insufficient_clear_procedure(dates,
+                                               spectra,
+                                               quality,
+                                               proc_params.MEOW_SIZE,
+                                               proc_params.CURVE_QA['INSUF_CLEAR'],
+                                               proc_params.AVG_DAYS_YR,
+                                               proc_params.LASSO_MAX_ITER,
+                                               proc_params.COEFFICIENT_MIN,
+                                               proc_params.GREEN_IDX,
+                                               proc_params.MEDIAN_GREEN_FILTER,
+                                               proc_params.THERMAL_IDX,
+                                               proc_params.QA_CLEAR,
+                                               proc_params.QA_WATER)
     else:
         raise Exception("its all gone horribly wrong")
 

@@ -38,7 +38,7 @@ from ccd.models.lasso import fitted_model
 from ccd.math_utils import kelvin_to_celsius, adjusted_variogram, euclidean_norm
 
 
-cdef char* fit_procedure(np.ndarray[np.int64_t, ndim=1] quality,
+cpdef char* fit_procedure(np.ndarray[np.int64_t, ndim=1] quality,
                   np.int_t clear,
                   np.int_t water,
                   np.int_t fill,
@@ -68,8 +68,18 @@ cdef char* fit_procedure(np.ndarray[np.int64_t, ndim=1] quality,
     return func
 
 
-def permanent_snow_procedure(dates, observations, quality,
-                             proc_params):
+def permanent_snow_procedure(dates,
+                             observations,
+                             quality,
+                             meow_size,
+                             curve_qa,
+                             avg_days_yr,
+                             fit_max_iter,
+                             num_coef,
+                             thermal_idx,
+                             clear,
+                             water,
+                             snow):
     """
     Snow procedure for when there is a significant amount snow represented
     in the quality information
@@ -92,15 +102,13 @@ def permanent_snow_procedure(dates, observations, quality,
         1-d ndarray: processing mask indicating which values were used
             for model fitting
     """
-    # TODO do this better
-    meow_size    = proc_params['MEOW_SIZE']
-    curve_qa     = proc_params['CURVE_QA']['PERSIST_SNOW']
-    avg_days_yr  = proc_params['AVG_DAYS_YR']
-    fit_max_iter = proc_params['LASSO_MAX_ITER']
-    num_coef     = proc_params['COEFFICIENT_MIN']
-
-    processing_mask = qa.snow_procedure_filter(observations, quality,
-                                               dates, proc_params)
+    processing_mask = qa.snow_procedure_filter(observations,
+                                               quality,
+                                               dates,
+                                               thermal_idx,
+                                               clear,
+                                               water,
+                                               snow)
 
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
@@ -127,8 +135,19 @@ def permanent_snow_procedure(dates, observations, quality,
     return (result,), processing_mask
 
 
-def insufficient_clear_procedure(dates, observations, quality,
-                                 proc_params):
+def insufficient_clear_procedure(dates,
+                                 observations,
+                                 quality,
+                                 meow_size,
+                                 curve_qa,
+                                 avg_days_yr,
+                                 fit_max_iter,
+                                 num_coef,
+                                 green_idx,
+                                 median_green_filter,
+                                 thermal_idx,
+                                 clear,
+                                 water):
     """
     insufficient clear procedure for when there is an insufficient quality
     observations
@@ -151,15 +170,14 @@ def insufficient_clear_procedure(dates, observations, quality,
         1-d ndarray: processing mask indicating which values were used
             for model fitting
         """
-    # TODO do this better
-    meow_size = proc_params['MEOW_SIZE']
-    curve_qa = proc_params['CURVE_QA']['INSUF_CLEAR']
-    avg_days_yr = proc_params['AVG_DAYS_YR']
-    fit_max_iter = proc_params['LASSO_MAX_ITER']
-    num_coef = proc_params['COEFFICIENT_MIN']
-
-    processing_mask = qa.insufficient_clear_filter(observations, quality,
-                                                   dates, proc_params)
+    processing_mask = qa.insufficient_clear_filter(observations,
+                                                   quality,
+                                                   dates,
+                                                   green_idx,
+                                                   median_green_filter,
+                                                   thermal_idx,
+                                                   clear,
+                                                   water)
 
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
@@ -185,14 +203,28 @@ def insufficient_clear_procedure(dates, observations, quality,
     return (result,), processing_mask
 
 
-cdef tuple standard_procedure(np.ndarray dates,
+cpdef tuple standard_procedure(np.ndarray dates,
                               np.ndarray observations,
                               np.ndarray quality,
                               int meow_size,
                               int peek_size,
                               int thermal_idx,
-                              curve_qa_start,
-                              curve_qa_end):
+                              int curve_qa_start,
+                              int curve_qa_end,
+                              int clear,
+                              int water,
+                              int day_delta,
+                              list detection_bands,
+                              list tmask_bands,
+                              int change_threshold,
+                              int tmask_scale,
+                              float avg_days_yr,
+                              int fit_max_iter,
+                              float outlier_threshold,
+                              int coefficient_min,
+                              int coefficient_mid,
+                              int coefficient_max,
+                              int num_obs_factor):
     """
     Runs the core change detection algorithm.
 
@@ -246,8 +278,12 @@ cdef tuple standard_procedure(np.ndarray dates,
     # The masked module from numpy does not seem to really add anything of
     # benefit to what we need to do, plus scikit may still be incompatible
     # with them.
-    processing_mask = qa.standard_procedure_filter(observations, quality,
-                                                   dates, proc_params)
+    processing_mask = qa.standard_procedure_filter(observations,
+                                                   quality,
+                                                   dates,
+                                                   thermal_idx,
+                                                   clear,
+                                                   water)
 
     obs_count = np.sum(processing_mask)
 
@@ -282,8 +318,19 @@ cdef tuple standard_procedure(np.ndarray dates,
 
         # Make things a little more readable by breaking this apart
         # catch return -> break apart into components
-        initialized = initialize(dates, observations, model_window,
-                                 processing_mask, variogram, proc_params)
+        initialized = initialize(dates,
+                                 observations,
+                                 model_window,
+                                 processing_mask,
+                                 variogram,
+                                 meow_size,
+                                 day_delta,
+                                 detection_bands,
+                                 tmask_bands,
+                                 change_threshold,
+                                 tmask_scale,
+                                 avg_days_yr,
+                                 fit_max_iter)
 
         model_window, init_models, processing_mask = initialized
 
@@ -294,8 +341,18 @@ cdef tuple standard_procedure(np.ndarray dates,
 
         # Step 2: Lookback
         if model_window.start > previous_end:
-            lb = lookback(dates, observations, model_window, init_models,
-                          previous_end, processing_mask, variogram, proc_params)
+            lb = lookback(dates,
+                          observations,
+                          model_window,
+                          init_models,
+                          previous_end,
+                          processing_mask,
+                          variogram,
+                          peek_size,
+                          detection_bands,
+                          change_threshold,
+                          outlier_threshold,
+                          avg_days_yr)
 
             model_window, processing_mask = lb
 
@@ -307,12 +364,30 @@ cdef tuple standard_procedure(np.ndarray dates,
                                  observations,
                                  processing_mask,
                                  slice(previous_end, model_window.start),
-                                 curve_qa_start, proc_params))
+                                 curve_qa_start,
+                                 avg_days_yr,
+                                 fit_max_iter,
+                                 coefficient_min)
+                           )
             start = False
 
         # Step 4: lookforward
         #log.debug('Extend change model')
-        lf = lookforward(dates, observations, model_window, processing_mask, variogram, proc_params)
+        lf = lookforward(dates,
+                         observations,
+                         model_window,
+                         processing_mask,
+                         variogram,
+                         peek_size,
+                         coefficient_min,
+                         coefficient_mid,
+                         coefficient_max,
+                         num_obs_factor,
+                         detection_bands,
+                         change_threshold,
+                         outlier_threshold,
+                         avg_days_yr,
+                         fit_max_iter)
 
         result, processing_mask, model_window = lf
         results.append(result)
@@ -329,8 +404,15 @@ cdef tuple standard_procedure(np.ndarray dates,
     # loop.
     if previous_end + peek_size < dates[processing_mask].shape[0]:
         model_window = slice(previous_end, dates[processing_mask].shape[0])
-        results.append(catch(dates, observations, processing_mask, model_window,
-                             curve_qa_end, proc_params))
+        results.append(catch(dates,
+                             observations,
+                             processing_mask,
+                             model_window,
+                             curve_qa_end,
+                             avg_days_yr,
+                             fit_max_iter,
+                             coefficient_min)
+                       )
 
     #log.debug("change detection complete")
 
@@ -346,7 +428,14 @@ cdef tuple initialize(np.ndarray dates,
                       slice model_window,
                       np.ndarray processing_mask,
                       np.ndarray variogram,
-                      dict proc_params):
+                      int meow_size,
+                      int day_delta,
+                      list detection_bands,
+                      list tmask_bands,
+                      float change_thresh,
+                      float tmask_scale,
+                      float avg_days_yr,
+                      int fit_max_iter):
     """
     Determine a good starting point at which to build off of for the
     subsequent process of change detection, both forward and backward.
@@ -366,16 +455,6 @@ cdef tuple initialize(np.ndarray dates,
         slice: model window that was deemed to be a stable start
         namedtuple: fitted regression models
     """
-    # TODO do this better
-    meow_size = proc_params['MEOW_SIZE']
-    day_delta = proc_params['DAY_DELTA']
-    detection_bands = proc_params['DETECTION_BANDS']
-    tmask_bands = np.array(proc_params['TMASK_BANDS'])
-    change_thresh = proc_params['CHANGE_THRESHOLD']
-    tmask_scale = proc_params['T_CONST']
-    avg_days_yr = proc_params['AVG_DAYS_YR']
-    fit_max_iter = proc_params['LASSO_MAX_ITER']
-
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
 
@@ -470,7 +549,16 @@ cdef tuple lookforward(np.ndarray dates,
                        slice model_window,
                        np.ndarray processing_mask,
                        np.ndarray variogram,
-                       dict proc_params):
+                       int peek_size,
+                       int coef_min,
+                       int coef_mid,
+                       int coef_max,
+                       int num_obs_fact,
+                       list detection_bands,
+                       int change_thresh,
+                       float outlier_thresh,
+                       float avg_days_yr,
+                       int fit_max_iter):
     """Increase observation window until change is detected or
     we are out of observations.
 
@@ -493,16 +581,16 @@ cdef tuple lookforward(np.ndarray dates,
         slice: model window
     """
     # TODO do this better
-    peek_size = proc_params['PEEK_SIZE']
-    coef_min = proc_params['COEFFICIENT_MIN']
-    coef_mid = proc_params['COEFFICIENT_MID']
-    coef_max = proc_params['COEFFICIENT_MAX']
-    num_obs_fact = proc_params['NUM_OBS_FACTOR']
-    detection_bands = proc_params['DETECTION_BANDS']
-    change_thresh = proc_params['CHANGE_THRESHOLD']
-    outlier_thresh = proc_params['OUTLIER_THRESHOLD']
-    avg_days_yr = proc_params['AVG_DAYS_YR']
-    fit_max_iter = proc_params['LASSO_MAX_ITER']
+    #peek_size = proc_params['PEEK_SIZE']
+    #coef_min = proc_params['COEFFICIENT_MIN']
+    #coef_mid = proc_params['COEFFICIENT_MID']
+    #coef_max = proc_params['COEFFICIENT_MAX']
+    #num_obs_fact = proc_params['NUM_OBS_FACTOR']
+    #detection_bands = proc_params['DETECTION_BANDS']
+    #change_thresh = proc_params['CHANGE_THRESHOLD']
+    #outlier_thresh = proc_params['OUTLIER_THRESHOLD']
+    #avg_days_yr = proc_params['AVG_DAYS_YR']
+    #fit_max_iter = proc_params['LASSO_MAX_ITER']
 
     # Step 4: lookforward.
     # The second step is to update a model until observations that do not
@@ -530,8 +618,11 @@ cdef tuple lookforward(np.ndarray dates,
 
     # stop is always exclusive
     while model_window.stop + peek_size < period.shape[0] or models is None:
-        num_coefs = determine_num_coefs(period[model_window], coef_min,
-                                        coef_mid, coef_max, num_obs_fact)
+        num_coefs = determine_num_coefs(period[model_window],
+                                        coef_min,
+                                        coef_mid,
+                                        coef_max,
+                                        num_obs_fact)
 
         peek_window = slice(model_window.stop, model_window.stop + peek_size)
 
@@ -640,13 +731,17 @@ cdef tuple lookback(np.ndarray dates,
                     int previous_break,
                     np.ndarray processing_mask,
                     np.ndarray variogram,
-                    dict proc_params):
+                    int peek_size,
+                    list detection_bands,
+                    float change_thresh,
+                    float outlier_thresh,
+                    float avg_days_yr):
     # TODO do this better
-    cdef int peek_size         = proc_params['PEEK_SIZE']
-    cdef list detection_bands  = proc_params['DETECTION_BANDS']
-    cdef float change_thresh   = proc_params['CHANGE_THRESHOLD']
-    cdef float outlier_thresh  = proc_params['OUTLIER_THRESHOLD']
-    cdef float avg_days_yr     = proc_params['AVG_DAYS_YR']
+    #cdef int peek_size         = proc_params['PEEK_SIZE']
+    #cdef list detection_bands  = proc_params['DETECTION_BANDS']
+    #cdef float change_thresh   = proc_params['CHANGE_THRESHOLD']
+    #cdef float outlier_thresh  = proc_params['OUTLIER_THRESHOLD']
+    #cdef float avg_days_yr     = proc_params['AVG_DAYS_YR']
 
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
@@ -709,7 +804,10 @@ cdef tuple lookback(np.ndarray dates,
 
 
 def catch(dates, observations, processing_mask, model_window,
-          curve_qa, proc_params):
+          curve_qa,
+          avg_days_yr,
+          fit_max_iter,
+          num_coef):
     """
     Handle special cases where general models just need to be fitted and return
     their results.
@@ -729,9 +827,9 @@ def catch(dates, observations, processing_mask, model_window,
 
     """
     # TODO do this better
-    avg_days_yr  = proc_params['AVG_DAYS_YR']
-    fit_max_iter = proc_params['LASSO_MAX_ITER']
-    num_coef     = proc_params['COEFFICIENT_MIN']
+    #avg_days_yr  = proc_params['AVG_DAYS_YR']
+    #fit_max_iter = proc_params['LASSO_MAX_ITER']
+    #num_coef     = proc_params['COEFFICIENT_MIN']
 
     #log.debug('Catching observations: %s', model_window)
     period = dates[processing_mask]
