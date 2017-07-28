@@ -237,7 +237,12 @@ def filter_thermal_celsius(thermal, min_celsius=-9320, max_celsius=7070):
             (thermal < max_celsius))
 
 
-def standard_procedure_filter(observations, quality, dates, proc_params):
+def standard_procedure_filter(observations,
+                              quality,
+                              dates,
+                              thermal_idx,
+                              clear,
+                              water):
     """
     Filter for the initial stages of the standard procedure.
 
@@ -254,9 +259,6 @@ def standard_procedure_filter(observations, quality, dates, proc_params):
     Returns:
         1-d boolean ndarray
     """
-    thermal_idx = proc_params['THERMAL_IDX']
-    clear = proc_params['QA_CLEAR']
-    water = proc_params['QA_WATER']
 
     mask = ((mask_value(quality, water) | mask_value(quality, clear)) &
             filter_thermal_celsius(observations[thermal_idx]) &
@@ -269,7 +271,13 @@ def standard_procedure_filter(observations, quality, dates, proc_params):
     return mask
 
 
-def snow_procedure_filter(observations, quality, dates, proc_params):
+def snow_procedure_filter(observations,
+                          quality,
+                          dates,
+                          thermal_idx,
+                          clear,
+                          water,
+                          snow):
     """
     Filter for initial stages of the snow procedure
 
@@ -286,11 +294,6 @@ def snow_procedure_filter(observations, quality, dates, proc_params):
     Returns:
         1-d boolean ndarray
     """
-    thermal_idx = proc_params['THERMAL_IDX']
-    clear = proc_params['QA_CLEAR']
-    water = proc_params['QA_WATER']
-    snow = proc_params['QA_SNOW']
-
     mask = ((mask_value(quality, water) | mask_value(quality, clear)) &
             filter_thermal_celsius(observations[thermal_idx]) &
             filter_saturated(observations)) | mask_value(quality, snow)
@@ -302,7 +305,14 @@ def snow_procedure_filter(observations, quality, dates, proc_params):
     return mask
 
 
-def insufficient_clear_filter(observations, quality, dates, proc_params):
+def insufficient_clear_filter(observations,
+                              quality,
+                              dates,
+                              green_idx,
+                              filter_range,
+                              thermal_idx,
+                              clear,
+                              water):
     """
     Filter for the initial stages of the insufficient clear procedure.
 
@@ -318,10 +328,12 @@ def insufficient_clear_filter(observations, quality, dates, proc_params):
     Returns:
         1-d boolean ndarray
     """
-    green_idx = proc_params['GREEN_IDX']
-    filter_range = proc_params['MEDIAN_GREEN_FILTER']
-
-    standard_mask = standard_procedure_filter(observations, quality, dates, proc_params)
+    standard_mask = standard_procedure_filter(observations,
+                                              quality,
+                                              dates,
+                                              thermal_idx,
+                                              clear,
+                                              water)
     green_mask = filter_median_green(observations[:, standard_mask][green_idx], filter_range)
 
     standard_mask[standard_mask] &= green_mask
