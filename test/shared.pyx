@@ -1,6 +1,8 @@
 import numpy as np
+cimport numpy as np
+
 from datetime import datetime
-import logging
+#import logging
 import aniso8601
 import itertools
 import glob
@@ -31,7 +33,7 @@ TEST_UBIDS = ['LANDSAT_4/TM/SRB1', 'LANDSAT_4/TM/SRB2', 'LANDSAT_4/TM/SRB3', 'LA
 # fmask_fail = read_data("test/resources/sample_WA_grid08_row12_col2265_fmask_fail.csv")
 
 
-log = logging.getLogger(__name__)
+#log = logging.getLogger(__name__)
 
 
 def dtstr_to_ordinal(dtstr, iso=True):
@@ -57,7 +59,7 @@ def two_change_data():
                      swir1s, swir2s, thermals, qas])
 
 
-def read_data(path):
+cpdef np.ndarray read_data(char* path):
     """Load a sample file containing acquisition days and spectral values.
 
     The first column is assumed to be the day number, subsequent columns
@@ -127,7 +129,7 @@ def sinusoid(times, frequency=1, amplitude=0.1, seed=42):
     xs = np.linspace(0, 2*np.pi, len(times))
     ys = np.array([np.sin(x)*amplitude for x in xs])
     scaled_ys = np.array(ys*100+1000, dtype=np.int16)
-    log.debug(scaled_ys)
+    #log.debug(scaled_ys)
     return np.array(scaled_ys)
 
 
@@ -239,15 +241,15 @@ def spectral_map(specs_url):
             resp = chip_specs(spectra)
             # value needs to be a list, make it unique using set()
             _spec_map[spectra] = list(set([i['ubid'] for i in resp]))
-        _spec_whole = chip_specs('all')
+        #_spec_whole = chip_specs('all')
     except Exception as e:
         raise Exception("Problem generating spectral map from api query, specs_url: {}\n message: {}".format(specs_url, e))
-    return _spec_map, _spec_whole
+    return _spec_map
 
 
-def as_numpy_array(chip, specs_map):
+cdef np.ndarray as_numpy_array(dict chip, dict specs_map):
     """ Return numpy array of chip data grouped by spectral map """
-    NUMPY_TYPES = {
+    cdef dict NUMPY_TYPES = {
         'UINT8': np.uint8,
         'UINT16': np.uint16,
         'INT8': np.int8,
@@ -264,23 +266,26 @@ def as_numpy_array(chip, specs_map):
     return np.frombuffer(buffer, np_type).reshape(*shape)
 
 
-def landsat_dataset(spectrum, ubid, specs, chips):
+cpdef landsat_dataset(str spectrum,
+                      str ubid,
+                      list specs,
+                      tuple chips):
     """ Return stack of landsat data for a given ubid, x, y, and time-span """
     # specs may not be unique, deal with it
-    uniq_specs = []
+    cdef list uniq_specs = []
     for spec in specs:
         if spec not in uniq_specs:
             uniq_specs.append(spec)
 
     #specs_map = dict([[spec['ubid'], spec] for spec in uniq_specs if spec['ubid'] == ubid])
-    _sm = []
+    cdef list _sm = []
     for spec in uniq_specs:
         if spec['ubid'] == ubid:
             _sm.append([spec['ubid'], spec])
     specs_map = dict(_sm)
 
     #rasters = xr.DataArray([as_numpy_array(chip, specs_map) for chip in chips])
-    _rast = []
+    cdef list _rast = []
     for chip in chips:
         _rast.append(as_numpy_array(chip, specs_map))
     rasters = xr.DataArray(_rast)
@@ -290,17 +295,23 @@ def landsat_dataset(spectrum, ubid, specs, chips):
     ds[spectrum].attrs = {'color': spectrum}
     #ds.coords['t'] = (('t'), pd.to_datetime([t['acquired'] for t in chips]))
     # ds.coords['t'] = (('t'), [t['acquired'] for t in chips])
-    t_acq = []
+    cdef list t_acq = []
     for t in chips:
         t_acq.append(t['acquired'])
     ds.coords['t'] = (('t'), t_acq)
     return ds
 
 
-@cached(cache)
-def rainbow(x, y, t, specs_url, chips_url, requested_ubids):
+
+cpdef rainbow(int x,
+              int y,
+              str specs_url,
+              str chips_url,
+              tuple requested_ubids):
     """ Return all the landsat data, organized by spectra for a given x, y, and time-span """
-    spec_map, spec_whole = spectral_map(specs_url)
+    #spec_map, spec_whole = spectral_map(specs_url)
+    cdef dict spec_map = spectral_map(specs_url)
+    cdef list spec_whole = chip_specs('all')
     ds = xr.Dataset()
     for (spectrum, ubids) in spec_map.items():
         for ubid in ubids:
