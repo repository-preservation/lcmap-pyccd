@@ -174,7 +174,7 @@ def flatten(iterable):
     return itertools.chain.from_iterable(iterable)
 
 
-def f_read(path):
+cdef str f_read(str path):
     """
     helper function for reading file contents
     """
@@ -182,7 +182,7 @@ def f_read(path):
         return handle.read()
 
 
-def return_key(value, kmap):
+cdef str return_key(str value, dict kmap):
     """
     return the key of a dict whose value contains arg
     """
@@ -191,24 +191,24 @@ def return_key(value, kmap):
             return k
 
 
-def chips(spectra, ubid, x, y, root_dir="test/resources/test-data/chips/band-json"):
+cdef tuple chips(str spectra, str ubid, int x, int y, str root_dir="test/resources/test-data/chips/band-json"):
     """
     Return chips for named spectra
     :param spectra: red, green, blue, nir, swir1, swir2, thermal or cfmask
     :type spectra: string
     :returns: sequence of chips
     """
-    path = ''.join([root_dir, os.sep, "*", spectra, '*', str(x), '*', str(y), '*'])
-    filenames = glob.glob(path)
+    cdef str path = ''.join([root_dir, os.sep, "*", spectra, '*', str(x), '*', str(y), '*'])
+    cdef list filenames = glob.glob(path)
 
     #all_chips = flatten([json.loads(f_read(filename)) for filename in filenames])
-    _chip_json = []
+    cdef list _chip_json = []
     for filename in filenames:
         _chip_json.append(json.loads(f_read(filename)))
-    all_chips = flatten(_chip_json)
+    cdef list all_chips = flatten(_chip_json)
 
     # chips = [i for i in all_chips if i['ubid'] == ubid]
-    _out_chips = []
+    cdef list _out_chips = []
     for chip in all_chips:
         if chip['ubid'] == ubid:
             _out_chips.append(chip)
@@ -217,24 +217,24 @@ def chips(spectra, ubid, x, y, root_dir="test/resources/test-data/chips/band-jso
     return tuple(_out_chips)
 
 
-def chip_specs(spectra, root_dir="test/resources/test-data/chip-specs"):
+cdef dict chip_specs(str spectra, str root_dir="test/resources/test-data/chip-specs"):
     """
     Returns chip specs for the named spectra.
     :param spectra: red, green, blue, nir, swir1, swir2, thermal or cfmask
     :type spectra: string
     :returns: sequence of chip specs
     """
-    path = ''.join([root_dir, os.sep, '*', spectra, '*'])
-    filenames = glob.glob(path)
+    cdef str path = ''.join([root_dir, os.sep, '*', spectra, '*'])
+    cdef list filenames = glob.glob(path)
     return json.loads(f_read(filenames[0]))
 
 
-def spectral_map(specs_url):
+cdef dict spectral_map(str specs_url):
     """ Return a dict of sensor bands keyed to their respective spectrum """
-    _spec_map = dict()
-    _map = {'blue': ('sr', 'blue'), 'green': ('sr', 'green'), 'red': ('sr', 'red'), 'nir': ('sr', 'nir'),
-            'swir1': ('sr', 'swir1'), 'swir2': ('sr', 'swir2'), 'thermal': ('bt', 'thermal -BTB11'),
-            'cfmask': 'pixelqa'}
+    cdef dict _spec_map = dict()
+    cdef dict _map = {'blue': ('sr', 'blue'), 'green': ('sr', 'green'), 'red': ('sr', 'red'), 'nir': ('sr', 'nir'),
+                      'swir1': ('sr', 'swir1'), 'swir2': ('sr', 'swir2'), 'thermal': ('bt', 'thermal -BTB11'),
+                      'cfmask': 'pixelqa'}
 
     try:
         for spectra in _map:
