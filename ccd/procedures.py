@@ -498,6 +498,9 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     avg_days_yr = proc_params.AVG_DAYS_YR
     fit_max_iter = proc_params.LASSO_MAX_ITER
 
+    # Used for loops.
+    num_detectbands = len(detection_bands)
+
     # Step 4: lookforward.
     # The second step is to update a model until observations that do not
     # fit the model are found.
@@ -554,9 +557,9 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             residuals = np.array([calc_residuals(period[peek_window],
                                                  spectral_obs[detection_bands][idx, peek_window],
                                                  models[idx], avg_days_yr)
-                                  for idx in range(len(detection_bands))])
+                                  for idx in range(num_detectbands)])
 
-            comp_rmse = [models[idx].rmse for idx in range(len(models))]
+            comp_rmse = [model.rmse for model in models]
 
         # More than 24 points
         else:
@@ -577,7 +580,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             residuals = np.array([calc_residuals(period[peek_window],
                                                  spectral_obs[detection_bands][idx, peek_window],
                                                  models[idx], avg_days_yr)
-                                  for idx in range(len(detection_bands))])
+                                  for idx in range(num_detectbands)])
 
             # We want to use the closest residual values to the peek_window
             # values based on seasonality.
@@ -587,7 +590,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             # Calculate an RMSE for the seasonal residual values, using 8
             # as the degrees of freedom.
             comp_rmse = [euclidean_norm(models[idx].residual[closest_indexes]) / 4
-                         for idx in range(len(models))]
+                         for idx in range(num_detectbands)]
 
         # Calculate the change magnitude values for each observation in the
         # peek_window.
@@ -671,6 +674,9 @@ def lookback(dates, observations, model_window, models, previous_break,
     outlier_thresh = proc_params.OUTLIER_THRESHOLD
     avg_days_yr = proc_params.AVG_DAYS_YR
 
+    # Used for loops.
+    num_detectbands = len(detection_bands)
+
     log.debug('Previous break: %s model window: %s', previous_break, model_window)
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
@@ -696,11 +702,11 @@ def lookback(dates, observations, model_window, models, previous_break,
         residuals = np.array([calc_residuals(period[peek_window],
                                              spectral_obs[detection_bands][idx, peek_window],
                                              models[idx], avg_days_yr)
-                              for idx in range(len(detection_bands))])
+                              for idx in range(num_detectbands)])
 
         # log.debug('Residuals for peek window: %s', residuals)
 
-        comp_rmse = [models[idx].rmse for idx in range(len(detection_bands))]
+        comp_rmse = [model.rmse for model in models]
 
         log.debug('RMSE values for comparison: %s', comp_rmse)
 
