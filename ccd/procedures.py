@@ -440,9 +440,11 @@ def initialize(dates, observations, fitter_fn, model_window, processing_mask,
             spectral_obs = observations[:, processing_mask]
 
         log.debug('Generating models to check for stability')
-        models = [fitter_fn(period[model_window], spectrum,
-                            fit_max_iter, avg_days_yr, 4)
-                  for spectrum in spectral_obs[:, model_window]]
+
+        def fitter_fn_wrapper(spectrum):
+            return fitter_fn(period[model_window], spectrum, fit_max_iter, avg_days_yr, 4)
+
+        models = list(map(fitter_fn_wrapper, spectral_obs[:, model_window]))
 
         # If a model is not stable, then it is possible that a disturbance
         # exists somewhere in the observation window. The window shifts
