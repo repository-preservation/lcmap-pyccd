@@ -31,20 +31,20 @@ def run_detect(rbow):
     row, col = 97, 57
     rainbow_date_array = np.array(rbow['t'].values)
     result = ccd.detect([dtstr_to_ordinal(str(pd.to_datetime(i)), False) for i in rainbow_date_array],
-                        np.array(rbow['blue'].values[:, row, col]),
-                        np.array(rbow['green'].values[:, row, col]),
-                        np.array(rbow['red'].values[:, row, col]),
-                        np.array(rbow['nir'].values[:, row, col]),
-                        np.array(rbow['swir1'].values[:, row, col]),
-                        np.array(rbow['swir2'].values[:, row, col]),
-                        np.array(rbow['thermal'].values[:, row, col]),
-                        np.array(rbow['cfmask'].values[:, row, col], dtype=int),
+                        rbow['blue'].values[:, row, col],
+                        rbow['green'].values[:, row, col],
+                        rbow['red'].values[:, row, col],
+                        rbow['nir'].values[:, row, col],
+                        rbow['swir1'].values[:, row, col],
+                        rbow['swir2'].values[:, row, col],
+                        rbow['thermal'].values[:, row, col],
+                        rbow['cfmask'].values[:, row, col],
                         params={})
     return True
 
 
 if __name__ == '__main__':
-    iters = 5
+    iters = 100
     t = timeit.Timer("run_detect(r)", setup="from __main__ import run_detect, run_rbow; r=run_rbow()")
     print(t.timeit(iters)/iters)
     #run_rbow()
