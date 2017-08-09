@@ -4,53 +4,6 @@ import numpy as np
 
 from ccd.math_utils import calc_median, mask_value, count_value, mask_duplicate_values
 
-
-def checkbit(packedint, offset):
-    """
-    Check for a bit flag in a given int value.
-    
-    Args:
-        packedint: bit packed int
-        offset: binary offset to check
-
-    Returns:
-        bool
-    """
-    bit = 1 << offset
-
-    return (packedint & bit) > 0
-
-
-def qabitval(packedint, proc_params):
-    """
-    Institute a hierarchy of qa values that may be flagged in the bitpacked
-    value.
-    
-    fill > cloud > shadow > snow > water > clear
-    
-    Args:
-        packedint: int value to bit check
-        proc_params: dictionary of processing parameters
-
-    Returns:
-        offset value to use
-    """
-    if checkbit(packedint, proc_params.QA_FILL):
-        return proc_params.QA_FILL
-    elif checkbit(packedint, proc_params.QA_CLOUD):
-        return proc_params.QA_CLOUD
-    elif checkbit(packedint, proc_params.QA_SHADOW):
-        return proc_params.QA_SHADOW
-    elif checkbit(packedint, proc_params.QA_SNOW):
-        return proc_params.QA_SNOW
-    elif checkbit(packedint, proc_params.QA_WATER):
-        return proc_params.QA_WATER
-    elif checkbit(packedint, proc_params.QA_CLEAR):
-        return proc_params.QA_CLEAR
-    else:
-        raise ValueError('Unsupported bitpacked QA value {}'.format(packedint))
-
-
 def unpackqa(quality, proc_params):
     """
     Transform the bit-packed QA values into their bit offset.
@@ -63,7 +16,51 @@ def unpackqa(quality, proc_params):
         1-d ndarray
     """
 
-    return np.array([qabitval(q, proc_params) for q in quality])
+    def checkbit(packedint, offset):
+        """
+        Check for a bit flag in a given int value.
+
+        Args:
+            packedint: bit packed int
+            offset: binary offset to check
+
+        Returns:
+            bool
+        """
+        bit = 1 << offset
+        return (packedint & bit) > 0
+
+    def qabitval(packedint):
+        """
+        Institute a hierarchy of qa values that may be flagged in the bitpacked
+        value.
+
+        fill > cloud > shadow > snow > water > clear
+
+        Args:
+            packedint: int value to bit check
+            proc_params: dictionary of processing parameters
+
+        Returns:
+            offset value to use
+        """
+        if checkbit(packedint, proc_params['QA_FILL']):
+            return proc_params['QA_FILL']
+        elif checkbit(packedint, proc_params['QA_CLOUD']):
+            return proc_params['QA_CLOUD']
+        elif checkbit(packedint, proc_params['QA_SHADOW']):
+            return proc_params['QA_SHADOW']
+        elif checkbit(packedint, proc_params['QA_SNOW']):
+            return proc_params['QA_SNOW']
+        elif checkbit(packedint, proc_params['QA_WATER']):
+            return proc_params['QA_WATER']
+        elif checkbit(packedint, proc_params['QA_CLEAR']):
+            return proc_params['QA_CLEAR']
+        else:
+            raise ValueError('Unsupported bitpacked QA value {}'.format(packedint))
+
+    # map returns an iterable
+    return np.array(list(map(qabitval, quality)))
 
 
 def count_clear_or_water(quality, clear, water):
