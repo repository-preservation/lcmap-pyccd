@@ -1,7 +1,7 @@
 from datetime import datetime
 from test.shared import snap, rainbow
 import numpy as np
-import pandas as pd
+#import pandas as pd
 import ccd
 import timeit
 
@@ -29,8 +29,8 @@ def run_detect(rbow):
         #return datetime.strptime(dtstr, _fmt).toordinal()
 
     row, col = 97, 57
-    rainbow_date_array = np.array(rbow['t'].values)
-    result = ccd.detect([dtstr_to_ordinal(str(pd.to_datetime(i)), False) for i in rainbow_date_array],
+    #rainbow_date_array = np.array(rbow['t'].values)
+    result = ccd.detect([dtstr_to_ordinal(i) for i in rbow['t'].values],
                         rbow['blue'].values[:, row, col],
                         rbow['green'].values[:, row, col],
                         rbow['red'].values[:, row, col],
@@ -38,7 +38,7 @@ def run_detect(rbow):
                         rbow['swir1'].values[:, row, col],
                         rbow['swir2'].values[:, row, col],
                         rbow['thermal'].values[:, row, col],
-                        rbow['cfmask'].values[:, row, col],
+                        np.array(rbow['cfmask'].values[:, row, col], dtype=int),
                         params={})
     return True
 
