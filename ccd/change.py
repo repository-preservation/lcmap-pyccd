@@ -14,7 +14,7 @@ from ccd.math_utils import sum_of_squares
 log = logging.getLogger(__name__)
 
 
-def stable(models, dates, variogram, t_cg, detection_bands):
+def stable(models, dates, variogram, t_cg):
     """Determine if we have a stable model to start building with
 
     Args:
@@ -23,8 +23,6 @@ def stable(models, dates, variogram, t_cg, detection_bands):
             normalization factor
         dates: array of ordinal date values
         t_cg: change threshold
-        detection_bands: index locations of the spectral bands that are used
-            to determine stability
 
     Returns:
         Boolean on whether stable or not
@@ -32,8 +30,8 @@ def stable(models, dates, variogram, t_cg, detection_bands):
     # This could be written differently, or more performant using numpy in the
     # future
     check_vals = []
-    for idx in detection_bands:
-        rmse_norm = max(variogram[idx], models[idx].rmse)
+    for idx, vario in enumerate(variogram):
+        rmse_norm = max(vario, models[idx].rmse)
         slope = models[idx].fitted_model.coef_[0] * (dates[-1] - dates[0])
 
         check_val = (abs(slope) + abs(models[idx].residual[0]) +

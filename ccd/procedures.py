@@ -231,6 +231,7 @@ def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
     peek_size = proc_params.PEEK_SIZE
     thermal_idx = proc_params.THERMAL_IDX
     curve_qa = proc_params.CURVE_QA
+    detection_bands = proc_params.DETECTION_BANDS
 
     ldebug('Build change models - dates: %s, obs: %s, '
               'meow_size: %s, peek_size: %s',
@@ -278,7 +279,7 @@ def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
     # Calculate the variogram/madogram that will be used in subsequent
     # processing steps. See algorithm documentation for further information.
     variogram = adjusted_variogram(dates[processing_mask],
-                                   observations[:, processing_mask])
+                                   observations[detection_bands][:, processing_mask])
     ldebug('Variogram values: %s', variogram)
 
     # Only build models as long as sufficient data exists.
@@ -449,13 +450,14 @@ def initialize(dates, observations, fitter_fn, model_window, processing_mask,
         def fitter_fn_wrapper(spectrum):
             return fitter_fn(period[model_window], spectrum, fit_max_iter, avg_days_yr, 4)
 
-        models = list(map(fitter_fn_wrapper, spectral_obs[:, model_window]))
+        models = list(map(fitter_fn_wrapper, spectral_obs[detection_bands, model_window]))
+
 
         # If a model is not stable, then it is possible that a disturbance
         # exists somewhere in the observation window. The window shifts
         # forward in time, and begins initialization again.
         if not stable(models, period[model_window], variogram,
-                      change_thresh, detection_bands):
+                      change_thresh):
 
             model_window = slice(model_window.start + 1, model_window.stop + 1)
             ldebug('Unstable model, shift window to: %s', model_window)
@@ -504,6 +506,9 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     avg_days_yr = proc_params.AVG_DAYS_YR
     fit_max_iter = proc_params.LASSO_MAX_ITER
 
+    # Used for loops.
+    num_detectbands = len(detection_bands)
+
     # Step 4: lookforward.
     # The second step is to update a model until observations that do not
     # fit the model are found.
@@ -528,6 +533,11 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     # Used for comparison purposes
     fit_span = period[model_window.stop - 1] - period[model_window.start]
 
+    # Initial value, fringe case when it drops to this function, but there
+    # is not enough observations to continue.
+    num_coefs = determine_num_coefs(period[model_window], coef_min,
+                                    coef_mid, coef_max, num_obs_fact)
+
     # stop is always exclusive
     while model_window.stop + peek_size < period.shape[0] or models is None:
         num_coefs = determine_num_coefs(period[model_window], coef_min,
@@ -550,14 +560,13 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             ldebug('Retrain models, less than 24 samples')
             models = [fitter_fn(period[fit_window], spectrum,
                                 fit_max_iter, avg_days_yr, num_coefs)
-                      for spectrum in spectral_obs[:, fit_window]]
+                      for spectrum in spectral_obs[detection_bands, fit_window]]
 
             residuals = np_array([calc_residuals(period[peek_window],
-                                                 spectral_obs[idx, peek_window],
-                                                 models[idx], avg_days_yr)
-                                  for idx in range(observations.shape[0])])
+                                                 spectral_obs[idx, peek_window], models[idx], avg_days_yr)
+                                  for idx in range(num_detectbands)])
 
-            comp_rmse = [models[idx].rmse for idx in detection_bands]
+            comp_rmse = [model.rmse for model in models]
 
         # More than 24 points
         else:
@@ -573,12 +582,11 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
 
                 models = [fitter_fn(period[fit_window], spectrum,
                                     fit_max_iter, avg_days_yr, num_coefs)
-                          for spectrum in spectral_obs[:, fit_window]]
+                          for spectrum in spectral_obs[detection_bands, fit_window]]
 
             residuals = np_array([calc_residuals(period[peek_window],
-                                                 spectral_obs[idx, peek_window],
-                                                 models[idx], avg_days_yr)
-                                  for idx in range(observations.shape[0])])
+                                                 spectral_obs[idx, peek_window],models[idx], avg_days_yr)
+                                  for idx in range(num_detectbands)])
 
             # We want to use the closest residual values to the peek_window
             # values based on seasonality.
@@ -588,13 +596,11 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             # Calculate an RMSE for the seasonal residual values, using 8
             # as the degrees of freedom.
             comp_rmse = [euclidean_norm(models[idx].residual[closest_indexes]) / 4
-                         for idx in detection_bands]
+                         for idx in range(num_detectbands)]
 
         # Calculate the change magnitude values for each observation in the
         # peek_window.
-        magnitude = change_magnitude(residuals[detection_bands, :],
-                                     variogram[detection_bands],
-                                     comp_rmse)
+        magnitude = change_magnitude(residuals, variogram, comp_rmse)
 
         if detect_change(magnitude, change_thresh):
             ldebug('Change detected at: %s', peek_window.start)
@@ -619,6 +625,16 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             continue
 
         model_window = slice(model_window.start, model_window.stop + 1)
+
+    # Exiting LookForward means that we now need to fit all the bands.
+    models = [fitter_fn(period[fit_window], spectrum,
+                        fit_max_iter, avg_days_yr, num_coefs)
+              for spectrum in spectral_obs[:, fit_window]]
+
+    residuals = np_array([calc_residuals(period[peek_window],
+                                         spectral_obs[idx, peek_window],
+                                         models[idx], avg_days_yr)
+                          for idx in range(observations.shape[0])])
 
     result = results_to_changemodel(fitted_models=models,
                                     start_day=period[model_window.start],
@@ -664,7 +680,12 @@ def lookback(dates, observations, model_window, models, previous_break,
     outlier_thresh = proc_params.OUTLIER_THRESHOLD
     avg_days_yr = proc_params.AVG_DAYS_YR
 
+
     ldebug('Previous break: %s model window: %s', previous_break, model_window)
+
+    # Used for loops.
+    num_detectbands = len(detection_bands)
+
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
 
@@ -687,19 +708,17 @@ def lookback(dates, observations, model_window, models, previous_break,
                   peek_window.start, peek_window)
 
         residuals = np_array([calc_residuals(period[peek_window],
-                                             spectral_obs[idx, peek_window],
+                                             spectral_obs[detection_bands][idx, peek_window],
                                              models[idx], avg_days_yr)
-                              for idx in range(observations.shape[0])])
+                              for idx in range(num_detectbands)])
 
         # ldebug('Residuals for peek window: %s', residuals)
 
-        comp_rmse = [models[idx].rmse for idx in detection_bands]
+        comp_rmse = [model.rmse for model in models]
 
         ldebug('RMSE values for comparison: %s', comp_rmse)
 
-        magnitude = change_magnitude(residuals[detection_bands, :],
-                                     variogram[detection_bands],
-                                     comp_rmse)
+        magnitude = change_magnitude(residuals, variogram, comp_rmse)
 
         if detect_change(magnitude, change_thresh):
             ldebug('Change detected for index: %s', peek_window.start)
