@@ -1,11 +1,11 @@
 from sklearn import linear_model
 import numpy as np
-from cachetools import LRUCache
+#from cachetools import LRUCache
 
 from ccd.models import FittedModel
 from ccd.math_utils import calc_rmse
 
-cache = LRUCache(maxsize=1000)
+#cache = LRUCache(maxsize=1000)
 
 
 def __coefficient_cache_key(observation_dates):
@@ -44,7 +44,7 @@ def coefficient_matrix(dates, avg_days_yr, num_coefficients):
     return matrix
 
 
-def fitted_model(dates, spectra_obs, max_iter, avg_days_yr, num_coefficients):
+def fitted_model(dates, spectra_obs, max_iter, avg_days_yr, num_coefficients, lm):
     """Create a fully fitted lasso model.
 
     Args:
@@ -63,8 +63,10 @@ def fitted_model(dates, spectra_obs, max_iter, avg_days_yr, num_coefficients):
     """
     coef_matrix = coefficient_matrix(dates, avg_days_yr, num_coefficients)
 
-    lasso = linear_model.Lasso(max_iter=max_iter)
-    model = lasso.fit(coef_matrix, spectra_obs)
+    #lasso = linear_model.Lasso(max_iter=max_iter)
+    #model = lasso.fit(coef_matrix, spectra_obs)
+    model = lm.fit(coef_matrix, spectra_obs)
+
 
     predictions = model.predict(coef_matrix)
     rmse, residuals = calc_rmse(spectra_obs, predictions)

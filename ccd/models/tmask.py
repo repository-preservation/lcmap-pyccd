@@ -6,6 +6,13 @@ from ccd.models import robust_fit
 
 log = logging.getLogger(__name__)
 
+np_pi    = np.pi
+np_ceil  = np.ceil
+np_ones  = np.ones
+np_cos   = np.cos
+np_sin   = np.sin
+np_zeros = np.zeros
+np_abs   = np.abs
 
 def tmask_coefficient_matrix(dates, avg_days_yr):
     """Coefficient matrix that is used for Tmask modeling
@@ -16,14 +23,14 @@ def tmask_coefficient_matrix(dates, avg_days_yr):
     Returns:
         Populated numpy array with coefficient values
     """
-    annual_cycle = 2*np.pi/avg_days_yr
+    annual_cycle = 2*np_pi/avg_days_yr
     observation_cycle = annual_cycle / np.ceil((dates[-1] - dates[0]) / avg_days_yr)
 
-    matrix = np.ones(shape=(dates.shape[0], 5), order='F')
-    matrix[:, 0] = np.cos(annual_cycle * dates)
-    matrix[:, 1] = np.sin(annual_cycle * dates)
-    matrix[:, 2] = np.cos(observation_cycle * dates)
-    matrix[:, 3] = np.sin(observation_cycle * dates)
+    matrix = np_ones(shape=(dates.shape[0], 5), order='F')
+    matrix[:, 0] = np_cos(annual_cycle * dates)
+    matrix[:, 1] = np_sin(annual_cycle * dates)
+    matrix[:, 2] = np_cos(observation_cycle * dates)
+    matrix[:, 3] = np_sin(observation_cycle * dates)
 
     return matrix
 
@@ -53,14 +60,15 @@ def tmask(dates, observations, variogram, bands, t_const, avg_days_yr):
     # Accumulator for outliers. This starts off as a list of False values
     # because we don't assume anything is an outlier.
     _, sample_count = observations.shape
-    outliers = np.zeros(sample_count, dtype=bool)
+    outliers = np_zeros(sample_count, dtype=bool)
 
-    # For each band, determine if the delta between predeicted and actual
+    # For each band, determine if the delta between predicted and actual
     # values exceeds the threshold. If it does, then it is an outlier.
+    regression_fit = regression.fit
     for band_ix in bands:
-        fit = regression.fit(tmask_matrix, observations[band_ix])
+        fit = regression_fit(tmask_matrix, observations[band_ix])
         predicted = fit.predict(tmask_matrix)
-        outliers += np.abs(predicted - observations[band_ix]) > variogram[band_ix] * t_const
+        outliers += np_abs(predicted - observations[band_ix]) > variogram[band_ix] * t_const
 
     # Keep all observations that aren't outliers.
     return outliers
