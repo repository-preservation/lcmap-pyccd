@@ -15,12 +15,9 @@ statsmodels and can reach ~4x faster if Numba is available to accelerate.
 # Don't alias to ``np`` until fix is implemented
 # https://github.com/numba/numba/issues/1559
 import numpy
-import sklearn
 import scipy
 
 # from yatsm.accel import try_jit
-
-EPS = numpy.finfo('float').eps
 
 
 # Weight scaling methods
@@ -101,7 +98,7 @@ def _weight_fit(X, y, w):
 
 
 # Robust regression
-class RLM(sklearn.base.BaseEstimator):
+class RLM(object):
     """ Robust Linear Model using Iterative Reweighted Least Squares (RIRLS)
 
     Perform robust fitting regression via iteratively reweighted least squares
@@ -158,9 +155,10 @@ class RLM(sklearn.base.BaseEstimator):
                 chaining
 
         """
+        EPS = numpy.finfo('float').eps
+
         self.coef_, resid = _weight_fit(X, y, numpy.ones_like(y))
         self.scale = self.scale_est(resid, c=self.scale_constant)
-
 
         Q, R = scipy.linalg.qr(X)
         E = X.dot(numpy.linalg.inv(R[0:X.shape[1],0:X.shape[1]]))
