@@ -1,8 +1,10 @@
 """Filters for pre-processing change model inputs.
 """
 import numpy as np
+np_array = np.array
 
 from ccd.math_utils import calc_median, mask_value, count_value, mask_duplicate_values
+
 
 def unpackqa(quality, proc_params):
     """
@@ -59,8 +61,7 @@ def unpackqa(quality, proc_params):
         else:
             raise ValueError('Unsupported bitpacked QA value {}'.format(packedint))
 
-    # map returns an iterable
-    return np.array(list(map(qabitval, quality)))
+    return np_array([qabitval(i) for i in quality])
 
 
 def count_clear_or_water(quality, clear, water):
