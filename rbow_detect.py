@@ -4,6 +4,8 @@ import numpy as np
 #import pandas as pd
 import ccd
 import timeit
+import cProfile
+
 
 def run_rbow():
     specs_url = 'http://localhost'
@@ -28,7 +30,13 @@ def run_detect(rbow):
         return _dt.toordinal()
         #return datetime.strptime(dtstr, _fmt).toordinal()
 
+    # 1.8 seconds start
     row, col = 97, 57
+    # 2.6 seconds start
+    row, col = 60, 5
+    # 1.8 seconds in mesos
+    row, col = 95, 33
+
     #rainbow_date_array = np.array(rbow['t'].values)
     result = ccd.detect([dtstr_to_ordinal(i) for i in rbow['t'].values],
                         rbow['blue'].values[:, row, col],
@@ -44,9 +52,11 @@ def run_detect(rbow):
 
 
 if __name__ == '__main__':
-    iters = 100
+    iters = 1
     t = timeit.Timer("run_detect(r)", setup="from __main__ import run_detect, run_rbow; r=run_rbow()")
     print(t.timeit(iters)/iters)
+    cProfile.runctx("run_detect(r)", locals={'r': run_rbow()}, globals=globals(), filename="foo.stat")
+
     #run_rbow()
 
 
