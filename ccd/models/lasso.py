@@ -2,10 +2,8 @@ import numpy as np
 from ccd.models import FittedModel
 from ccd.math_utils import calc_rmse
 
-from ccd.models.lasso_fit import ElasticNet
-
-def __coefficient_cache_key(observation_dates):
-    return tuple(observation_dates)
+#from ccd.models.lasso_fit import ElasticNet
+#from sklearn import linear_model
 
 
 def coefficient_matrix(dates, avg_days_yr, num_coefficients):
@@ -21,23 +19,27 @@ def coefficient_matrix(dates, avg_days_yr, num_coefficients):
         Populated numpy array with coefficient values
     """
     w = 2 * np.pi / avg_days_yr
-
     matrix = np.zeros(shape=(len(dates), 7), order='F')
+    w12 = w * dates
+
+    cos = np.cos
+    sin = np.sin
 
     matrix[:, 0] = dates
-    matrix[:, 1] = np.cos(w * dates)
-    matrix[:, 2] = np.sin(w * dates)
+    matrix[:, 1] = cos(w12)
+    matrix[:, 2] = sin(w12)
 
     if num_coefficients >= 6:
-        matrix[:, 3] = np.cos(2 * w * dates)
-        matrix[:, 4] = np.sin(2 * w * dates)
+        w34 = 2 * w12
+        matrix[:, 3] = cos(w34)
+        matrix[:, 4] = sin(w34)
 
     if num_coefficients >= 8:
-        matrix[:, 5] = np.cos(3 * w * dates)
-        matrix[:, 6] = np.sin(3 * w * dates)
+        w56 = 3 * w12
+        matrix[:, 5] = cos(w56)
+        matrix[:, 6] = sin(w56)
 
     return matrix
-
 
 
 def fitted_model(dates, spectra_obs, max_iter, avg_days_yr, num_coefficients, lm):
@@ -58,8 +60,11 @@ def fitted_model(dates, spectra_obs, max_iter, avg_days_yr, num_coefficients, lm
         fitted_model(dates, obs).predict(...)
     """
     coef_matrix = coefficient_matrix(dates, avg_days_yr, num_coefficients)
-    #model = lm.fit(coef_matrix, spectra_obs)
-    model = ElasticNet().fit(coef_matrix, spectra_obs)
+    model = lm.fit(coef_matrix, spectra_obs)
+    #model = ElasticNet().fit(coef_matrix, spectra_obs)
+    #lasso = linear_model.Lasso(max_iter=max_iter)
+    #model = lasso.fit(coef_matrix, spectra_obs)
+
     predictions = model.predict(coef_matrix)
     rmse, residuals = calc_rmse(spectra_obs, predictions)
 

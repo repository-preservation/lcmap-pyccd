@@ -11,9 +11,16 @@ Texas Tech University, TX, USA
 
 from setuptools import setup
 from os import path
+
+from Cython.Build import cythonize
+from distutils.extension import Extension
+import numpy as np
+
 import io
 
 here = path.abspath(path.dirname(__file__))
+
+extensions = [Extension('models', ['ccd/models/*.pyx'], include_dirs=[np.get_include()])]
 
 
 # bring in __version__ and __name from version.py for install.
@@ -59,6 +66,9 @@ setup(
     keywords='python change detection',
 
     packages=['ccd', 'ccd.models'],
+
+    ext_modules=cythonize(['ccd/models/*.pyx']),
+    include_dirs=[np.get_include()],
 
     install_requires=['numpy>=1.10.0',
                       'scipy>=0.18.1',
