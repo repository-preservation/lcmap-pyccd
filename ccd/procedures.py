@@ -34,9 +34,7 @@ from ccd.change import enough_samples, enough_time,\
 from ccd.models import results_to_changemodel, tmask
 from ccd.math_utils import kelvin_to_celsius, adjusted_variogram, euclidean_norm
 
-#testing
-from sklearn import linear_model
-lm_lasso = linear_model.Lasso
+from sklearn.linear_model import Lasso
 
 log = logging.getLogger(__name__)
 
@@ -242,7 +240,7 @@ def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
     curve_qa        = proc_params.CURVE_QA
     detection_bands = proc_params.DETECTION_BANDS
 
-    lasso = lm_lasso(max_iter=proc_params.LASSO_MAX_ITER)
+    lasso = Lasso(max_iter=proc_params.LASSO_MAX_ITER)
 
     ldebug('Build change models - dates: %s, obs: %s, '
               'meow_size: %s, peek_size: %s',
