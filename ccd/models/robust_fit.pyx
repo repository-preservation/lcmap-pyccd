@@ -15,86 +15,93 @@ statsmodels and can reach ~4x faster if Numba is available to accelerate.
 # Don't alias to ``np`` until fix is implemented
 # https://github.com/numba/numba/issues/1559
 import numpy
+
+import sklearn
 import scipy
+from functions import bisquare, mad, _check_converge, _weight_beta, _weight_resid
 
 # from yatsm.accel import try_jit
+
+EPS = numpy.finfo('float').eps
+
+
 
 
 # Weight scaling methods
 # @try_jit(nopython=True)
-def bisquare(resid, c=4.685):
-    """
-    Returns weighting for each residual using bisquare weight function
+#def bisquare(resid, c=4.685):
+#    """
+#    Returns weighting for each residual using bisquare weight function
+#
+#    Args:
+#        resid (np.ndarray): residuals to be weighted
+#        c (float): tuning constant for Tukey's Biweight (default: 4.685)
+#
+#    Returns:
+#        weight (ndarray): weights for residuals
+#
+#    Reference:
+#        http://statsmodels.sourceforge.net/stable/generated/statsmodels.robust.norms.TukeyBiweight.html
+#    """
+#    # Weight where abs(resid) < c; otherwise 0
+#    return (numpy.abs(resid) < c) * (1 - (resid / c) ** 2) ** 2
 
-    Args:
-        resid (np.ndarray): residuals to be weighted
-        c (float): tuning constant for Tukey's Biweight (default: 4.685)
 
-    Returns:
-        weight (ndarray): weights for residuals
-
-    Reference:
-        http://statsmodels.sourceforge.net/stable/generated/statsmodels.robust.norms.TukeyBiweight.html
-    """
-    # Weight where abs(resid) < c; otherwise 0
-    return (numpy.abs(resid) < c) * (1 - (resid / c) ** 2) ** 2
-
-
-# @try_jit(nopython=True)
-def mad(x, c=0.6745):
-    """
-    Returns Median-Absolute-Deviation (MAD) of some data
-
-    Args:
-        resid (np.ndarray): Observations (e.g., residuals)
-        c (float): scale factor to get to ~standard normal (default: 0.6745)
-                 (i.e. 1 / 0.75iCDF ~= 1.4826 = 1 / 0.6745)
-
-    Returns:
-        float: MAD 'robust' standard deivation  estimate
-
-    Reference:
-        http://en.wikipedia.org/wiki/Median_absolute_deviation
-    """
-    # Return median absolute deviation adjusted sigma
-    rs = numpy.sort(numpy.abs(x))
-    return numpy.median(rs[4:]) / c
+## @try_jit(nopython=True)
+#def mad(x, c=0.6745):
+#    """
+#    Returns Median-Absolute-Deviation (MAD) of some data
+#
+#    Args:
+#        resid (np.ndarray): Observations (e.g., residuals)
+#        c (float): scale factor to get to ~standard normal (default: 0.6745)
+#                 (i.e. 1 / 0.75iCDF ~= 1.4826 = 1 / 0.6745)
+#
+#    Returns:
+#        float: MAD 'robust' standard deivation  estimate
+#
+#    Reference:
+#        http://en.wikipedia.org/wiki/Median_absolute_deviation
+#    """
+#    # Return median absolute deviation adjusted sigma
+#    rs = numpy.sort(numpy.abs(x))
+#    return numpy.median(rs[4:]) / c
 
 #    return numpy.median(numpy.fabs(x)) / c
 
 
 # UTILITY FUNCTIONS
 # @try_jit(nopython=True)
-def _check_converge(x0, x, tol=1e-8):
-    return not numpy.any(numpy.fabs(x0 - x > tol))
+#def _check_converge(x0, x, tol=1e-8):
+#    return not numpy.any(numpy.fabs(x0 - x > tol))
 
 
 # Broadcast on sw prevents nopython
 # TODO: check implementation https://github.com/numba/numba/pull/1542
 # @try_jit()
-def _weight_fit(X, y, w):
-    """
-    Apply a weighted OLS fit to data
-
-    Args:
-        X (ndarray): independent variables
-        y (ndarray): dependent variable
-        w (ndarray): observation weights
-
-    Returns:
-        tuple: coefficients and residual vector
-
-    """
-    sw = numpy.sqrt(w)
-
-    Xw = X * sw[:, None]
-    yw = y * sw
-
-    beta, _, _, _ = numpy.linalg.lstsq(Xw, yw)
-
-    resid = y - numpy.dot(X, beta)
-
-    return beta, resid
+#def _weight_fit(X, y, w):
+#    """
+#    Apply a weighted OLS fit to data
+#
+#    Args:
+#        X (ndarray): independent variables
+#        y (ndarray): dependent variable
+#        w (ndarray): observation weights
+#
+#    Returns:
+#        tuple: coefficients and residual vector
+#
+#    """
+#    sw = numpy.sqrt(w)
+#
+#    Xw = X * sw[:, None]
+#    yw = y * sw
+#
+#    beta, _, _, _ = numpy.linalg.lstsq(Xw, yw)
+#
+#    resid = y - numpy.dot(X, beta)
+#
+#    return beta, resid
 
 
 # Robust regression
@@ -155,10 +162,12 @@ class RLM(object):
                 chaining
 
         """
-        EPS = numpy.finfo('float').eps
+        #self.coef_, resid = _weight_fit(X, y, numpy.ones_like(y))
+        self.coef_ = _weight_beta(X, y, numpy.ones_like(y))
+        resid = _weight_resid(X, y, self.coef_)
 
-        self.coef_, resid = _weight_fit(X, y, numpy.ones_like(y))
         self.scale = self.scale_est(resid, c=self.scale_constant)
+
 
         Q, R = scipy.linalg.qr(X)
         E = X.dot(numpy.linalg.inv(R[0:X.shape[1],0:X.shape[1]]))
@@ -189,7 +198,10 @@ class RLM(object):
             # print iteration,numpy.sort(numpy.abs(resid)/self.scale_constant)
 
             self.weights = self.M(resid / self.scale, c=self.tune)
-            self.coef_, resid = _weight_fit(X, y, self.weights)
+            #self.coef_, resid = _weight_fit(X, y, self.weights)
+            self.coef_ = _weight_beta(X, y, self.weights)
+            resid = _weight_resid(X, y, self.coef_)
+
             # print 'w: ', self.weights
 
             iteration += 1

@@ -25,17 +25,19 @@ def tmask_coefficient_matrix(dates, avg_days_yr):
     """
     annual_cycle = 2*np_pi/avg_days_yr
     observation_cycle = annual_cycle / np.ceil((dates[-1] - dates[0]) / avg_days_yr)
+    ac_dates = annual_cycle * dates
+    oc_dates = observation_cycle * dates
 
     matrix = np_ones(shape=(dates.shape[0], 5), order='F')
-    matrix[:, 0] = np_cos(annual_cycle * dates)
-    matrix[:, 1] = np_sin(annual_cycle * dates)
-    matrix[:, 2] = np_cos(observation_cycle * dates)
-    matrix[:, 3] = np_sin(observation_cycle * dates)
+    matrix[:, 0] = np_cos(ac_dates)
+    matrix[:, 1] = np_sin(ac_dates)
+    matrix[:, 2] = np_cos(oc_dates)
+    matrix[:, 3] = np_sin(oc_dates)
 
     return matrix
 
 
-def tmask(dates, observations, variogram, bands, t_const, avg_days_yr):
+def tmask(dates, observations, variogram, bands, t_const, avg_days_yr, regression):
     """Produce an index for filtering outliers.
 
     Arguments:
@@ -53,7 +55,7 @@ def tmask(dates, observations, variogram, bands, t_const, avg_days_yr):
     # variogram = calculate_variogram(observations)
     # Time and expected values using a four-part matrix of coefficients.
     # regression = lm.LinearRegression()
-    regression = robust_fit.RLM(maxiter=5)
+    #regression = robust_fit.RLM(maxiter=5)
 
     tmask_matrix = tmask_coefficient_matrix(dates, avg_days_yr)
 
@@ -64,7 +66,8 @@ def tmask(dates, observations, variogram, bands, t_const, avg_days_yr):
 
     # For each band, determine if the delta between predicted and actual
     # values exceeds the threshold. If it does, then it is an outlier.
-    regression_fit = regression.fit
+    #regression_fit = regression.fit
+    regression_fit = regression
     for band_ix in bands:
         fit = regression_fit(tmask_matrix, observations[band_ix])
         predicted = fit.predict(tmask_matrix)
