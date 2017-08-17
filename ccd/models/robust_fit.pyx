@@ -1,3 +1,4 @@
+# cython: profile=True
 """
 Perform an iteratively re-weighted least squares 'robust regression'. Basically
 a clone of `statsmodels.robust.robust_linear_model.RLM` without all the lovely,
@@ -15,97 +16,114 @@ statsmodels and can reach ~4x faster if Numba is available to accelerate.
 # Don't alias to ``np`` until fix is implemented
 # https://github.com/numba/numba/issues/1559
 import numpy
+cimport numpy
+
+from cpython cimport bool
+
+ctypedef numpy.float64_t STYPE_t
+ctypedef float           FTYPE_t
+ctypedef int             ITYPE_t
+ctypedef bool            BTYPE_t
 
 import sklearn
 import scipy
-from functions import bisquare, mad, _check_converge, _weight_beta, _weight_resid
-
-# from yatsm.accel import try_jit
 
 EPS = numpy.finfo('float').eps
 
 
+cdef numpy.ndarray[STYPE_t, ndim=1] bisquare(numpy.ndarray[STYPE_t, ndim=1] resid,
+                                             FTYPE_t c=4.685):
+    """
+    Returns weighting for each residual using bisquare weight function
+
+    Args:
+        resid (np.ndarray): residuals to be weighted
+        c (float): tuning constant for Tukey's Biweight (default: 4.685)
+
+    Returns:
+        weight (ndarray): weights for residuals
+
+    Reference:
+        http://statsmodels.sourceforge.net/stable/generated/statsmodels.robust.norms.TukeyBiweight.html
+    """
+    # Weight where abs(resid) < c; otherwise 0
+    cdef numpy.ndarray[STYPE_t, ndim=1] abs_resid = numpy.abs(resid)
+
+    return (abs_resid < c) * (1 - (resid / c) ** 2) ** 2
 
 
-# Weight scaling methods
-# @try_jit(nopython=True)
-#def bisquare(resid, c=4.685):
-#    """
-#    Returns weighting for each residual using bisquare weight function
-#
-#    Args:
-#        resid (np.ndarray): residuals to be weighted
-#        c (float): tuning constant for Tukey's Biweight (default: 4.685)
-#
-#    Returns:
-#        weight (ndarray): weights for residuals
-#
-#    Reference:
-#        http://statsmodels.sourceforge.net/stable/generated/statsmodels.robust.norms.TukeyBiweight.html
-#    """
-#    # Weight where abs(resid) < c; otherwise 0
-#    return (numpy.abs(resid) < c) * (1 - (resid / c) ** 2) ** 2
+cdef STYPE_t mad(numpy.ndarray[STYPE_t, ndim=1] x,
+                 STYPE_t c=0.6745):
+    """
+    Returns Median-Absolute-Deviation (MAD) of some data
+
+    Args:
+        resid (np.ndarray): Observations (e.g., residuals)
+        c (float): scale factor to get to ~standard normal (default: 0.6745)
+                 (i.e. 1 / 0.75iCDF ~= 1.4826 = 1 / 0.6745)
+
+    Returns:
+        float: MAD 'robust' standard deivation  estimate
+
+    Reference:
+        http://en.wikipedia.org/wiki/Median_absolute_deviation
+    """
+    # Return median absolute deviation adjusted sigma
+    rs = numpy.sort(numpy.abs(x))
+
+    return numpy.median(rs[4:]) / c
 
 
-## @try_jit(nopython=True)
-#def mad(x, c=0.6745):
-#    """
-#    Returns Median-Absolute-Deviation (MAD) of some data
-#
-#    Args:
-#        resid (np.ndarray): Observations (e.g., residuals)
-#        c (float): scale factor to get to ~standard normal (default: 0.6745)
-#                 (i.e. 1 / 0.75iCDF ~= 1.4826 = 1 / 0.6745)
-#
-#    Returns:
-#        float: MAD 'robust' standard deivation  estimate
-#
-#    Reference:
-#        http://en.wikipedia.org/wiki/Median_absolute_deviation
-#    """
-#    # Return median absolute deviation adjusted sigma
-#    rs = numpy.sort(numpy.abs(x))
-#    return numpy.median(rs[4:]) / c
+cdef bool _check_converge(numpy.ndarray[STYPE_t, ndim=1] x0,
+                          numpy.ndarray[STYPE_t, ndim=1] x,
+                          STYPE_t tol=1e-8):
 
-#    return numpy.median(numpy.fabs(x)) / c
+    return not numpy.any(numpy.fabs(x0 - x > tol))
+    
+    
+cdef numpy.ndarray[STYPE_t, ndim=1] _weight_beta(numpy.ndarray[STYPE_t, ndim=2] X,
+                                                 numpy.ndarray[STYPE_t, ndim=1] y,
+                                                 numpy.ndarray[STYPE_t, ndim=1] w):
+    """
+    Apply a weighted OLS fit to data
 
+    Args:
+    X (ndarray): independent variables
+    y (ndarray): dependent variable
+    w (ndarray): observation weights
 
-# UTILITY FUNCTIONS
-# @try_jit(nopython=True)
-#def _check_converge(x0, x, tol=1e-8):
-#    return not numpy.any(numpy.fabs(x0 - x > tol))
+    Returns:
+    array: coefficients
 
+    """
 
-# Broadcast on sw prevents nopython
-# TODO: check implementation https://github.com/numba/numba/pull/1542
-# @try_jit()
-#def _weight_fit(X, y, w):
-#    """
-#    Apply a weighted OLS fit to data
-#
-#    Args:
-#        X (ndarray): independent variables
-#        y (ndarray): dependent variable
-#        w (ndarray): observation weights
-#
-#    Returns:
-#        tuple: coefficients and residual vector
-#
-#    """
-#    sw = numpy.sqrt(w)
-#
-#    Xw = X * sw[:, None]
-#    yw = y * sw
-#
-#    beta, _, _, _ = numpy.linalg.lstsq(Xw, yw)
-#
-#    resid = y - numpy.dot(X, beta)
-#
-#    return beta, resid
+    cdef numpy.ndarray[STYPE_t, ndim=1] sw = numpy.sqrt(w)
+    cdef numpy.ndarray[STYPE_t, ndim=2] Xw = X * sw[:, None]
+    cdef numpy.ndarray[STYPE_t, ndim=1] yw = y * sw
+
+    return numpy.linalg.lstsq(Xw, yw)[0]
+    
+cdef numpy.ndarray[STYPE_t, ndim=1] _weight_resid(numpy.ndarray[STYPE_t, ndim=2] X,
+                                                  numpy.ndarray[STYPE_t, ndim=1] y,
+                                                  numpy.ndarray[STYPE_t, ndim=1] beta):
+    """
+    Apply a weighted OLS fit to data
+
+    Args:
+    X (ndarray): independent variables
+    y (ndarray): dependent variable
+    w (ndarray): observation weights
+
+    Returns:
+    array: residual vector
+
+    """
+    return y - numpy.dot(X, beta)
 
 
 # Robust regression
-class RLM(object):
+#class RLM(object):
+cdef class RLM:
     """ Robust Linear Model using Iterative Reweighted Least Squares (RIRLS)
 
     Perform robust fitting regression via iteratively reweighted least squares
@@ -135,13 +153,21 @@ class RLM(object):
             robust iteratively reweighted least squares
 
     """
+    #cdef public:
+    #    tune, scale_constant, update_scale, maxiter, tol, coef_, intercept_, scale, weights
+    cdef public FTYPE_t tune
+    cdef public FTYPE_t scale_constant
+    cdef public BTYPE_t update_scale
+    cdef public ITYPE_t maxiter
+    cdef public STYPE_t tol
+    cdef public numpy.ndarray coef_
+    cdef public STYPE_t intercept_
+    cdef public STYPE_t scale
+    cdef public numpy.ndarray weights
 
-    def __init__(self, M=bisquare, tune=4.685,
-                 scale_est=mad, scale_constant=0.6745,
+    def __init__(self, tune=4.685, scale_constant=0.6745,
                  update_scale=True, maxiter=50, tol=1e-8):
-        self.M = M
         self.tune = tune
-        self.scale_est = scale_est
         self.scale_constant = scale_constant
         self.update_scale = update_scale
         self.maxiter = maxiter
@@ -150,7 +176,9 @@ class RLM(object):
         self.coef_ = None
         self.intercept_ = 0.0
 
-    def fit(self, X, y):
+    cpdef fit(self,
+             numpy.ndarray[STYPE_t, ndim=2] X,
+             numpy.ndarray[STYPE_t, ndim=1] y):
         """ Fit a model predicting y from X design matrix
 
         Args:
@@ -164,9 +192,11 @@ class RLM(object):
         """
         #self.coef_, resid = _weight_fit(X, y, numpy.ones_like(y))
         self.coef_ = _weight_beta(X, y, numpy.ones_like(y))
+        #cdef numpy.ndarray[STYPE_t, ndim=1] resid = _weight_resid(X, y, self.coef_)
         resid = _weight_resid(X, y, self.coef_)
 
-        self.scale = self.scale_est(resid, c=self.scale_constant)
+
+        self.scale = mad(resid, c=self.scale_constant)
 
 
         Q, R = scipy.linalg.qr(X)
@@ -183,21 +213,23 @@ class RLM(object):
         if self.scale < EPS:
             return self
 
-        iteration = 1
-        converged = 0
+        cdef ITYPE_t iteration = 1
+        cdef ITYPE_t converged = 0
         while not converged and iteration < self.maxiter:
             _coef = self.coef_.copy()
             resid = y-X.dot(_coef)
             resid = resid * adjfactor
             # print resid
 
-            if self.update_scale:
-                self.scale = max(EPS*numpy.std(y),
-                                 self.scale_est(resid, c=self.scale_constant))
+            # always True
+            #if self.update_scale:
+            self.scale = max(EPS*numpy.std(y),
+                             mad(resid, c=self.scale_constant))
             # print self.scale
             # print iteration,numpy.sort(numpy.abs(resid)/self.scale_constant)
 
-            self.weights = self.M(resid / self.scale, c=self.tune)
+            #self.weights = self.M(resid / self.scale, c=self.tune)
+            self.weights = bisquare(resid / self.scale, c=self.tune)
             #self.coef_, resid = _weight_fit(X, y, self.weights)
             self.coef_ = _weight_beta(X, y, self.weights)
             resid = _weight_resid(X, y, self.coef_)
@@ -209,15 +241,14 @@ class RLM(object):
         # print resid
         return self
 
-    def predict(self, X):
+    cpdef numpy.ndarray[STYPE_t, ndim=1] predict(self,
+                                                numpy.ndarray[STYPE_t, ndim=2] X):
         """ Predict yhat using model
-
         Args:
             X (np.ndarray): 2D (n_obs x n_features) design matrix
 
         Returns:
             np.ndarray: 1D yhat prediction
-
         """
         return numpy.dot(X[:,1:], self.coef_[1:]) + X[:,0]*self.coef_[0]
         # return numpy.dot(X, self.coef_) + self.intercept_

@@ -1,3 +1,4 @@
+# cython: profile=True
 """Functions for providing the over-arching methodology. Tying together the
 individual components that make-up the change detection process. This module
 should really contain any method that could be considered procedural. Methods
