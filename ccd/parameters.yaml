@@ -59,6 +59,9 @@ QA_WATER: 2
 QA_SHADOW: 3
 QA_SNOW: 4
 QA_CLOUD: 5
+QA_CIRRUS1: 8
+QA_CIRRUS2: 9
+QA_OCCLUSION: 10
 
 
 ############################
