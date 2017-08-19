@@ -46,7 +46,7 @@ def tmask(dates, observations, variogram, bands, t_const, avg_days_yr):
     # variogram = calculate_variogram(observations)
     # Time and expected values using a four-part matrix of coefficients.
     # regression = lm.LinearRegression()
-    regression = robust_fit.RLM(maxiter=5)
+    # regression = robust_fit.RLM(maxiter=5)
 
     tmask_matrix = tmask_coefficient_matrix(dates, avg_days_yr)
 
@@ -58,8 +58,10 @@ def tmask(dates, observations, variogram, bands, t_const, avg_days_yr):
     # For each band, determine if the delta between predeicted and actual
     # values exceeds the threshold. If it does, then it is an outlier.
     for band_ix in bands:
-        fit = regression.fit(tmask_matrix, observations[band_ix])
-        predicted = fit.predict(tmask_matrix)
+        coefs = robust_fit.fit(tmask_matrix, observations[band_ix])
+        # fit = regression.fit(tmask_matrix, observations[band_ix])
+        predicted = robust_fit.predict(coefs, tmask_matrix)
+        # predicted = fit.predict(tmask_matrix)
         outliers += np.abs(predicted - observations[band_ix]) > variogram[band_ix] * t_const
 
     # Keep all observations that aren't outliers.
