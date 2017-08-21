@@ -669,7 +669,7 @@ def lookback(dates, observations, model_window, models, previous_break,
 
     Args:
         dates: list of ordinal days
-        observations: spectral values across bands
+        observations: values across bands
         model_window: current window of values that is being considered
         models: currently fitted models for the model_window
         previous_break: index value of the previous break point, or the start

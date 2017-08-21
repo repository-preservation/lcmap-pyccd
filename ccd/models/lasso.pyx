@@ -1,12 +1,22 @@
+# cython: profile=True
 import numpy as np
+cimport numpy as np
+
+from cpython cimport bool
+
 from ccd.models import FittedModel
 from ccd.math_utils import calc_rmse
 
-#from ccd.models.lasso_fit import ElasticNet
-#from sklearn import linear_model
+ctypedef np.float64_t STYPE_t
+ctypedef float        FTYPE_t
+ctypedef int          ITYPE_t
+ctypedef bool         BTYPE_t
+ctypedef np.long_t    LTYPE_t
 
 
-def coefficient_matrix(dates, avg_days_yr, num_coefficients):
+cdef np.ndarray coefficient_matrix(np.ndarray[LTYPE_t, ndim=1] dates,
+                                   FTYPE_t avg_days_yr,
+                                   ITYPE_t num_coefficients):
     """
     Fourier transform function to be used for the matrix of inputs for
     model fitting
@@ -42,7 +52,13 @@ def coefficient_matrix(dates, avg_days_yr, num_coefficients):
     return matrix
 
 
-def fitted_model(dates, spectra_obs, max_iter, avg_days_yr, num_coefficients, lm):
+cpdef fitted_model(np.ndarray[LTYPE_t, ndim=1] dates,
+                   np.ndarray[STYPE_t, ndim=1] spectra_obs,
+                   ITYPE_t max_iter,
+                   FTYPE_t avg_days_yr,
+                   ITYPE_t num_coefficients,
+                   object lm):
+
     """Create a fully fitted lasso model.
 
     Args:
@@ -59,6 +75,7 @@ def fitted_model(dates, spectra_obs, max_iter, avg_days_yr, num_coefficients, lm
     Example:
         fitted_model(dates, obs).predict(...)
     """
+    #print("***  spectra_obs: {} {}".format(spectra_obs.ndim, spectra_obs.dtype))
     coef_matrix = coefficient_matrix(dates, avg_days_yr, num_coefficients)
     model = lm.fit(coef_matrix, spectra_obs)
     #model = ElasticNet().fit(coef_matrix, spectra_obs)
@@ -71,7 +88,9 @@ def fitted_model(dates, spectra_obs, max_iter, avg_days_yr, num_coefficients, lm
     return FittedModel(fitted_model=model, rmse=rmse, residual=residuals)
 
 
-def predict(model, dates, avg_days_yr):
+cpdef predict(object model,
+              np.ndarray[LTYPE_t, ndim=1] dates,
+              FTYPE_t avg_days_yr):
     coef_matrix = coefficient_matrix(dates, avg_days_yr, 8)
 
     return model.fitted_model.predict(coef_matrix)

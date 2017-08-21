@@ -16,14 +16,6 @@ ctypedef np.long_t    LTYPE_t
 
 log = logging.getLogger(__name__)
 
-np_pi    = np.pi
-np_ceil  = np.ceil
-np_ones  = np.ones
-np_cos   = np.cos
-np_sin   = np.sin
-np_zeros = np.zeros
-np_abs   = np.abs
-
 
 cpdef np.ndarray tmask_coefficient_matrix(np.ndarray[LTYPE_t, ndim=1] dates,
                                           FTYPE_t avg_days_yr):
@@ -35,17 +27,17 @@ cpdef np.ndarray tmask_coefficient_matrix(np.ndarray[LTYPE_t, ndim=1] dates,
     Returns:
         Populated numpy array with coefficient values
     """
-    cdef FTYPE_t annual_cycle = 2*np_pi/avg_days_yr
+    cdef FTYPE_t annual_cycle = 2*np.pi/avg_days_yr
     cdef STYPE_t observation_cycle = annual_cycle / np.ceil((dates[-1] - dates[0]) / avg_days_yr)
 
     ac_dates = annual_cycle * dates
     oc_dates = observation_cycle * dates
 
-    cdef np.ndarray[STYPE_t, ndim=2] matrix = np_ones(shape=(dates.shape[0], 5), order='F')
-    matrix[:, 0] = np_cos(ac_dates)
-    matrix[:, 1] = np_sin(ac_dates)
-    matrix[:, 2] = np_cos(oc_dates)
-    matrix[:, 3] = np_sin(oc_dates)
+    cdef np.ndarray[STYPE_t, ndim=2] matrix = np.ones(shape=(dates.shape[0], 5), order='F')
+    matrix[:, 0] = np.cos(ac_dates)
+    matrix[:, 1] = np.sin(ac_dates)
+    matrix[:, 2] = np.cos(oc_dates)
+    matrix[:, 3] = np.sin(oc_dates)
     #print("** matrix: {} {}".format(matrix.ndim, matrix.dtype))
     return matrix
 
@@ -82,7 +74,7 @@ cpdef tmask(np.ndarray[LTYPE_t, ndim=1] dates,
     #_, sample_count = observations.shape[0]
     cdef ITYPE_t sample_count = observations.shape[1]
     #print("sample_count {} ".format(type(sample_count)))
-    cdef np.ndarray outliers = np_zeros(sample_count, dtype=bool)
+    cdef np.ndarray outliers = np.zeros(sample_count, dtype=bool)
     #print("outliers {} {} {}".format(type(outliers), outliers.ndim, outliers.dtype))
 
     # For each band, determine if the delta between predicted and actual
@@ -91,7 +83,7 @@ cpdef tmask(np.ndarray[LTYPE_t, ndim=1] dates,
     for band_ix in bands:
         fit = regression_fit(tmask_matrix, observations[band_ix])
         predicted = fit.predict(tmask_matrix)
-        outliers += np_abs(predicted - observations[band_ix]) > variogram[band_ix] * t_const
+        outliers += np.abs(predicted - observations[band_ix]) > variogram[band_ix] * t_const
 
     # Keep all observations that aren't outliers.
     return outliers
