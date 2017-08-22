@@ -7,9 +7,8 @@ from ccd.models.robust_fit import RLM
 
 log = logging.getLogger(__name__)
 
-
-cdef np.ndarray tmask_coefficient_matrix(np.ndarray[LTYPE_t, ndim=1] dates,
-                                          FTYPE_t avg_days_yr):
+cdef np.ndarray[STYPE_t, ndim=2] tmask_coefficient_matrix(np.ndarray[LTYPE_t, ndim=1] dates,
+                                                          FTYPE_t avg_days_yr):
     """Coefficient matrix that is used for Tmask modeling
 
     Args:
@@ -58,6 +57,7 @@ cdef np.ndarray tmask(np.ndarray[LTYPE_t, ndim=1] dates,
     # regression = lm.LinearRegression()
     #regression = robust_fit.RLM(maxiter=5)
     cdef np.ndarray[STYPE_t, ndim=2] tmask_matrix = tmask_coefficient_matrix(dates, avg_days_yr)
+
     #print("tmask_matrix {} {} {}".format(type(tmask_matrix), tmask_matrix.ndim, tmask_matrix.dtype))
     # Accumulator for outliers. This starts off as a list of False values
     # because we don't assume anything is an outlier.

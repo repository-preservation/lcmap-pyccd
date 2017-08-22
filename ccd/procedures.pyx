@@ -38,6 +38,14 @@ from ccd.math_utils import kelvin_to_celsius, adjusted_variogram, euclidean_norm
 
 from ccd.models.tmask cimport tmask
 
+from cpython cimport bool
+
+ctypedef np.float64_t STYPE_t
+ctypedef float        FTYPE_t
+ctypedef int          ITYPE_t
+ctypedef bool         BTYPE_t
+ctypedef np.long_t    LTYPE_t
+
 
 log = logging.getLogger(__name__)
 
@@ -201,10 +209,10 @@ def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
 
 
 #cpdef standard_procedure(dates, observations, fitter_fn, quality, proc_params):
-cpdef tuple standard_procedure(np.ndarray dates,
-                               np.ndarray observations,
+cpdef tuple standard_procedure(np.ndarray[LTYPE_t, ndim=1] dates,
+                               np.ndarray[STYPE_t, ndim=2] observations,
                                object fitter_fn,
-                               np.ndarray quality,
+                               np.ndarray[LTYPE_t, ndim=1] quality,
                                dict proc_params):
     """
     Runs the core change detection algorithm.
@@ -367,12 +375,12 @@ cpdef tuple standard_procedure(np.ndarray dates,
     return results, processing_mask
 
 
-cdef tuple initialize(np.ndarray dates,
-                      np.ndarray observations,
+cdef tuple initialize(np.ndarray[LTYPE_t, ndim=1] dates,
+                      np.ndarray[STYPE_t, ndim=2] observations,
                       object fitter_fn,
                       slice model_window,
                       np.ndarray processing_mask,
-                      np.ndarray variogram,
+                      np.ndarray[STYPE_t, ndim=1] variogram,
                       dict proc_params,
                       object lasso):
     """
@@ -492,8 +500,14 @@ cdef tuple initialize(np.ndarray dates,
     return model_window, models, processing_mask
 
 
-def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
-                variogram, proc_params, lasso):
+cdef tuple lookforward(np.ndarray[LTYPE_t, ndim=1] dates,
+                       np.ndarray[STYPE_t, ndim=2] observations,
+                       slice model_window,
+                       object fitter_fn,
+                       np.ndarray processing_mask,
+                       np.ndarray[STYPE_t, ndim=1] variogram,
+                       dict proc_params,
+                       object lasso):
     """Increase observation window until change is detected or
     we are out of observations.
 
@@ -672,8 +686,14 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     return result, processing_mask, model_window
 
 
-def lookback(dates, observations, model_window, models, previous_break,
-             processing_mask, variogram, proc_params):
+cdef tuple lookback(np.ndarray[LTYPE_t, ndim=1] dates,
+                    np.ndarray[STYPE_t, ndim=2] observations,
+                    slice model_window,
+                    list models,
+                    ITYPE_t previous_break,
+                    np.ndarray processing_mask,
+                    np.ndarray[STYPE_t, ndim=1] variogram,
+                    dict proc_params):
     """
     Special case when there is a gap between the start of a time series model
     and the previous model break point, this can include values that were
@@ -765,8 +785,14 @@ def lookback(dates, observations, model_window, models, previous_break,
     return model_window, processing_mask
 
 
-def catch(dates, observations, fitter_fn, processing_mask, model_window,
-          curve_qa, proc_params, lasso):
+cdef catch(np.ndarray[LTYPE_t, ndim=1] dates,
+           np.ndarray[STYPE_t, ndim=2] observations,
+           object fitter_fn,
+           np.ndarray processing_mask,
+           slice model_window,
+           ITYPE_t curve_qa,
+           dict proc_params,
+           object lasso):
     """
     Handle special cases where general models just need to be fitted and return
     their results.
