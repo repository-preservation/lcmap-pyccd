@@ -252,9 +252,9 @@ def standard_procedure_filter(observations, quality, dates, proc_params):
     Returns:
         1-d boolean ndarray
     """
-    thermal_idx = proc_params.THERMAL_IDX
-    clear = proc_params.QA_CLEAR
-    water = proc_params.QA_WATER
+    thermal_idx = proc_params['THERMAL_IDX']
+    clear = proc_params['QA_CLEAR']
+    water = proc_params['QA_WATER']
 
     mask = ((mask_value(quality, water) | mask_value(quality, clear)) &
             filter_thermal_celsius(observations[thermal_idx]) &

@@ -25,6 +25,7 @@ For more information please refer to the pyccd Algorithm Description Document.
 """
 import logging
 import numpy as np
+cimport numpy as np
 np_array = np.array
 np_sum = np.sum
 
@@ -32,7 +33,7 @@ from ccd import qa
 from ccd.change import enough_samples, enough_time,\
     update_processing_mask, stable, determine_num_coefs, calc_residuals, \
     find_closest_doy, change_magnitude, detect_change, detect_outlier
-from ccd.models import results_to_changemodel, tmask
+from ccd.models import results_to_changemodel#, tmask
 from ccd.math_utils import kelvin_to_celsius, adjusted_variogram, euclidean_norm
 
 
@@ -40,7 +41,7 @@ from ccd.math_utils import kelvin_to_celsius, adjusted_variogram, euclidean_norm
 log = logging.getLogger(__name__)
 
 ldebug                       = log.debug
-tmask_tmask                  = tmask.tmask
+#tmask_tmask                  = tmask.tmask
 qa_enough_clear              = qa.enough_clear
 qa_enough_snow               = qa.enough_snow
 qa_snow_procedure_filter     = qa.snow_procedure_filter
@@ -63,12 +64,12 @@ def fit_procedure(quality, proc_params):
          the curves
     """
     # TODO do this better
-    clear        = proc_params.QA_CLEAR
-    water        = proc_params.QA_WATER
-    fill         = proc_params.QA_FILL
-    snow         = proc_params.QA_SNOW
-    clear_thresh = proc_params.CLEAR_PCT_THRESHOLD
-    snow_thresh  = proc_params.SNOW_PCT_THRESHOLD
+    clear        = proc_params['QA_CLEAR']
+    water        = proc_params['QA_WATER']
+    fill         = proc_params['QA_FILL']
+    snow         = proc_params['QA_SNOW']
+    clear_thresh = proc_params['CLEAR_PCT_THRESHOLD']
+    snow_thresh  = proc_params['SNOW_PCT_THRESHOLD']
 
     if not qa_enough_clear(quality, clear, water, fill, clear_thresh):
         if qa_enough_snow(quality, clear, water, snow, snow_thresh):
@@ -109,11 +110,11 @@ def permanent_snow_procedure(dates, observations, fitter_fn, quality,
             for model fitting
     """
     # TODO do this better
-    meow_size    = proc_params.MEOW_SIZE
-    curve_qa     = proc_params.CURVE_QA['PERSIST_SNOW']
-    avg_days_yr  = proc_params.AVG_DAYS_YR
-    fit_max_iter = proc_params.LASSO_MAX_ITER
-    num_coef     = proc_params.COEFFICIENT_MIN
+    meow_size    = proc_params['MEOW_SIZE']
+    curve_qa     = proc_params['CURVE_QA']['PERSIST_SNOW']
+    avg_days_yr  = proc_params['AVG_DAYS_YR']
+    fit_max_iter = proc_params['LASSO_MAX_ITER']
+    num_coef     = proc_params['COEFFICIENT_MIN']
 
     processing_mask = qa_snow_procedure_filter(observations, quality,
                                                dates, proc_params)
@@ -167,11 +168,11 @@ def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
             for model fitting
         """
     # TODO do this better
-    meow_size    = proc_params.MEOW_SIZE,
-    curve_qa     = proc_params.CURVE_QA['INSUF_CLEAR']
-    avg_days_yr  = proc_params.AVG_DAYS_YR
-    fit_max_iter = proc_params.LASSO_MAX_ITER
-    num_coef     = proc_params.COEFFICIENT_MIN
+    meow_size    = proc_params['MEOW_SIZE']
+    curve_qa     = proc_params['CURVE_QA']['INSUF_CLEAR']
+    avg_days_yr  = proc_params['AVG_DAYS_YR']
+    fit_max_iter = proc_params['LASSO_MAX_ITER']
+    num_coef     = proc_params['COEFFICIENT_MIN']
 
     processing_mask = qa_insufficient_clear_filter(observations, quality,
                                                    dates, proc_params)
@@ -199,7 +200,12 @@ def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
     return (result,), processing_mask
 
 
-def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
+#cpdef standard_procedure(dates, observations, fitter_fn, quality, proc_params):
+cpdef tuple standard_procedure(np.ndarray dates,
+                               np.ndarray observations,
+                               object fitter_fn,
+                               np.ndarray quality,
+                               dict proc_params):
     """
     Runs the core change detection algorithm.
 
@@ -235,19 +241,19 @@ def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
             for model fitting
     """
     # TODO do this better
-    meow_size       = proc_params.MEOW_SIZE
-    peek_size       = proc_params.PEEK_SIZE
-    thermal_idx     = proc_params.THERMAL_IDX
-    curve_qa        = proc_params.CURVE_QA
-    detection_bands = proc_params.DETECTION_BANDS
+    meow_size       = proc_params['MEOW_SIZE']
+    peek_size       = proc_params['PEEK_SIZE']
+    thermal_idx     = proc_params['THERMAL_IDX']
+    curve_qa        = proc_params['CURVE_QA']
+    detection_bands = proc_params['DETECTION_BANDS']
 
     from sklearn.linear_model import Lasso
 
-    lasso = Lasso(max_iter=proc_params.LASSO_MAX_ITER)
+    lasso = Lasso(max_iter=proc_params['LASSO_MAX_ITER'])
 
-    ldebug('Build change models - dates: %s, obs: %s, '
-              'meow_size: %s, peek_size: %s',
-              dates.shape[0], observations.shape, meow_size, peek_size)
+    #ldebug('Build change models - dates: %s, obs: %s, '
+    #          'meow_size: %s, peek_size: %s',
+    #          dates.shape[0], observations.shape, meow_size, peek_size)
 
     # First we need to filter the observations based on the spectra values
     # and qa information and convert kelvin to celsius.
@@ -361,8 +367,16 @@ def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
     return results, processing_mask
 
 
-def initialize(dates, observations, fitter_fn, model_window, processing_mask,
-               variogram, proc_params, lasso):
+#cpdef initialize(dates, observations, fitter_fn, model_window, processing_mask,
+#               variogram, proc_params, lasso):
+cdef tuple initialize(np.ndarray dates,
+                      np.ndarray observations,
+                      object fitter_fn,
+                      slice model_window,
+                      np.ndarray processing_mask,
+                      np.ndarray variogram,
+                      dict proc_params,
+                      object lasso):
     """
     Determine a good starting point at which to build off of for the
     subsequent process of change detection, both forward and backward.
@@ -382,15 +396,19 @@ def initialize(dates, observations, fitter_fn, model_window, processing_mask,
         slice: model window that was deemed to be a stable start
         namedtuple: fitted regression models
     """
+
+    from ccd.models import tmask
+    tmask_tmask = tmask.tmask
+
     # TODO do this better
-    meow_size       = proc_params.MEOW_SIZE
-    day_delta       = proc_params.DAY_DELTA
-    detection_bands = proc_params.DETECTION_BANDS
-    tmask_bands     = proc_params.TMASK_BANDS
-    change_thresh   = proc_params.CHANGE_THRESHOLD
-    tmask_scale     = proc_params.T_CONST
-    avg_days_yr     = proc_params.AVG_DAYS_YR
-    fit_max_iter    = proc_params.LASSO_MAX_ITER
+    meow_size       = proc_params['MEOW_SIZE']
+    day_delta       = proc_params['DAY_DELTA']
+    detection_bands = proc_params['DETECTION_BANDS']
+    tmask_bands     = proc_params['TMASK_BANDS']
+    change_thresh   = proc_params['CHANGE_THRESHOLD']
+    tmask_scale     = proc_params['T_CONST']
+    avg_days_yr     = proc_params['AVG_DAYS_YR']
+    fit_max_iter    = proc_params['LASSO_MAX_ITER']
 
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
@@ -503,16 +521,16 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
         slice: model window
     """
     # TODO do this better
-    peek_size       = proc_params.PEEK_SIZE
-    coef_min        = proc_params.COEFFICIENT_MIN
-    coef_mid        = proc_params.COEFFICIENT_MID
-    coef_max        = proc_params.COEFFICIENT_MAX
-    num_obs_fact    = proc_params.NUM_OBS_FACTOR
-    detection_bands = proc_params.DETECTION_BANDS
-    change_thresh   = proc_params.CHANGE_THRESHOLD
-    outlier_thresh  = proc_params.OUTLIER_THRESHOLD
-    avg_days_yr     = proc_params.AVG_DAYS_YR
-    fit_max_iter    = proc_params.LASSO_MAX_ITER
+    peek_size       = proc_params['PEEK_SIZE']
+    coef_min        = proc_params['COEFFICIENT_MIN']
+    coef_mid        = proc_params['COEFFICIENT_MID']
+    coef_max        = proc_params['COEFFICIENT_MAX']
+    num_obs_fact    = proc_params['NUM_OBS_FACTOR']
+    detection_bands = proc_params['DETECTION_BANDS']
+    change_thresh   = proc_params['CHANGE_THRESHOLD']
+    outlier_thresh  = proc_params['OUTLIER_THRESHOLD']
+    avg_days_yr     = proc_params['AVG_DAYS_YR']
+    fit_max_iter    = proc_params['LASSO_MAX_ITER']
 
     # Used for loops.
     num_detectbands = len(detection_bands)
@@ -684,11 +702,11 @@ def lookback(dates, observations, model_window, models, previous_break,
         array: indices of data that have been flagged as outliers
     """
     # TODO do this better
-    peek_size       = proc_params.PEEK_SIZE
-    detection_bands = proc_params.DETECTION_BANDS
-    change_thresh   = proc_params.CHANGE_THRESHOLD
-    outlier_thresh  = proc_params.OUTLIER_THRESHOLD
-    avg_days_yr     = proc_params.AVG_DAYS_YR
+    peek_size       = proc_params['PEEK_SIZE']
+    detection_bands = proc_params['DETECTION_BANDS']
+    change_thresh   = proc_params['CHANGE_THRESHOLD']
+    outlier_thresh  = proc_params['OUTLIER_THRESHOLD']
+    avg_days_yr     = proc_params['AVG_DAYS_YR']
 
     ldebug('Previous break: %s model window: %s', previous_break, model_window)
 
@@ -773,9 +791,9 @@ def catch(dates, observations, fitter_fn, processing_mask, model_window,
 
     """
     # TODO do this better
-    avg_days_yr  = proc_params.AVG_DAYS_YR
-    fit_max_iter = proc_params.LASSO_MAX_ITER
-    num_coef     = proc_params.COEFFICIENT_MIN
+    avg_days_yr  = proc_params['AVG_DAYS_YR']
+    fit_max_iter = proc_params['LASSO_MAX_ITER']
+    num_coef     = proc_params['COEFFICIENT_MIN']
 
     ldebug('Catching observations: %s', model_window)
     period = dates[processing_mask]
