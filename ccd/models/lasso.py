@@ -32,21 +32,21 @@ def coefficient_matrix(dates, avg_days_yr, num_coefficients):
     # lookup optimizations
     # Before optimization - 12.53% of total runtime
     # After optimization  - 10.57% of total runtime
-    w12 = w * dates
-    w34 = 2 * w12
-    w56 = 3 * w12
     cos = np.cos
     sin = np.sin
 
+    w12 = w * dates
     matrix[:, 0] = dates
     matrix[:, 1] = cos(w12)
     matrix[:, 2] = sin(w12)
 
     if num_coefficients >= 6:
+        w34 = 2 * w12
         matrix[:, 3] = cos(w34)
         matrix[:, 4] = sin(w34)
 
     if num_coefficients >= 8:
+        w56 = 3 * w12
         matrix[:, 5] = cos(w56)
         matrix[:, 6] = sin(w56)
 
