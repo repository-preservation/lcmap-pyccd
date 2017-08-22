@@ -33,15 +33,15 @@ from ccd import qa
 from ccd.change import enough_samples, enough_time,\
     update_processing_mask, stable, determine_num_coefs, calc_residuals, \
     find_closest_doy, change_magnitude, detect_change, detect_outlier
-from ccd.models import results_to_changemodel#, tmask
+from ccd.models import results_to_changemodel
 from ccd.math_utils import kelvin_to_celsius, adjusted_variogram, euclidean_norm
 
+from ccd.models.tmask cimport tmask
 
 
 log = logging.getLogger(__name__)
 
 ldebug                       = log.debug
-#tmask_tmask                  = tmask.tmask
 qa_enough_clear              = qa.enough_clear
 qa_enough_snow               = qa.enough_snow
 qa_snow_procedure_filter     = qa.snow_procedure_filter
@@ -367,8 +367,6 @@ cpdef tuple standard_procedure(np.ndarray dates,
     return results, processing_mask
 
 
-#cpdef initialize(dates, observations, fitter_fn, model_window, processing_mask,
-#               variogram, proc_params, lasso):
 cdef tuple initialize(np.ndarray dates,
                       np.ndarray observations,
                       object fitter_fn,
@@ -396,9 +394,6 @@ cdef tuple initialize(np.ndarray dates,
         slice: model window that was deemed to be a stable start
         namedtuple: fitted regression models
     """
-
-    from ccd.models import tmask
-    tmask_tmask = tmask.tmask
 
     # TODO do this better
     meow_size       = proc_params['MEOW_SIZE']
@@ -430,10 +425,10 @@ cdef tuple initialize(np.ndarray dates,
 
         # Count outliers in the window, if there are too many outliers then
         # try again.
-        tmask_outliers = tmask_tmask(period[model_window],
-                                     spectral_obs[:, model_window],
-                                     variogram, tmask_bands, tmask_scale,
-                                     avg_days_yr)
+        tmask_outliers = tmask(period[model_window],
+                               spectral_obs[:, model_window],
+                               variogram, tmask_bands, tmask_scale,
+                               avg_days_yr)
 
         tmask_count = np_sum(tmask_outliers)
 
