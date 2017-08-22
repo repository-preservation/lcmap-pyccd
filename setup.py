@@ -31,7 +31,7 @@ setup(
 
     # __version__ is defined in version.py
     version=__version__,
-    
+
     description='Python implementation of Continuous Change Detection',
     long_description=__doc__,
     url='https://github.com/usgs-eros/lcmap-pyccd',
@@ -76,7 +76,8 @@ setup(
                  'pytest-profiling>=1.1.1',
                  'gprof2dot>=2015.12.1',
                  'pytest-watch>=4.1.0'],
-        'dev': ['jupyter',],
+        'dev': ['jupyter',
+                'line_profiler'],
     },
 
     setup_requires=['pytest-runner', 'pip'],
@@ -85,7 +86,7 @@ setup(
     package_data={
         'ccd': ['parameters.yaml'],
     },
-    
+
     # data_files=[('my_data', ['data/data_file'])],
 
     # entry_points={'console_scripts': ['pyccd-detect=ccd.cli:detect', ], },
