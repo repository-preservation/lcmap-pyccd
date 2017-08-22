@@ -11,8 +11,7 @@ ctypedef int          ITYPE_t
 ctypedef bool         BTYPE_t
 ctypedef np.long_t    LTYPE_t
 
-#from ccd.models import robust_fit
-
+from ccd.models.robust_fit import RLM
 
 log = logging.getLogger(__name__)
 
@@ -47,8 +46,7 @@ cpdef tmask(np.ndarray[LTYPE_t, ndim=1] dates,
             np.ndarray[STYPE_t, ndim=1] variogram,
             list bands,
             FTYPE_t t_const,
-            FTYPE_t avg_days_yr,
-            object regression_fit):
+            FTYPE_t avg_days_yr):
     """Produce an index for filtering outliers.
 
     Arguments:
@@ -81,7 +79,8 @@ cpdef tmask(np.ndarray[LTYPE_t, ndim=1] dates,
     # values exceeds the threshold. If it does, then it is an outlier.
     #regression_fit = regression.fit
     for band_ix in bands:
-        fit = regression_fit(tmask_matrix, observations[band_ix])
+        #fit = regression_fit(tmask_matrix, observations[band_ix])
+        fit = RLM(maxiter=5).fit(tmask_matrix, observations[band_ix])
         predicted = fit.predict(tmask_matrix)
         outliers += np.abs(predicted - observations[band_ix]) > variogram[band_ix] * t_const
 

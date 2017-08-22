@@ -36,9 +36,6 @@ from ccd.models import results_to_changemodel, tmask
 from ccd.math_utils import kelvin_to_celsius, adjusted_variogram, euclidean_norm
 
 from sklearn.linear_model import Lasso
-from ccd.models import robust_fit
-
-robust_fit_regression = robust_fit.RLM(maxiter=5).fit
 
 log = logging.getLogger(__name__)
 
@@ -416,7 +413,7 @@ def initialize(dates, observations, fitter_fn, model_window, processing_mask,
         tmask_outliers = tmask_tmask(period[model_window],
                                      spectral_obs[:, model_window],
                                      variogram, tmask_bands, tmask_scale,
-                                     avg_days_yr, robust_fit_regression)
+                                     avg_days_yr)
 
         tmask_count = np_sum(tmask_outliers)
 
