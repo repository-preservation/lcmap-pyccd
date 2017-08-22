@@ -35,7 +35,7 @@ from ccd.change import enough_samples, enough_time,\
 from ccd.models import results_to_changemodel, tmask
 from ccd.math_utils import kelvin_to_celsius, adjusted_variogram, euclidean_norm
 
-from sklearn.linear_model import Lasso
+
 
 log = logging.getLogger(__name__)
 
@@ -240,6 +240,8 @@ def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
     thermal_idx     = proc_params.THERMAL_IDX
     curve_qa        = proc_params.CURVE_QA
     detection_bands = proc_params.DETECTION_BANDS
+
+    from sklearn.linear_model import Lasso
 
     lasso = Lasso(max_iter=proc_params.LASSO_MAX_ITER)
 
