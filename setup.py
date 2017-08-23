@@ -82,8 +82,7 @@ setup(
                       'cachetools>=2.0.0',
                       'click>=6.6',
                       'click-plugins>=1.0.3',
-                      'PyYAML>=3.12',
-                      'cython>=0.26'],
+                      'PyYAML>=3.12'],
 
     extras_require={
         'test': ['aniso8601>=1.1.0',
@@ -92,8 +91,10 @@ setup(
                  'pytest>=3.0.2',
                  'pytest-profiling>=1.1.1',
                  'gprof2dot>=2015.12.1',
-                 'pytest-watch>=4.1.0'],
-        'dev': ['jupyter',],
+                 'pytest-watch>=4.1.0',
+                 'xarray>=0.9.6'],
+        'dev': ['jupyter',
+                'cython>=0.26'],
     },
 
     setup_requires=['pytest-runner', 'pip', 'numpy'],
