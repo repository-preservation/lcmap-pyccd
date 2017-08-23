@@ -11,17 +11,29 @@ Texas Tech University, TX, USA
 
 from setuptools import setup
 from os import path
-
-from Cython.Build import cythonize
 from distutils.extension import Extension
 import numpy as np
 
-import io
+here    = path.abspath(path.dirname(__file__))
+np_incl = np.get_include()
 
-here = path.abspath(path.dirname(__file__))
+USE_CYTHON=False
+EXT_TYPE=".c"
+try:
+    import cython
+    USE_CYTHON=True
+    EXT_TYPE=".pyx"
+except ImportError:
+    print("Cython unavailable")
 
-extensions = [Extension('models', ['ccd/models/*.pyx'], include_dirs=[np.get_include()])]
+extensions = [Extension('ccd.models.lasso',      ['ccd/models/lasso'+EXT_TYPE],      include_dirs=[np_incl]),
+              Extension('ccd.models.robust_fit', ['ccd/models/robust_fit'+EXT_TYPE], include_dirs=[np_incl]),
+              Extension('ccd.models.tmask',      ['ccd/models/tmask'+EXT_TYPE],      include_dirs=[np_incl]),
+              Extension('ccd.procedures',        ['ccd/procedures'+EXT_TYPE],        include_dirs=[np_incl])]
 
+if USE_CYTHON:
+    from Cython.Build import cythonize
+    extensions = cythonize(extensions)
 
 # bring in __version__ and __name from version.py for install.
 with open(path.join(here, 'ccd', 'version.py')) as h:
@@ -54,21 +66,15 @@ setup(
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: Public Domain',
-
-        # 'Programming Language :: Python :: 2',
-        # 'Programming Language :: Python :: 2.7',
-        # 'Programming Language :: Python :: 3',
-        # 'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
     ],
 
     keywords='python change detection',
 
     packages=['ccd', 'ccd.models'],
 
-    ext_modules=cythonize(['ccd/models/*.pyx', 'ccd/procedures.pyx']),
-    include_dirs=[np.get_include()],
+    ext_modules=extensions,
 
     install_requires=['numpy>=1.10.0',
                       'scipy>=0.18.1',
@@ -76,7 +82,8 @@ setup(
                       'cachetools>=2.0.0',
                       'click>=6.6',
                       'click-plugins>=1.0.3',
-                      'PyYAML>=3.12'],
+                      'PyYAML>=3.12',
+                      'cython>=0.26'],
 
     extras_require={
         'test': ['aniso8601>=1.1.0',
@@ -89,13 +96,13 @@ setup(
         'dev': ['jupyter',],
     },
 
-    setup_requires=['pytest-runner', 'pip'],
+    setup_requires=['pytest-runner', 'pip', 'numpy'],
     tests_require=['pytest>=3.0.2'],
 
     package_data={
         'ccd': ['parameters.yaml'],
     },
-    
+
     # data_files=[('my_data', ['data/data_file'])],
 
     # entry_points={'console_scripts': ['pyccd-detect=ccd.cli:detect', ], },

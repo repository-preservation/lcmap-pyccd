@@ -13,5 +13,5 @@ pip-selfcheck.json
 *.stat
 *.dot
 *.so
-*.c
+
 
