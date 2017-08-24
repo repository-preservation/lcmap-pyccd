@@ -284,10 +284,10 @@ def snow_procedure_filter(observations, quality, dates, proc_params):
     Returns:
         1-d boolean ndarray
     """
-    thermal_idx = proc_params.THERMAL_IDX
-    clear = proc_params.QA_CLEAR
-    water = proc_params.QA_WATER
-    snow = proc_params.QA_SNOW
+    thermal_idx = proc_params['THERMAL_IDX']
+    clear = proc_params['QA_CLEAR']
+    water = proc_params['QA_WATER']
+    snow = proc_params['QA_SNOW']
 
     mask = ((mask_value(quality, water) | mask_value(quality, clear)) &
             filter_thermal_celsius(observations[thermal_idx]) &
@@ -316,8 +316,8 @@ def insufficient_clear_filter(observations, quality, dates, proc_params):
     Returns:
         1-d boolean ndarray
     """
-    green_idx = proc_params.GREEN_IDX
-    filter_range = proc_params.MEDIAN_GREEN_FILTER
+    green_idx = proc_params['GREEN_IDX']
+    filter_range = proc_params['MEDIAN_GREEN_FILTER']
 
     standard_mask = standard_procedure_filter(observations, quality, dates, proc_params)
     green_mask = filter_median_green(observations[:, standard_mask][green_idx], filter_range)

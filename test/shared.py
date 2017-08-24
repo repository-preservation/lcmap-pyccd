@@ -67,8 +67,8 @@ def read_data(path):
     Returns:
         A 2D numpy array.
     """
-    return np.genfromtxt(path, delimiter=',', dtype=np.int).T
-
+    #return np.genfromtxt(path, delimiter=',', dtype=np.int).T
+    return np.genfromtxt(path, delimiter=',', dtype=np.float).T
 
 def gen_acquisition_dates(interval):
     """Generate acquisition dates for an ISO8601 interval.

@@ -29,7 +29,8 @@ except ImportError:
 extensions = [Extension('ccd.models.lasso',      ['ccd/models/lasso'+EXT_TYPE],      include_dirs=[np_incl]),
               Extension('ccd.models.robust_fit', ['ccd/models/robust_fit'+EXT_TYPE], include_dirs=[np_incl]),
               Extension('ccd.models.tmask',      ['ccd/models/tmask'+EXT_TYPE],      include_dirs=[np_incl]),
-              Extension('ccd.procedures',        ['ccd/procedures'+EXT_TYPE],        include_dirs=[np_incl])]
+              Extension('ccd.procedures',        ['ccd/procedures'+EXT_TYPE],        include_dirs=[np_incl]),
+              Extension('test.test_models',      ['test/test_models' + EXT_TYPE],    include_dirs=[np_incl])]
 
 if USE_CYTHON:
     from Cython.Build import cythonize

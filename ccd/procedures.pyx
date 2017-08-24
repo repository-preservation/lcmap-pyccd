@@ -117,6 +117,9 @@ def permanent_snow_procedure(dates, observations, fitter_fn, quality,
         1-d ndarray: processing mask indicating which values were used
             for model fitting
     """
+    from sklearn.linear_model import Lasso
+    lasso = Lasso(max_iter=proc_params['LASSO_MAX_ITER'])
+
     # TODO do this better
     meow_size    = proc_params['MEOW_SIZE']
     curve_qa     = proc_params['CURVE_QA']['PERSIST_SNOW']
@@ -133,7 +136,7 @@ def permanent_snow_procedure(dates, observations, fitter_fn, quality,
     if np_sum(processing_mask) < meow_size:
         return [], processing_mask
 
-    models = [fitter_fn(period, spectrum, fit_max_iter, avg_days_yr, num_coef)
+    models = [fitter_fn(period, spectrum, fit_max_iter, avg_days_yr, num_coef, lasso)
               for spectrum in spectral_obs]
 
     magnitudes = np_zeros(shape=(observations.shape[0],))
@@ -175,6 +178,10 @@ def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
         1-d ndarray: processing mask indicating which values were used
             for model fitting
         """
+
+    from sklearn.linear_model import Lasso
+    lasso = Lasso(max_iter=proc_params['LASSO_MAX_ITER'])
+
     # TODO do this better
     meow_size    = proc_params['MEOW_SIZE']
     curve_qa     = proc_params['CURVE_QA']['INSUF_CLEAR']
@@ -191,7 +198,7 @@ def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
     if np_sum(processing_mask) < meow_size:
         return [], processing_mask
 
-    models = [fitter_fn(period, spectrum, fit_max_iter, avg_days_yr, num_coef)
+    models = [fitter_fn(period, spectrum, fit_max_iter, avg_days_yr, num_coef, lasso)
               for spectrum in spectral_obs]
 
     magnitudes = np_zeros(shape=(observations.shape[0],))

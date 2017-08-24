@@ -1,0 +1,3 @@
+from test.test_models import test_lasso_coefficient_matrix
+
+test_lasso_coefficient_matrix()

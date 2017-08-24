@@ -1,11 +1,11 @@
 # cython: profile=True
-import logging
+#import logging
 import numpy as np
 cimport numpy as np
 
 from ccd.models.robust_fit import RLM
 
-log = logging.getLogger(__name__)
+#log = logging.getLogger(__name__)
 
 cdef np.ndarray[STYPE_t, ndim=2] tmask_coefficient_matrix(np.ndarray[LTYPE_t, ndim=1] dates,
                                                           FTYPE_t avg_days_yr):

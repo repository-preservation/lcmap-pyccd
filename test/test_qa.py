@@ -11,16 +11,16 @@ snow = 3
 clear_thresh = 0.25
 snow_thresh = 0.75
 
-
-def test_checkbit():
-    packint = 1
-    offset = 0
-
-    assert checkbit(packint, offset)
-
-    offset = 1
-
-    assert not checkbit(packint, offset)
+# TODO test for unpackqa, where checkbit resides
+#def test_checkbit():
+#    packint = 1
+#    offset = 0
+#
+#     assert checkbit(packint, offset)
+#
+#     offset = 1
+#
+#     assert not checkbit(packint, offset)
 
 
 # def test_qabitval():
