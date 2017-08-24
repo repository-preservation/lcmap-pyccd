@@ -1,0 +1,7 @@
+include ccd/models/lasso.pyx
+include ccd/models/lasso.pxd
+include ccd/models/robust_fit.pyx
+include ccd/models/tmask.pyx
+include ccd/models/tmask.pxd
+include ccd/procedures.pyx
+include test/test_models.pyx
