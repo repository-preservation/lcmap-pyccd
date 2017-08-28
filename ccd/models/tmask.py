@@ -1,14 +1,11 @@
-# cython: profile=True
 #import logging
 import numpy as np
-cimport numpy as np
 
 from ccd.models.robust_fit import RLM
 
 #log = logging.getLogger(__name__)
 
-cdef np.ndarray[STYPE_t, ndim=2] tmask_coefficient_matrix(np.ndarray[LTYPE_t, ndim=1] dates,
-                                                          FTYPE_t avg_days_yr):
+def tmask_coefficient_matrix(dates, avg_days_yr):
     """Coefficient matrix that is used for Tmask modeling
 
     Args:
@@ -17,13 +14,13 @@ cdef np.ndarray[STYPE_t, ndim=2] tmask_coefficient_matrix(np.ndarray[LTYPE_t, nd
     Returns:
         Populated numpy array with coefficient values
     """
-    cdef FTYPE_t annual_cycle = 2*np.pi/avg_days_yr
-    cdef STYPE_t observation_cycle = annual_cycle / np.ceil((dates[-1] - dates[0]) / avg_days_yr)
+    annual_cycle = 2*np.pi/avg_days_yr
+    observation_cycle = annual_cycle / np.ceil((dates[-1] - dates[0]) / avg_days_yr)
 
     ac_dates = annual_cycle * dates
     oc_dates = observation_cycle * dates
 
-    cdef np.ndarray[STYPE_t, ndim=2] matrix = np.ones(shape=(dates.shape[0], 5), order='F')
+    matrix = np.ones(shape=(dates.shape[0], 5), order='F')
     matrix[:, 0] = np.cos(ac_dates)
     matrix[:, 1] = np.sin(ac_dates)
     matrix[:, 2] = np.cos(oc_dates)
@@ -32,12 +29,12 @@ cdef np.ndarray[STYPE_t, ndim=2] tmask_coefficient_matrix(np.ndarray[LTYPE_t, nd
     return matrix
 
 
-cdef np.ndarray tmask(np.ndarray[LTYPE_t, ndim=1] dates,
-                      np.ndarray[STYPE_t, ndim=2] observations,
-                      np.ndarray[STYPE_t, ndim=1] variogram,
-                      list bands,
-                      FTYPE_t t_const,
-                      FTYPE_t avg_days_yr):
+def tmask(dates,
+          observations,
+          variogram,
+          bands,
+          t_const,
+          avg_days_yr):
     """Produce an index for filtering outliers.
 
     Arguments:
@@ -56,15 +53,15 @@ cdef np.ndarray tmask(np.ndarray[LTYPE_t, ndim=1] dates,
     # Time and expected values using a four-part matrix of coefficients.
     # regression = lm.LinearRegression()
     #regression = robust_fit.RLM(maxiter=5)
-    cdef np.ndarray[STYPE_t, ndim=2] tmask_matrix = tmask_coefficient_matrix(dates, avg_days_yr)
+    tmask_matrix = tmask_coefficient_matrix(dates, avg_days_yr)
 
     #print("tmask_matrix {} {} {}".format(type(tmask_matrix), tmask_matrix.ndim, tmask_matrix.dtype))
     # Accumulator for outliers. This starts off as a list of False values
     # because we don't assume anything is an outlier.
     #_, sample_count = observations.shape[0]
-    cdef ITYPE_t sample_count = observations.shape[1]
+    sample_count = observations.shape[1]
     #print("sample_count {} ".format(type(sample_count)))
-    cdef np.ndarray outliers = np.zeros(sample_count, dtype=bool)
+    outliers = np.zeros(sample_count, dtype=bool)
     #print("outliers {} {} {}".format(type(outliers), outliers.ndim, outliers.dtype))
 
     # For each band, determine if the delta between predicted and actual

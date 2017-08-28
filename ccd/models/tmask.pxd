@@ -10,9 +10,16 @@ ctypedef bool         BTYPE_t
 ctypedef np.long_t    LTYPE_t
 
 
-cdef np.ndarray tmask(np.ndarray[LTYPE_t, ndim=1],
-                      np.ndarray[STYPE_t, ndim=2],
-                      np.ndarray[STYPE_t, ndim=1],
-                      list,
-                      FTYPE_t,
-                      FTYPE_t)
+#cdef np.ndarray[STYPE_t, ndim=2] tmask_coefficient_matrix(np.ndarray[LTYPE_t, ndim=1] dates,
+#                                                          FTYPE_t avg_days_yr)
+cdef np.ndarray tmask_coefficient_matrix(np.ndarray[LTYPE_t, ndim=1] dates,
+                                                          FTYPE_t avg_days_yr)
+
+
+
+cdef np.ndarray tmask(np.ndarray[LTYPE_t, ndim=1] dates,
+                      np.ndarray[STYPE_t, ndim=2] observations,
+                      np.ndarray[STYPE_t, ndim=1] variogram,
+                      list bands,
+                      FTYPE_t t_const,
+                      FTYPE_t avg_days_yr)

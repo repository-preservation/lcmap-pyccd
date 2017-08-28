@@ -22,7 +22,7 @@ EXT_TYPE = ".c"
 try:
     import cython
     USE_CYTHON = True
-    EXT_TYPE = ".pyx"
+    EXT_TYPE = ".py"
 except ImportError:
     print("Cython unavailable")
 
@@ -30,7 +30,8 @@ extensions = [Extension('ccd.models.lasso',      ['ccd/models/lasso'+EXT_TYPE], 
               Extension('ccd.models.robust_fit', ['ccd/models/robust_fit'+EXT_TYPE], include_dirs=[np_incl]),
               Extension('ccd.models.tmask',      ['ccd/models/tmask'+EXT_TYPE],      include_dirs=[np_incl]),
               Extension('ccd.procedures',        ['ccd/procedures'+EXT_TYPE],        include_dirs=[np_incl]),
-              Extension('test.test_models',      ['test/test_models' + EXT_TYPE],    include_dirs=[np_incl])]
+              # Extension('test.test_models',      ['test/test_models' + EXT_TYPE],    include_dirs=[np_incl])
+              ]
 
 if USE_CYTHON:
     from Cython.Build import cythonize

@@ -1,14 +1,10 @@
-# cython: profile=True
 import numpy as np
-cimport numpy as np
 
 from ccd.models import FittedModel
 from ccd.math_utils import calc_rmse
 
 
-cdef np.ndarray coefficient_matrix(np.ndarray[LTYPE_t, ndim=1] dates,
-                                   FTYPE_t avg_days_yr,
-                                   ITYPE_t num_coefficients):
+def coefficient_matrix(dates, avg_days_yr, num_coefficients):
     """
     Fourier transform function to be used for the matrix of inputs for
     model fitting
@@ -44,12 +40,7 @@ cdef np.ndarray coefficient_matrix(np.ndarray[LTYPE_t, ndim=1] dates,
     return matrix
 
 
-cpdef fitted_model(np.ndarray[LTYPE_t, ndim=1] dates,
-                   np.ndarray[STYPE_t, ndim=1] spectra_obs,
-                   ITYPE_t max_iter,
-                   FTYPE_t avg_days_yr,
-                   ITYPE_t num_coefficients,
-                   object lm):
+def fitted_model(dates, spectra_obs, max_iter, avg_days_yr, num_coefficients, lm):
 
     """Create a fully fitted lasso model.
 
@@ -76,9 +67,7 @@ cpdef fitted_model(np.ndarray[LTYPE_t, ndim=1] dates,
     return FittedModel(fitted_model=model, rmse=rmse, residual=residuals)
 
 
-cpdef predict(object model,
-              np.ndarray[LTYPE_t, ndim=1] dates,
-              FTYPE_t avg_days_yr):
+def predict(model, dates, avg_days_yr):
     coef_matrix = coefficient_matrix(dates, avg_days_yr, 8)
 
     return model.fitted_model.predict(coef_matrix)
