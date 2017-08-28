@@ -14,15 +14,15 @@ from os import path
 from distutils.extension import Extension
 import numpy as np
 
-here    = path.abspath(path.dirname(__file__))
+here = path.abspath(path.dirname(__file__))
 np_incl = np.get_include()
 
-USE_CYTHON=False
-EXT_TYPE=".c"
+USE_CYTHON = False
+EXT_TYPE = ".c"
 try:
     import cython
-    USE_CYTHON=True
-    EXT_TYPE=".pyx"
+    USE_CYTHON = True
+    EXT_TYPE = ".pyx"
 except ImportError:
     print("Cython unavailable")
 

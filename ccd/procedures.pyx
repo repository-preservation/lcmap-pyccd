@@ -215,7 +215,6 @@ def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
     return (result,), processing_mask
 
 
-#cpdef standard_procedure(dates, observations, fitter_fn, quality, proc_params):
 cpdef tuple standard_procedure(np.ndarray[LTYPE_t, ndim=1] dates,
                                np.ndarray[STYPE_t, ndim=2] observations,
                                object fitter_fn,
@@ -255,16 +254,15 @@ cpdef tuple standard_procedure(np.ndarray[LTYPE_t, ndim=1] dates,
         1-d ndarray: processing mask indicating which values were used
             for model fitting
     """
+    from sklearn.linear_model import Lasso
+    lasso = Lasso(max_iter=proc_params['LASSO_MAX_ITER'])
+
     # TODO do this better
     meow_size       = proc_params['MEOW_SIZE']
     peek_size       = proc_params['PEEK_SIZE']
     thermal_idx     = proc_params['THERMAL_IDX']
     curve_qa        = proc_params['CURVE_QA']
     detection_bands = proc_params['DETECTION_BANDS']
-
-    from sklearn.linear_model import Lasso
-
-    lasso = Lasso(max_iter=proc_params['LASSO_MAX_ITER'])
 
     #ldebug('Build change models - dates: %s, obs: %s, '
     #          'meow_size: %s, peek_size: %s',

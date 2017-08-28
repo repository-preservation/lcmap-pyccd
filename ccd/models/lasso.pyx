@@ -67,12 +67,8 @@ cpdef fitted_model(np.ndarray[LTYPE_t, ndim=1] dates,
     Example:
         fitted_model(dates, obs).predict(...)
     """
-    #print("***  spectra_obs: {} {}".format(spectra_obs.ndim, spectra_obs.dtype))
     coef_matrix = coefficient_matrix(dates, avg_days_yr, num_coefficients)
     model = lm.fit(coef_matrix, spectra_obs)
-    #model = ElasticNet().fit(coef_matrix, spectra_obs)
-    #lasso = linear_model.Lasso(max_iter=max_iter)
-    #model = lasso.fit(coef_matrix, spectra_obs)
 
     predictions = model.predict(coef_matrix)
     rmse, residuals = calc_rmse(spectra_obs, predictions)
