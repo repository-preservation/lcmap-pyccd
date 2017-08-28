@@ -396,7 +396,7 @@ def initialize(dates, observations, fitter_fn, model_window, processing_mask,
         # Count outliers in the window, if there are too many outliers then
         # try again.
         tmask_outliers = tmask.tmask(period[model_window],
-                                     spectral_obs[:, model_window],
+                                     spectral_obs[detection_bands][:, model_window],
                                      variogram, tmask_bands, tmask_scale,
                                      avg_days_yr)
 
