@@ -17,7 +17,7 @@ cdef np.ndarray tmask_coefficient_matrix(np.ndarray[LTYPE_t, ndim=1] dates,
 
 
 
-cdef np.ndarray tmask(np.ndarray[LTYPE_t, ndim=1] dates,
+cpdef np.ndarray tmask(np.ndarray[LTYPE_t, ndim=1] dates,
                       np.ndarray[STYPE_t, ndim=2] observations,
                       np.ndarray[STYPE_t, ndim=1] variogram,
                       list bands,
