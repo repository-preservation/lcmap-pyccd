@@ -4,6 +4,7 @@ cimport numpy as np
 from cpython cimport bool
 
 ctypedef np.float64_t STYPE_t
+ctypedef np.int16_t   DTYPE_t
 ctypedef float        FTYPE_t
 ctypedef int          ITYPE_t
 ctypedef bool         BTYPE_t
@@ -20,13 +21,9 @@ cpdef bool _check_converge(np.ndarray[STYPE_t, ndim=1] x0,
                           np.ndarray[STYPE_t, ndim=1] x,
                           STYPE_t tol=*)
 
-cpdef np.ndarray[STYPE_t, ndim=1] _weight_beta(np.ndarray[STYPE_t, ndim=2] X,
-                                                 np.ndarray[STYPE_t, ndim=1] y,
-                                                 np.ndarray[STYPE_t, ndim=1] w)
-
-cpdef np.ndarray[STYPE_t, ndim=1] _weight_resid(np.ndarray[STYPE_t, ndim=2] X,
-                                                  np.ndarray[STYPE_t, ndim=1] y,
-                                                  np.ndarray[STYPE_t, ndim=1] beta)
+cpdef _weight_fit(np.ndarray[STYPE_t, ndim=2] X,
+                  np.ndarray[DTYPE_t, ndim=1] y,
+                  np.ndarray[STYPE_t, ndim=1] w)
 
 
 

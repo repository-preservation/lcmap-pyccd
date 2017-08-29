@@ -948,22 +948,31 @@ typedef npy_longdouble __pyx_t_5numpy_longdouble_t;
  * from cpython cimport bool
  * 
  * ctypedef np.float64_t STYPE_t             # <<<<<<<<<<<<<<
+ * ctypedef np.int16_t   DTYPE_t
  * ctypedef float        FTYPE_t
- * ctypedef int          ITYPE_t
  */
 typedef __pyx_t_5numpy_float64_t __pyx_t_3ccd_6models_5tmask_STYPE_t;
 
 /* "ccd/models/tmask.pxd":7
  * 
  * ctypedef np.float64_t STYPE_t
+ * ctypedef np.int16_t   DTYPE_t             # <<<<<<<<<<<<<<
+ * ctypedef float        FTYPE_t
+ * ctypedef int          ITYPE_t
+ */
+typedef __pyx_t_5numpy_int16_t __pyx_t_3ccd_6models_5tmask_DTYPE_t;
+
+/* "ccd/models/tmask.pxd":8
+ * ctypedef np.float64_t STYPE_t
+ * ctypedef np.int16_t   DTYPE_t
  * ctypedef float        FTYPE_t             # <<<<<<<<<<<<<<
  * ctypedef int          ITYPE_t
  * ctypedef bool         BTYPE_t
  */
 typedef float __pyx_t_3ccd_6models_5tmask_FTYPE_t;
 
-/* "ccd/models/tmask.pxd":8
- * ctypedef np.float64_t STYPE_t
+/* "ccd/models/tmask.pxd":9
+ * ctypedef np.int16_t   DTYPE_t
  * ctypedef float        FTYPE_t
  * ctypedef int          ITYPE_t             # <<<<<<<<<<<<<<
  * ctypedef bool         BTYPE_t
@@ -971,7 +980,7 @@ typedef float __pyx_t_3ccd_6models_5tmask_FTYPE_t;
  */
 typedef int __pyx_t_3ccd_6models_5tmask_ITYPE_t;
 
-/* "ccd/models/tmask.pxd":10
+/* "ccd/models/tmask.pxd":11
  * ctypedef int          ITYPE_t
  * ctypedef bool         BTYPE_t
  * ctypedef np.long_t    LTYPE_t             # <<<<<<<<<<<<<<
@@ -1042,7 +1051,7 @@ typedef npy_clongdouble __pyx_t_5numpy_clongdouble_t;
  */
 typedef npy_cdouble __pyx_t_5numpy_complex_t;
 
-/* "ccd/models/tmask.pxd":9
+/* "ccd/models/tmask.pxd":10
  * ctypedef float        FTYPE_t
  * ctypedef int          ITYPE_t
  * ctypedef bool         BTYPE_t             # <<<<<<<<<<<<<<
@@ -1638,6 +1647,7 @@ static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *, cha
 static PyArrayObject *__pyx_f_3ccd_6models_5tmask_tmask_coefficient_matrix(PyArrayObject *, __pyx_t_3ccd_6models_5tmask_FTYPE_t); /*proto*/
 static PyArrayObject *__pyx_f_3ccd_6models_5tmask_tmask(PyArrayObject *, PyArrayObject *, PyArrayObject *, PyObject *, __pyx_t_3ccd_6models_5tmask_FTYPE_t, __pyx_t_3ccd_6models_5tmask_FTYPE_t, int __pyx_skip_dispatch); /*proto*/
 static __Pyx_TypeInfo __Pyx_TypeInfo_nn___pyx_t_3ccd_6models_5tmask_LTYPE_t = { "LTYPE_t", NULL, sizeof(__pyx_t_3ccd_6models_5tmask_LTYPE_t), { 0 }, 0, IS_UNSIGNED(__pyx_t_3ccd_6models_5tmask_LTYPE_t) ? 'U' : 'I', IS_UNSIGNED(__pyx_t_3ccd_6models_5tmask_LTYPE_t), 0 };
+static __Pyx_TypeInfo __Pyx_TypeInfo_nn___pyx_t_3ccd_6models_5tmask_DTYPE_t = { "DTYPE_t", NULL, sizeof(__pyx_t_3ccd_6models_5tmask_DTYPE_t), { 0 }, 0, IS_UNSIGNED(__pyx_t_3ccd_6models_5tmask_DTYPE_t) ? 'U' : 'I', IS_UNSIGNED(__pyx_t_3ccd_6models_5tmask_DTYPE_t), 0 };
 static __Pyx_TypeInfo __Pyx_TypeInfo_nn___pyx_t_3ccd_6models_5tmask_STYPE_t = { "STYPE_t", NULL, sizeof(__pyx_t_3ccd_6models_5tmask_STYPE_t), { 0 }, 0, 'R', 0, 0 };
 #define __Pyx_MODULE_NAME "ccd.models.tmask"
 int __pyx_module_is_main_ccd__models__tmask = 0;
@@ -2306,7 +2316,7 @@ static PyArrayObject *__pyx_f_3ccd_6models_5tmask_tmask(PyArrayObject *__pyx_v_d
   __pyx_pybuffernd_dates.diminfo[0].strides = __pyx_pybuffernd_dates.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_dates.diminfo[0].shape = __pyx_pybuffernd_dates.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_observations.rcbuffer->pybuffer, (PyObject*)__pyx_v_observations, &__Pyx_TypeInfo_nn___pyx_t_3ccd_6models_5tmask_STYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 32, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_observations.rcbuffer->pybuffer, (PyObject*)__pyx_v_observations, &__Pyx_TypeInfo_nn___pyx_t_3ccd_6models_5tmask_DTYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 32, __pyx_L1_error)
   }
   __pyx_pybuffernd_observations.diminfo[0].strides = __pyx_pybuffernd_observations.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_observations.diminfo[0].shape = __pyx_pybuffernd_observations.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_observations.diminfo[1].strides = __pyx_pybuffernd_observations.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_observations.diminfo[1].shape = __pyx_pybuffernd_observations.rcbuffer->pybuffer.shape[1];
   {
@@ -2804,7 +2814,7 @@ static PyObject *__pyx_pf_3ccd_6models_5tmask_tmask(CYTHON_UNUSED PyObject *__py
   __pyx_pybuffernd_dates.diminfo[0].strides = __pyx_pybuffernd_dates.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_dates.diminfo[0].shape = __pyx_pybuffernd_dates.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_observations.rcbuffer->pybuffer, (PyObject*)__pyx_v_observations, &__Pyx_TypeInfo_nn___pyx_t_3ccd_6models_5tmask_STYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 32, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_observations.rcbuffer->pybuffer, (PyObject*)__pyx_v_observations, &__Pyx_TypeInfo_nn___pyx_t_3ccd_6models_5tmask_DTYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 32, __pyx_L1_error)
   }
   __pyx_pybuffernd_observations.diminfo[0].strides = __pyx_pybuffernd_observations.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_observations.diminfo[0].shape = __pyx_pybuffernd_observations.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_observations.diminfo[1].strides = __pyx_pybuffernd_observations.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_observations.diminfo[1].shape = __pyx_pybuffernd_observations.rcbuffer->pybuffer.shape[1];
   {

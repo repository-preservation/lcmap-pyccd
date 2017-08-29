@@ -1,4 +1,3 @@
-# cython: profile=True
 """
 Perform an iteratively re-weighted least squares 'robust regression'. Basically
 a clone of `statsmodels.robust.robust_linear_model.RLM` without all the lovely,
@@ -16,8 +15,6 @@ statsmodels and can reach ~4x faster if Numba is available to accelerate.
 # Don't alias to ``np`` until fix is implemented
 # https://github.com/numba/numba/issues/1559
 import numpy
-
-import sklearn
 import scipy
 
 EPS = numpy.finfo('float').eps
@@ -66,45 +63,31 @@ def mad(x, c=0.6745):
 
 def _check_converge(x0, x, tol=1e-8):
     return not numpy.any(numpy.fabs(x0 - x > tol))
-    
-    
-def _weight_beta(X, y, w):
+
+
+def _weight_fit(X, y, w):
     """
     Apply a weighted OLS fit to data
 
     Args:
-    X (ndarray): independent variables
-    y (ndarray): dependent variable
-    w (ndarray): observation weights
+        X (ndarray): independent variables
+        y (ndarray): dependent variable
+        w (ndarray): observation weights
 
     Returns:
-    array: coefficients
+        tuple: coefficients and residual vector
 
     """
-
-    # cdef numpy.ndarray[STYPE_t, ndim=1] sw = numpy.sqrt(w)
-    # cdef numpy.ndarray[STYPE_t, ndim=2] Xw = X * sw[:, None]
-    # cdef numpy.ndarray[STYPE_t, ndim=1] yw = y * sw
     sw = numpy.sqrt(w)
+
     Xw = X * sw[:, None]
     yw = y * sw
 
-    return numpy.linalg.lstsq(Xw, yw)[0]
-    
-def _weight_resid(X, y, beta):
-    """
-    Apply a weighted OLS fit to data
+    beta, _, _, _ = numpy.linalg.lstsq(Xw, yw)
 
-    Args:
-    X (ndarray): independent variables
-    y (ndarray): dependent variable
-    w (ndarray): observation weights
+    resid = y - numpy.dot(X, beta)
 
-    Returns:
-    array: residual vector
-
-    """
-    return y - numpy.dot(X, beta)
+    return beta, resid
 
 
 # Robust regression
@@ -172,14 +155,8 @@ class RLM(object):
                 chaining
 
         """
-        #self.coef_, resid = _weight_fit(X, y, numpy.ones_like(y))
-        self.coef_ = _weight_beta(X, y, numpy.ones_like(y))
-        #cdef numpy.ndarray[STYPE_t, ndim=1] resid = _weight_resid(X, y, self.coef_)
-        resid = _weight_resid(X, y, self.coef_)
-
-
+        self.coef_, resid = _weight_fit(X, y, numpy.ones_like(y, dtype=float))
         self.scale = mad(resid, c=self.scale_constant)
-
 
         Q, R = scipy.linalg.qr(X)
         E = X.dot(numpy.linalg.inv(R[0:X.shape[1],0:X.shape[1]]))
@@ -201,7 +178,6 @@ class RLM(object):
             _coef = self.coef_.copy()
             resid = y-X.dot(_coef)
             resid = resid * adjfactor
-            # print resid
 
             # always True
             #if self.update_scale:
@@ -212,9 +188,7 @@ class RLM(object):
 
             #self.weights = self.M(resid / self.scale, c=self.tune)
             self.weights = bisquare(resid / self.scale, c=self.tune)
-            #self.coef_, resid = _weight_fit(X, y, self.weights)
-            self.coef_ = _weight_beta(X, y, self.weights)
-            resid = _weight_resid(X, y, self.coef_)
+            self.coef_, resid = _weight_fit(X, y, self.weights)
 
             # print 'w: ', self.weights
 

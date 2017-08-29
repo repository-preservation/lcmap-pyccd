@@ -948,22 +948,31 @@ typedef npy_longdouble __pyx_t_5numpy_longdouble_t;
  * from cpython cimport bool
  * 
  * ctypedef np.float64_t STYPE_t             # <<<<<<<<<<<<<<
+ * ctypedef np.int16_t   DTYPE_t
  * ctypedef float        FTYPE_t
- * ctypedef int          ITYPE_t
  */
 typedef __pyx_t_5numpy_float64_t __pyx_t_3ccd_6models_5lasso_STYPE_t;
 
 /* "ccd/models/lasso.pxd":7
  * 
  * ctypedef np.float64_t STYPE_t
+ * ctypedef np.int16_t   DTYPE_t             # <<<<<<<<<<<<<<
+ * ctypedef float        FTYPE_t
+ * ctypedef int          ITYPE_t
+ */
+typedef __pyx_t_5numpy_int16_t __pyx_t_3ccd_6models_5lasso_DTYPE_t;
+
+/* "ccd/models/lasso.pxd":8
+ * ctypedef np.float64_t STYPE_t
+ * ctypedef np.int16_t   DTYPE_t
  * ctypedef float        FTYPE_t             # <<<<<<<<<<<<<<
  * ctypedef int          ITYPE_t
  * ctypedef bool         BTYPE_t
  */
 typedef float __pyx_t_3ccd_6models_5lasso_FTYPE_t;
 
-/* "ccd/models/lasso.pxd":8
- * ctypedef np.float64_t STYPE_t
+/* "ccd/models/lasso.pxd":9
+ * ctypedef np.int16_t   DTYPE_t
  * ctypedef float        FTYPE_t
  * ctypedef int          ITYPE_t             # <<<<<<<<<<<<<<
  * ctypedef bool         BTYPE_t
@@ -971,7 +980,7 @@ typedef float __pyx_t_3ccd_6models_5lasso_FTYPE_t;
  */
 typedef int __pyx_t_3ccd_6models_5lasso_ITYPE_t;
 
-/* "ccd/models/lasso.pxd":10
+/* "ccd/models/lasso.pxd":11
  * ctypedef int          ITYPE_t
  * ctypedef bool         BTYPE_t
  * ctypedef np.long_t    LTYPE_t             # <<<<<<<<<<<<<<
@@ -1042,7 +1051,7 @@ typedef npy_clongdouble __pyx_t_5numpy_clongdouble_t;
  */
 typedef npy_cdouble __pyx_t_5numpy_complex_t;
 
-/* "ccd/models/lasso.pxd":9
+/* "ccd/models/lasso.pxd":10
  * ctypedef float        FTYPE_t
  * ctypedef int          ITYPE_t
  * ctypedef bool         BTYPE_t             # <<<<<<<<<<<<<<
@@ -1206,18 +1215,6 @@ static CYTHON_INLINE void __Pyx_ErrFetchInState(PyThreadState *tstate, PyObject 
 #define __Pyx_ErrFetch(type, value, tb)  PyErr_Fetch(type, value, tb)
 #endif
 
-/* RaiseTooManyValuesToUnpack.proto */
-static CYTHON_INLINE void __Pyx_RaiseTooManyValuesError(Py_ssize_t expected);
-
-/* RaiseNeedMoreValuesToUnpack.proto */
-static CYTHON_INLINE void __Pyx_RaiseNeedMoreValuesError(Py_ssize_t index);
-
-/* IterFinish.proto */
-static CYTHON_INLINE int __Pyx_IterFinish(void);
-
-/* UnpackItemEndCheck.proto */
-static int __Pyx_IternextUnpackEndCheck(PyObject *retval, Py_ssize_t expected);
-
 /* RaiseArgTupleInvalid.proto */
 static void __Pyx_RaiseArgtupleInvalid(const char* func_name, int exact,
     Py_ssize_t num_min, Py_ssize_t num_max, Py_ssize_t num_found);
@@ -1233,6 +1230,18 @@ static int __Pyx_ParseOptionalKeywords(PyObject *kwds, PyObject **argnames[],\
 /* ArgTypeTest.proto */
 static CYTHON_INLINE int __Pyx_ArgTypeTest(PyObject *obj, PyTypeObject *type, int none_allowed,
     const char *name, int exact);
+
+/* RaiseTooManyValuesToUnpack.proto */
+static CYTHON_INLINE void __Pyx_RaiseTooManyValuesError(Py_ssize_t expected);
+
+/* RaiseNeedMoreValuesToUnpack.proto */
+static CYTHON_INLINE void __Pyx_RaiseNeedMoreValuesError(Py_ssize_t index);
+
+/* IterFinish.proto */
+static CYTHON_INLINE int __Pyx_IterFinish(void);
+
+/* UnpackItemEndCheck.proto */
+static int __Pyx_IternextUnpackEndCheck(PyObject *retval, Py_ssize_t expected);
 
 /* RaiseException.proto */
 static void __Pyx_Raise(PyObject *type, PyObject *value, PyObject *tb, PyObject *cause);
@@ -1634,11 +1643,11 @@ static PyTypeObject *__pyx_ptype_5numpy_ufunc = 0;
 static CYTHON_INLINE char *__pyx_f_5numpy__util_dtypestring(PyArray_Descr *, char *, char *, int *); /*proto*/
 
 /* Module declarations from 'ccd.models.lasso' */
-static PyArrayObject *__pyx_f_3ccd_6models_5lasso_coefficient_matrix(PyArrayObject *, __pyx_t_3ccd_6models_5lasso_FTYPE_t, __pyx_t_3ccd_6models_5lasso_ITYPE_t); /*proto*/
+static PyArrayObject *__pyx_f_3ccd_6models_5lasso_coefficient_matrix(PyArrayObject *, __pyx_t_3ccd_6models_5lasso_FTYPE_t, __pyx_t_3ccd_6models_5lasso_ITYPE_t, int __pyx_skip_dispatch); /*proto*/
 static PyObject *__pyx_f_3ccd_6models_5lasso_fitted_model(PyArrayObject *, PyArrayObject *, __pyx_t_3ccd_6models_5lasso_ITYPE_t, __pyx_t_3ccd_6models_5lasso_FTYPE_t, __pyx_t_3ccd_6models_5lasso_ITYPE_t, PyObject *, int __pyx_skip_dispatch); /*proto*/
 static PyObject *__pyx_f_3ccd_6models_5lasso_predict(PyObject *, PyArrayObject *, __pyx_t_3ccd_6models_5lasso_FTYPE_t, int __pyx_skip_dispatch); /*proto*/
 static __Pyx_TypeInfo __Pyx_TypeInfo_nn___pyx_t_3ccd_6models_5lasso_LTYPE_t = { "LTYPE_t", NULL, sizeof(__pyx_t_3ccd_6models_5lasso_LTYPE_t), { 0 }, 0, IS_UNSIGNED(__pyx_t_3ccd_6models_5lasso_LTYPE_t) ? 'U' : 'I', IS_UNSIGNED(__pyx_t_3ccd_6models_5lasso_LTYPE_t), 0 };
-static __Pyx_TypeInfo __Pyx_TypeInfo_nn___pyx_t_3ccd_6models_5lasso_STYPE_t = { "STYPE_t", NULL, sizeof(__pyx_t_3ccd_6models_5lasso_STYPE_t), { 0 }, 0, 'R', 0, 0 };
+static __Pyx_TypeInfo __Pyx_TypeInfo_nn___pyx_t_3ccd_6models_5lasso_DTYPE_t = { "DTYPE_t", NULL, sizeof(__pyx_t_3ccd_6models_5lasso_DTYPE_t), { 0 }, 0, IS_UNSIGNED(__pyx_t_3ccd_6models_5lasso_DTYPE_t) ? 'U' : 'I', IS_UNSIGNED(__pyx_t_3ccd_6models_5lasso_DTYPE_t), 0 };
 #define __Pyx_MODULE_NAME "ccd.models.lasso"
 int __pyx_module_is_main_ccd__models__lasso = 0;
 
@@ -1681,6 +1690,7 @@ static const char __pyx_k_ccd_math_utils[] = "ccd.math_utils";
 static const char __pyx_k_ccd_models_lasso[] = "ccd.models.lasso";
 static const char __pyx_k_num_coefficients[] = "num_coefficients";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
+static const char __pyx_k_coefficient_matrix[] = "coefficient_matrix";
 static const char __pyx_k_ccd_models_lasso_py[] = "ccd/models/lasso.py";
 static const char __pyx_k_ndarray_is_not_C_contiguous[] = "ndarray is not C contiguous";
 static const char __pyx_k_numpy_core_multiarray_failed_to[] = "numpy.core.multiarray failed to import";
@@ -1705,6 +1715,7 @@ static PyObject *__pyx_n_s_ccd_models;
 static PyObject *__pyx_n_s_ccd_models_lasso;
 static PyObject *__pyx_kp_s_ccd_models_lasso_py;
 static PyObject *__pyx_n_s_cline_in_traceback;
+static PyObject *__pyx_n_s_coefficient_matrix;
 static PyObject *__pyx_n_s_cos;
 static PyObject *__pyx_n_s_dates;
 static PyObject *__pyx_n_s_fit;
@@ -1733,8 +1744,9 @@ static PyObject *__pyx_n_s_spectra_obs;
 static PyObject *__pyx_n_s_test;
 static PyObject *__pyx_kp_u_unknown_dtype_code_in_numpy_pxd;
 static PyObject *__pyx_n_s_zeros;
-static PyObject *__pyx_pf_3ccd_6models_5lasso_fitted_model(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_dates, PyArrayObject *__pyx_v_spectra_obs, __pyx_t_3ccd_6models_5lasso_ITYPE_t __pyx_v_max_iter, __pyx_t_3ccd_6models_5lasso_FTYPE_t __pyx_v_avg_days_yr, __pyx_t_3ccd_6models_5lasso_ITYPE_t __pyx_v_num_coefficients, PyObject *__pyx_v_lm); /* proto */
-static PyObject *__pyx_pf_3ccd_6models_5lasso_2predict(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_model, PyArrayObject *__pyx_v_dates, __pyx_t_3ccd_6models_5lasso_FTYPE_t __pyx_v_avg_days_yr); /* proto */
+static PyObject *__pyx_pf_3ccd_6models_5lasso_coefficient_matrix(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_dates, __pyx_t_3ccd_6models_5lasso_FTYPE_t __pyx_v_avg_days_yr, __pyx_t_3ccd_6models_5lasso_ITYPE_t __pyx_v_num_coefficients); /* proto */
+static PyObject *__pyx_pf_3ccd_6models_5lasso_2fitted_model(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_dates, PyArrayObject *__pyx_v_spectra_obs, __pyx_t_3ccd_6models_5lasso_ITYPE_t __pyx_v_max_iter, __pyx_t_3ccd_6models_5lasso_FTYPE_t __pyx_v_avg_days_yr, __pyx_t_3ccd_6models_5lasso_ITYPE_t __pyx_v_num_coefficients, PyObject *__pyx_v_lm); /* proto */
+static PyObject *__pyx_pf_3ccd_6models_5lasso_4predict(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_model, PyArrayObject *__pyx_v_dates, __pyx_t_3ccd_6models_5lasso_FTYPE_t __pyx_v_avg_days_yr); /* proto */
 static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, Py_buffer *__pyx_v_info, int __pyx_v_flags); /* proto */
 static void __pyx_pf_5numpy_7ndarray_2__releasebuffer__(PyArrayObject *__pyx_v_self, Py_buffer *__pyx_v_info); /* proto */
 static PyObject *__pyx_int_0;
@@ -1770,8 +1782,10 @@ static PyObject *__pyx_tuple__22;
 static PyObject *__pyx_tuple__23;
 static PyObject *__pyx_tuple__24;
 static PyObject *__pyx_tuple__26;
+static PyObject *__pyx_tuple__28;
 static PyObject *__pyx_codeobj__25;
 static PyObject *__pyx_codeobj__27;
+static PyObject *__pyx_codeobj__29;
 
 /* "ccd/models/lasso.py":7
  * 
@@ -1781,7 +1795,8 @@ static PyObject *__pyx_codeobj__27;
  *     Fourier transform function to be used for the matrix of inputs for
  */
 
-static PyArrayObject *__pyx_f_3ccd_6models_5lasso_coefficient_matrix(PyArrayObject *__pyx_v_dates, __pyx_t_3ccd_6models_5lasso_FTYPE_t __pyx_v_avg_days_yr, __pyx_t_3ccd_6models_5lasso_ITYPE_t __pyx_v_num_coefficients) {
+static PyObject *__pyx_pw_3ccd_6models_5lasso_1coefficient_matrix(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyArrayObject *__pyx_f_3ccd_6models_5lasso_coefficient_matrix(PyArrayObject *__pyx_v_dates, __pyx_t_3ccd_6models_5lasso_FTYPE_t __pyx_v_avg_days_yr, __pyx_t_3ccd_6models_5lasso_ITYPE_t __pyx_v_num_coefficients, CYTHON_UNUSED int __pyx_skip_dispatch) {
   PyObject *__pyx_v_w = NULL;
   PyObject *__pyx_v_matrix = NULL;
   PyObject *__pyx_v_w12 = NULL;
@@ -2357,6 +2372,128 @@ static PyArrayObject *__pyx_f_3ccd_6models_5lasso_coefficient_matrix(PyArrayObje
   return __pyx_r;
 }
 
+/* Python wrapper */
+static PyObject *__pyx_pw_3ccd_6models_5lasso_1coefficient_matrix(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static char __pyx_doc_3ccd_6models_5lasso_coefficient_matrix[] = "\n    Fourier transform function to be used for the matrix of inputs for\n    model fitting\n\n    Args:\n        dates: list of ordinal dates\n        num_coefficients: how many coefficients to use to build the matrix\n\n    Returns:\n        Populated numpy array with coefficient values\n    ";
+static PyMethodDef __pyx_mdef_3ccd_6models_5lasso_1coefficient_matrix = {"coefficient_matrix", (PyCFunction)__pyx_pw_3ccd_6models_5lasso_1coefficient_matrix, METH_VARARGS|METH_KEYWORDS, __pyx_doc_3ccd_6models_5lasso_coefficient_matrix};
+static PyObject *__pyx_pw_3ccd_6models_5lasso_1coefficient_matrix(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  PyArrayObject *__pyx_v_dates = 0;
+  __pyx_t_3ccd_6models_5lasso_FTYPE_t __pyx_v_avg_days_yr;
+  __pyx_t_3ccd_6models_5lasso_ITYPE_t __pyx_v_num_coefficients;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("coefficient_matrix (wrapper)", 0);
+  {
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_dates,&__pyx_n_s_avg_days_yr,&__pyx_n_s_num_coefficients,0};
+    PyObject* values[3] = {0,0,0};
+    if (unlikely(__pyx_kwds)) {
+      Py_ssize_t kw_args;
+      const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
+      switch (pos_args) {
+        case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+        CYTHON_FALLTHROUGH;
+        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        CYTHON_FALLTHROUGH;
+        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      kw_args = PyDict_Size(__pyx_kwds);
+      switch (pos_args) {
+        case  0:
+        if (likely((values[0] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_dates)) != 0)) kw_args--;
+        else goto __pyx_L5_argtuple_error;
+        CYTHON_FALLTHROUGH;
+        case  1:
+        if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_avg_days_yr)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("coefficient_matrix", 1, 3, 3, 1); __PYX_ERR(0, 7, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  2:
+        if (likely((values[2] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_num_coefficients)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("coefficient_matrix", 1, 3, 3, 2); __PYX_ERR(0, 7, __pyx_L3_error)
+        }
+      }
+      if (unlikely(kw_args > 0)) {
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "coefficient_matrix") < 0)) __PYX_ERR(0, 7, __pyx_L3_error)
+      }
+    } else if (PyTuple_GET_SIZE(__pyx_args) != 3) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+      values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+      values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+    }
+    __pyx_v_dates = ((PyArrayObject *)values[0]);
+    __pyx_v_avg_days_yr = __pyx_PyFloat_AsFloat(values[1]); if (unlikely((__pyx_v_avg_days_yr == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 7, __pyx_L3_error)
+    __pyx_v_num_coefficients = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_num_coefficients == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 7, __pyx_L3_error)
+  }
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("coefficient_matrix", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 7, __pyx_L3_error)
+  __pyx_L3_error:;
+  __Pyx_AddTraceback("ccd.models.lasso.coefficient_matrix", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_dates), __pyx_ptype_5numpy_ndarray, 1, "dates", 0))) __PYX_ERR(0, 7, __pyx_L1_error)
+  __pyx_r = __pyx_pf_3ccd_6models_5lasso_coefficient_matrix(__pyx_self, __pyx_v_dates, __pyx_v_avg_days_yr, __pyx_v_num_coefficients);
+
+  /* function exit code */
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_3ccd_6models_5lasso_coefficient_matrix(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_dates, __pyx_t_3ccd_6models_5lasso_FTYPE_t __pyx_v_avg_days_yr, __pyx_t_3ccd_6models_5lasso_ITYPE_t __pyx_v_num_coefficients) {
+  __Pyx_LocalBuf_ND __pyx_pybuffernd_dates;
+  __Pyx_Buffer __pyx_pybuffer_dates;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  __Pyx_RefNannySetupContext("coefficient_matrix", 0);
+  __pyx_pybuffer_dates.pybuffer.buf = NULL;
+  __pyx_pybuffer_dates.refcount = 0;
+  __pyx_pybuffernd_dates.data = NULL;
+  __pyx_pybuffernd_dates.rcbuffer = &__pyx_pybuffer_dates;
+  {
+    __Pyx_BufFmt_StackElem __pyx_stack[1];
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_dates.rcbuffer->pybuffer, (PyObject*)__pyx_v_dates, &__Pyx_TypeInfo_nn___pyx_t_3ccd_6models_5lasso_LTYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 7, __pyx_L1_error)
+  }
+  __pyx_pybuffernd_dates.diminfo[0].strides = __pyx_pybuffernd_dates.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_dates.diminfo[0].shape = __pyx_pybuffernd_dates.rcbuffer->pybuffer.shape[0];
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = ((PyObject *)__pyx_f_3ccd_6models_5lasso_coefficient_matrix(__pyx_v_dates, __pyx_v_avg_days_yr, __pyx_v_num_coefficients, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 7, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  { PyObject *__pyx_type, *__pyx_value, *__pyx_tb;
+    __Pyx_PyThreadState_declare
+    __Pyx_PyThreadState_assign
+    __Pyx_ErrFetch(&__pyx_type, &__pyx_value, &__pyx_tb);
+    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_dates.rcbuffer->pybuffer);
+  __Pyx_ErrRestore(__pyx_type, __pyx_value, __pyx_tb);}
+  __Pyx_AddTraceback("ccd.models.lasso.coefficient_matrix", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  goto __pyx_L2;
+  __pyx_L0:;
+  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_dates.rcbuffer->pybuffer);
+  __pyx_L2:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
 /* "ccd/models/lasso.py":43
  * 
  * 
@@ -2365,7 +2502,7 @@ static PyArrayObject *__pyx_f_3ccd_6models_5lasso_coefficient_matrix(PyArrayObje
  *     """Create a fully fitted lasso model.
  */
 
-static PyObject *__pyx_pw_3ccd_6models_5lasso_1fitted_model(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_3ccd_6models_5lasso_3fitted_model(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
 static PyObject *__pyx_f_3ccd_6models_5lasso_fitted_model(PyArrayObject *__pyx_v_dates, PyArrayObject *__pyx_v_spectra_obs, CYTHON_UNUSED __pyx_t_3ccd_6models_5lasso_ITYPE_t __pyx_v_max_iter, __pyx_t_3ccd_6models_5lasso_FTYPE_t __pyx_v_avg_days_yr, __pyx_t_3ccd_6models_5lasso_ITYPE_t __pyx_v_num_coefficients, PyObject *__pyx_v_lm, CYTHON_UNUSED int __pyx_skip_dispatch) {
   PyArrayObject *__pyx_v_coef_matrix = NULL;
   PyObject *__pyx_v_model = NULL;
@@ -2400,7 +2537,7 @@ static PyObject *__pyx_f_3ccd_6models_5lasso_fitted_model(PyArrayObject *__pyx_v
   __pyx_pybuffernd_dates.diminfo[0].strides = __pyx_pybuffernd_dates.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_dates.diminfo[0].shape = __pyx_pybuffernd_dates.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_spectra_obs.rcbuffer->pybuffer, (PyObject*)__pyx_v_spectra_obs, &__Pyx_TypeInfo_nn___pyx_t_3ccd_6models_5lasso_STYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 43, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_spectra_obs.rcbuffer->pybuffer, (PyObject*)__pyx_v_spectra_obs, &__Pyx_TypeInfo_nn___pyx_t_3ccd_6models_5lasso_DTYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 43, __pyx_L1_error)
   }
   __pyx_pybuffernd_spectra_obs.diminfo[0].strides = __pyx_pybuffernd_spectra_obs.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_spectra_obs.diminfo[0].shape = __pyx_pybuffernd_spectra_obs.rcbuffer->pybuffer.shape[0];
 
@@ -2411,7 +2548,7 @@ static PyObject *__pyx_f_3ccd_6models_5lasso_fitted_model(PyArrayObject *__pyx_v
  *     model = lm.fit(coef_matrix, spectra_obs)
  * 
  */
-  __pyx_t_1 = ((PyObject *)__pyx_f_3ccd_6models_5lasso_coefficient_matrix(((PyArrayObject *)__pyx_v_dates), __pyx_v_avg_days_yr, __pyx_v_num_coefficients)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 61, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_f_3ccd_6models_5lasso_coefficient_matrix(((PyArrayObject *)__pyx_v_dates), __pyx_v_avg_days_yr, __pyx_v_num_coefficients, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 61, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_coef_matrix = ((PyArrayObject *)__pyx_t_1);
   __pyx_t_1 = 0;
@@ -2699,10 +2836,10 @@ static PyObject *__pyx_f_3ccd_6models_5lasso_fitted_model(PyArrayObject *__pyx_v
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_3ccd_6models_5lasso_1fitted_model(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_3ccd_6models_5lasso_fitted_model[] = "Create a fully fitted lasso model.\n\n    Args:\n        dates: list or ordinal observation dates\n        spectra_obs: list of values corresponding to the observation dates for\n            a single spectral band\n        num_coefficients: how many coefficients to use for the fit\n        max_iter: maximum number of iterations that the coefficients\n            undergo to find the convergence point.\n\n    Returns:\n        sklearn.linear_model.Lasso().fit(observation_dates, observations)\n\n    Example:\n        fitted_model(dates, obs).predict(...)\n    ";
-static PyMethodDef __pyx_mdef_3ccd_6models_5lasso_1fitted_model = {"fitted_model", (PyCFunction)__pyx_pw_3ccd_6models_5lasso_1fitted_model, METH_VARARGS|METH_KEYWORDS, __pyx_doc_3ccd_6models_5lasso_fitted_model};
-static PyObject *__pyx_pw_3ccd_6models_5lasso_1fitted_model(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_3ccd_6models_5lasso_3fitted_model(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static char __pyx_doc_3ccd_6models_5lasso_2fitted_model[] = "Create a fully fitted lasso model.\n\n    Args:\n        dates: list or ordinal observation dates\n        spectra_obs: list of values corresponding to the observation dates for\n            a single spectral band\n        num_coefficients: how many coefficients to use for the fit\n        max_iter: maximum number of iterations that the coefficients\n            undergo to find the convergence point.\n\n    Returns:\n        sklearn.linear_model.Lasso().fit(observation_dates, observations)\n\n    Example:\n        fitted_model(dates, obs).predict(...)\n    ";
+static PyMethodDef __pyx_mdef_3ccd_6models_5lasso_3fitted_model = {"fitted_model", (PyCFunction)__pyx_pw_3ccd_6models_5lasso_3fitted_model, METH_VARARGS|METH_KEYWORDS, __pyx_doc_3ccd_6models_5lasso_2fitted_model};
+static PyObject *__pyx_pw_3ccd_6models_5lasso_3fitted_model(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyArrayObject *__pyx_v_dates = 0;
   PyArrayObject *__pyx_v_spectra_obs = 0;
   __pyx_t_3ccd_6models_5lasso_ITYPE_t __pyx_v_max_iter;
@@ -2800,7 +2937,7 @@ static PyObject *__pyx_pw_3ccd_6models_5lasso_1fitted_model(PyObject *__pyx_self
   __pyx_L4_argument_unpacking_done:;
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_dates), __pyx_ptype_5numpy_ndarray, 1, "dates", 0))) __PYX_ERR(0, 43, __pyx_L1_error)
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_spectra_obs), __pyx_ptype_5numpy_ndarray, 1, "spectra_obs", 0))) __PYX_ERR(0, 43, __pyx_L1_error)
-  __pyx_r = __pyx_pf_3ccd_6models_5lasso_fitted_model(__pyx_self, __pyx_v_dates, __pyx_v_spectra_obs, __pyx_v_max_iter, __pyx_v_avg_days_yr, __pyx_v_num_coefficients, __pyx_v_lm);
+  __pyx_r = __pyx_pf_3ccd_6models_5lasso_2fitted_model(__pyx_self, __pyx_v_dates, __pyx_v_spectra_obs, __pyx_v_max_iter, __pyx_v_avg_days_yr, __pyx_v_num_coefficients, __pyx_v_lm);
 
   /* function exit code */
   goto __pyx_L0;
@@ -2811,7 +2948,7 @@ static PyObject *__pyx_pw_3ccd_6models_5lasso_1fitted_model(PyObject *__pyx_self
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_3ccd_6models_5lasso_fitted_model(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_dates, PyArrayObject *__pyx_v_spectra_obs, __pyx_t_3ccd_6models_5lasso_ITYPE_t __pyx_v_max_iter, __pyx_t_3ccd_6models_5lasso_FTYPE_t __pyx_v_avg_days_yr, __pyx_t_3ccd_6models_5lasso_ITYPE_t __pyx_v_num_coefficients, PyObject *__pyx_v_lm) {
+static PyObject *__pyx_pf_3ccd_6models_5lasso_2fitted_model(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_dates, PyArrayObject *__pyx_v_spectra_obs, __pyx_t_3ccd_6models_5lasso_ITYPE_t __pyx_v_max_iter, __pyx_t_3ccd_6models_5lasso_FTYPE_t __pyx_v_avg_days_yr, __pyx_t_3ccd_6models_5lasso_ITYPE_t __pyx_v_num_coefficients, PyObject *__pyx_v_lm) {
   __Pyx_LocalBuf_ND __pyx_pybuffernd_dates;
   __Pyx_Buffer __pyx_pybuffer_dates;
   __Pyx_LocalBuf_ND __pyx_pybuffernd_spectra_obs;
@@ -2835,7 +2972,7 @@ static PyObject *__pyx_pf_3ccd_6models_5lasso_fitted_model(CYTHON_UNUSED PyObjec
   __pyx_pybuffernd_dates.diminfo[0].strides = __pyx_pybuffernd_dates.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_dates.diminfo[0].shape = __pyx_pybuffernd_dates.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_spectra_obs.rcbuffer->pybuffer, (PyObject*)__pyx_v_spectra_obs, &__Pyx_TypeInfo_nn___pyx_t_3ccd_6models_5lasso_STYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 43, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_spectra_obs.rcbuffer->pybuffer, (PyObject*)__pyx_v_spectra_obs, &__Pyx_TypeInfo_nn___pyx_t_3ccd_6models_5lasso_DTYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 43, __pyx_L1_error)
   }
   __pyx_pybuffernd_spectra_obs.diminfo[0].strides = __pyx_pybuffernd_spectra_obs.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_spectra_obs.diminfo[0].shape = __pyx_pybuffernd_spectra_obs.rcbuffer->pybuffer.shape[0];
   __Pyx_XDECREF(__pyx_r);
@@ -2875,7 +3012,7 @@ static PyObject *__pyx_pf_3ccd_6models_5lasso_fitted_model(CYTHON_UNUSED PyObjec
  * 
  */
 
-static PyObject *__pyx_pw_3ccd_6models_5lasso_3predict(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_3ccd_6models_5lasso_5predict(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
 static PyObject *__pyx_f_3ccd_6models_5lasso_predict(PyObject *__pyx_v_model, PyArrayObject *__pyx_v_dates, __pyx_t_3ccd_6models_5lasso_FTYPE_t __pyx_v_avg_days_yr, CYTHON_UNUSED int __pyx_skip_dispatch) {
   PyArrayObject *__pyx_v_coef_matrix = NULL;
   __Pyx_LocalBuf_ND __pyx_pybuffernd_dates;
@@ -2904,7 +3041,7 @@ static PyObject *__pyx_f_3ccd_6models_5lasso_predict(PyObject *__pyx_v_model, Py
  * 
  *     return model.fitted_model.predict(coef_matrix)
  */
-  __pyx_t_1 = ((PyObject *)__pyx_f_3ccd_6models_5lasso_coefficient_matrix(((PyArrayObject *)__pyx_v_dates), __pyx_v_avg_days_yr, 8)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 71, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_f_3ccd_6models_5lasso_coefficient_matrix(((PyArrayObject *)__pyx_v_dates), __pyx_v_avg_days_yr, 8, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 71, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_coef_matrix = ((PyArrayObject *)__pyx_t_1);
   __pyx_t_1 = 0;
@@ -3000,9 +3137,9 @@ static PyObject *__pyx_f_3ccd_6models_5lasso_predict(PyObject *__pyx_v_model, Py
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_3ccd_6models_5lasso_3predict(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyMethodDef __pyx_mdef_3ccd_6models_5lasso_3predict = {"predict", (PyCFunction)__pyx_pw_3ccd_6models_5lasso_3predict, METH_VARARGS|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_3ccd_6models_5lasso_3predict(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_3ccd_6models_5lasso_5predict(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_3ccd_6models_5lasso_5predict = {"predict", (PyCFunction)__pyx_pw_3ccd_6models_5lasso_5predict, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_3ccd_6models_5lasso_5predict(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_model = 0;
   PyArrayObject *__pyx_v_dates = 0;
   __pyx_t_3ccd_6models_5lasso_FTYPE_t __pyx_v_avg_days_yr;
@@ -3066,7 +3203,7 @@ static PyObject *__pyx_pw_3ccd_6models_5lasso_3predict(PyObject *__pyx_self, PyO
   return NULL;
   __pyx_L4_argument_unpacking_done:;
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_dates), __pyx_ptype_5numpy_ndarray, 1, "dates", 0))) __PYX_ERR(0, 70, __pyx_L1_error)
-  __pyx_r = __pyx_pf_3ccd_6models_5lasso_2predict(__pyx_self, __pyx_v_model, __pyx_v_dates, __pyx_v_avg_days_yr);
+  __pyx_r = __pyx_pf_3ccd_6models_5lasso_4predict(__pyx_self, __pyx_v_model, __pyx_v_dates, __pyx_v_avg_days_yr);
 
   /* function exit code */
   goto __pyx_L0;
@@ -3077,7 +3214,7 @@ static PyObject *__pyx_pw_3ccd_6models_5lasso_3predict(PyObject *__pyx_self, PyO
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_3ccd_6models_5lasso_2predict(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_model, PyArrayObject *__pyx_v_dates, __pyx_t_3ccd_6models_5lasso_FTYPE_t __pyx_v_avg_days_yr) {
+static PyObject *__pyx_pf_3ccd_6models_5lasso_4predict(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_model, PyArrayObject *__pyx_v_dates, __pyx_t_3ccd_6models_5lasso_FTYPE_t __pyx_v_avg_days_yr) {
   __Pyx_LocalBuf_ND __pyx_pybuffernd_dates;
   __Pyx_Buffer __pyx_pybuffer_dates;
   PyObject *__pyx_r = NULL;
@@ -5672,6 +5809,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_ccd_models_lasso, __pyx_k_ccd_models_lasso, sizeof(__pyx_k_ccd_models_lasso), 0, 0, 1, 1},
   {&__pyx_kp_s_ccd_models_lasso_py, __pyx_k_ccd_models_lasso_py, sizeof(__pyx_k_ccd_models_lasso_py), 0, 0, 1, 0},
   {&__pyx_n_s_cline_in_traceback, __pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 0, 1, 1},
+  {&__pyx_n_s_coefficient_matrix, __pyx_k_coefficient_matrix, sizeof(__pyx_k_coefficient_matrix), 0, 0, 1, 1},
   {&__pyx_n_s_cos, __pyx_k_cos, sizeof(__pyx_k_cos), 0, 0, 1, 1},
   {&__pyx_n_s_dates, __pyx_k_dates, sizeof(__pyx_k_dates), 0, 0, 1, 1},
   {&__pyx_n_s_fit, __pyx_k_fit, sizeof(__pyx_k_fit), 0, 0, 1, 1},
@@ -5911,6 +6049,18 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__23);
   __Pyx_GIVEREF(__pyx_tuple__23);
 
+  /* "ccd/models/lasso.py":7
+ * 
+ * 
+ * def coefficient_matrix(dates, avg_days_yr, num_coefficients):             # <<<<<<<<<<<<<<
+ *     """
+ *     Fourier transform function to be used for the matrix of inputs for
+ */
+  __pyx_tuple__24 = PyTuple_Pack(3, __pyx_n_s_dates, __pyx_n_s_avg_days_yr, __pyx_n_s_num_coefficients); if (unlikely(!__pyx_tuple__24)) __PYX_ERR(0, 7, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__24);
+  __Pyx_GIVEREF(__pyx_tuple__24);
+  __pyx_codeobj__25 = (PyObject*)__Pyx_PyCode_New(3, 0, 3, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__24, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_ccd_models_lasso_py, __pyx_n_s_coefficient_matrix, 7, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__25)) __PYX_ERR(0, 7, __pyx_L1_error)
+
   /* "ccd/models/lasso.py":43
  * 
  * 
@@ -5918,10 +6068,10 @@ static int __Pyx_InitCachedConstants(void) {
  * 
  *     """Create a fully fitted lasso model.
  */
-  __pyx_tuple__24 = PyTuple_Pack(6, __pyx_n_s_dates, __pyx_n_s_spectra_obs, __pyx_n_s_max_iter, __pyx_n_s_avg_days_yr, __pyx_n_s_num_coefficients, __pyx_n_s_lm); if (unlikely(!__pyx_tuple__24)) __PYX_ERR(0, 43, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__24);
-  __Pyx_GIVEREF(__pyx_tuple__24);
-  __pyx_codeobj__25 = (PyObject*)__Pyx_PyCode_New(6, 0, 6, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__24, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_ccd_models_lasso_py, __pyx_n_s_fitted_model, 43, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__25)) __PYX_ERR(0, 43, __pyx_L1_error)
+  __pyx_tuple__26 = PyTuple_Pack(6, __pyx_n_s_dates, __pyx_n_s_spectra_obs, __pyx_n_s_max_iter, __pyx_n_s_avg_days_yr, __pyx_n_s_num_coefficients, __pyx_n_s_lm); if (unlikely(!__pyx_tuple__26)) __PYX_ERR(0, 43, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__26);
+  __Pyx_GIVEREF(__pyx_tuple__26);
+  __pyx_codeobj__27 = (PyObject*)__Pyx_PyCode_New(6, 0, 6, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__26, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_ccd_models_lasso_py, __pyx_n_s_fitted_model, 43, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__27)) __PYX_ERR(0, 43, __pyx_L1_error)
 
   /* "ccd/models/lasso.py":70
  * 
@@ -5930,10 +6080,10 @@ static int __Pyx_InitCachedConstants(void) {
  *     coef_matrix = coefficient_matrix(dates, avg_days_yr, 8)
  * 
  */
-  __pyx_tuple__26 = PyTuple_Pack(3, __pyx_n_s_model, __pyx_n_s_dates, __pyx_n_s_avg_days_yr); if (unlikely(!__pyx_tuple__26)) __PYX_ERR(0, 70, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__26);
-  __Pyx_GIVEREF(__pyx_tuple__26);
-  __pyx_codeobj__27 = (PyObject*)__Pyx_PyCode_New(3, 0, 3, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__26, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_ccd_models_lasso_py, __pyx_n_s_predict, 70, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__27)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __pyx_tuple__28 = PyTuple_Pack(3, __pyx_n_s_model, __pyx_n_s_dates, __pyx_n_s_avg_days_yr); if (unlikely(!__pyx_tuple__28)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__28);
+  __Pyx_GIVEREF(__pyx_tuple__28);
+  __pyx_codeobj__29 = (PyObject*)__Pyx_PyCode_New(3, 0, 3, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__28, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_ccd_models_lasso_py, __pyx_n_s_predict, 70, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__29)) __PYX_ERR(0, 70, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -6041,7 +6191,7 @@ PyMODINIT_FUNC PyInit_lasso(void)
   /*--- Global init code ---*/
   /*--- Variable export code ---*/
   /*--- Function export code ---*/
-  if (__Pyx_ExportFunction("coefficient_matrix", (void (*)(void))__pyx_f_3ccd_6models_5lasso_coefficient_matrix, "PyArrayObject *(PyArrayObject *, __pyx_t_3ccd_6models_5lasso_FTYPE_t, __pyx_t_3ccd_6models_5lasso_ITYPE_t)") < 0) __PYX_ERR(0, 1, __pyx_L1_error)
+  if (__Pyx_ExportFunction("coefficient_matrix", (void (*)(void))__pyx_f_3ccd_6models_5lasso_coefficient_matrix, "PyArrayObject *(PyArrayObject *, __pyx_t_3ccd_6models_5lasso_FTYPE_t, __pyx_t_3ccd_6models_5lasso_ITYPE_t, int __pyx_skip_dispatch)") < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   if (__Pyx_ExportFunction("fitted_model", (void (*)(void))__pyx_f_3ccd_6models_5lasso_fitted_model, "PyObject *(PyArrayObject *, PyArrayObject *, __pyx_t_3ccd_6models_5lasso_ITYPE_t, __pyx_t_3ccd_6models_5lasso_FTYPE_t, __pyx_t_3ccd_6models_5lasso_ITYPE_t, PyObject *, int __pyx_skip_dispatch)") < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   if (__Pyx_ExportFunction("predict", (void (*)(void))__pyx_f_3ccd_6models_5lasso_predict, "PyObject *(PyObject *, PyArrayObject *, __pyx_t_3ccd_6models_5lasso_FTYPE_t, int __pyx_skip_dispatch)") < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   /*--- Type init code ---*/
@@ -6119,6 +6269,18 @@ PyMODINIT_FUNC PyInit_lasso(void)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
+  /* "ccd/models/lasso.py":7
+ * 
+ * 
+ * def coefficient_matrix(dates, avg_days_yr, num_coefficients):             # <<<<<<<<<<<<<<
+ *     """
+ *     Fourier transform function to be used for the matrix of inputs for
+ */
+  __pyx_t_1 = __Pyx_CyFunction_NewEx(&__pyx_mdef_3ccd_6models_5lasso_1coefficient_matrix, 0, __pyx_n_s_coefficient_matrix, NULL, __pyx_n_s_ccd_models_lasso, __pyx_d, ((PyObject *)__pyx_codeobj__25)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 7, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_coefficient_matrix, __pyx_t_1) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
   /* "ccd/models/lasso.py":43
  * 
  * 
@@ -6126,7 +6288,7 @@ PyMODINIT_FUNC PyInit_lasso(void)
  * 
  *     """Create a fully fitted lasso model.
  */
-  __pyx_t_1 = __Pyx_CyFunction_NewEx(&__pyx_mdef_3ccd_6models_5lasso_1fitted_model, 0, __pyx_n_s_fitted_model, NULL, __pyx_n_s_ccd_models_lasso, __pyx_d, ((PyObject *)__pyx_codeobj__25)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 43, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_CyFunction_NewEx(&__pyx_mdef_3ccd_6models_5lasso_3fitted_model, 0, __pyx_n_s_fitted_model, NULL, __pyx_n_s_ccd_models_lasso, __pyx_d, ((PyObject *)__pyx_codeobj__27)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 43, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_fitted_model, __pyx_t_1) < 0) __PYX_ERR(0, 43, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -6138,7 +6300,7 @@ PyMODINIT_FUNC PyInit_lasso(void)
  *     coef_matrix = coefficient_matrix(dates, avg_days_yr, 8)
  * 
  */
-  __pyx_t_1 = __Pyx_CyFunction_NewEx(&__pyx_mdef_3ccd_6models_5lasso_3predict, 0, __pyx_n_s_predict, NULL, __pyx_n_s_ccd_models_lasso, __pyx_d, ((PyObject *)__pyx_codeobj__27)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_CyFunction_NewEx(&__pyx_mdef_3ccd_6models_5lasso_5predict, 0, __pyx_n_s_predict, NULL, __pyx_n_s_ccd_models_lasso, __pyx_d, ((PyObject *)__pyx_codeobj__29)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 70, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_predict, __pyx_t_1) < 0) __PYX_ERR(0, 70, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -7044,66 +7206,6 @@ static CYTHON_INLINE void __Pyx_ErrFetchInState(PyThreadState *tstate, PyObject 
 }
 #endif
 
-/* RaiseTooManyValuesToUnpack */
-    static CYTHON_INLINE void __Pyx_RaiseTooManyValuesError(Py_ssize_t expected) {
-    PyErr_Format(PyExc_ValueError,
-                 "too many values to unpack (expected %" CYTHON_FORMAT_SSIZE_T "d)", expected);
-}
-
-/* RaiseNeedMoreValuesToUnpack */
-    static CYTHON_INLINE void __Pyx_RaiseNeedMoreValuesError(Py_ssize_t index) {
-    PyErr_Format(PyExc_ValueError,
-                 "need more than %" CYTHON_FORMAT_SSIZE_T "d value%.1s to unpack",
-                 index, (index == 1) ? "" : "s");
-}
-
-/* IterFinish */
-    static CYTHON_INLINE int __Pyx_IterFinish(void) {
-#if CYTHON_FAST_THREAD_STATE
-    PyThreadState *tstate = PyThreadState_GET();
-    PyObject* exc_type = tstate->curexc_type;
-    if (unlikely(exc_type)) {
-        if (likely(exc_type == PyExc_StopIteration) || PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration)) {
-            PyObject *exc_value, *exc_tb;
-            exc_value = tstate->curexc_value;
-            exc_tb = tstate->curexc_traceback;
-            tstate->curexc_type = 0;
-            tstate->curexc_value = 0;
-            tstate->curexc_traceback = 0;
-            Py_DECREF(exc_type);
-            Py_XDECREF(exc_value);
-            Py_XDECREF(exc_tb);
-            return 0;
-        } else {
-            return -1;
-        }
-    }
-    return 0;
-#else
-    if (unlikely(PyErr_Occurred())) {
-        if (likely(PyErr_ExceptionMatches(PyExc_StopIteration))) {
-            PyErr_Clear();
-            return 0;
-        } else {
-            return -1;
-        }
-    }
-    return 0;
-#endif
-}
-
-/* UnpackItemEndCheck */
-    static int __Pyx_IternextUnpackEndCheck(PyObject *retval, Py_ssize_t expected) {
-    if (unlikely(retval)) {
-        Py_DECREF(retval);
-        __Pyx_RaiseTooManyValuesError(expected);
-        return -1;
-    } else {
-        return __Pyx_IterFinish();
-    }
-    return 0;
-}
-
 /* RaiseArgTupleInvalid */
     static void __Pyx_RaiseArgtupleInvalid(
     const char* func_name,
@@ -7270,6 +7372,66 @@ static CYTHON_INLINE int __Pyx_ArgTypeTest(PyObject *obj, PyTypeObject *type, in
         if (likely(PyObject_TypeCheck(obj, type))) return 1;
     }
     __Pyx_RaiseArgumentTypeInvalid(name, obj, type);
+    return 0;
+}
+
+/* RaiseTooManyValuesToUnpack */
+    static CYTHON_INLINE void __Pyx_RaiseTooManyValuesError(Py_ssize_t expected) {
+    PyErr_Format(PyExc_ValueError,
+                 "too many values to unpack (expected %" CYTHON_FORMAT_SSIZE_T "d)", expected);
+}
+
+/* RaiseNeedMoreValuesToUnpack */
+    static CYTHON_INLINE void __Pyx_RaiseNeedMoreValuesError(Py_ssize_t index) {
+    PyErr_Format(PyExc_ValueError,
+                 "need more than %" CYTHON_FORMAT_SSIZE_T "d value%.1s to unpack",
+                 index, (index == 1) ? "" : "s");
+}
+
+/* IterFinish */
+    static CYTHON_INLINE int __Pyx_IterFinish(void) {
+#if CYTHON_FAST_THREAD_STATE
+    PyThreadState *tstate = PyThreadState_GET();
+    PyObject* exc_type = tstate->curexc_type;
+    if (unlikely(exc_type)) {
+        if (likely(exc_type == PyExc_StopIteration) || PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration)) {
+            PyObject *exc_value, *exc_tb;
+            exc_value = tstate->curexc_value;
+            exc_tb = tstate->curexc_traceback;
+            tstate->curexc_type = 0;
+            tstate->curexc_value = 0;
+            tstate->curexc_traceback = 0;
+            Py_DECREF(exc_type);
+            Py_XDECREF(exc_value);
+            Py_XDECREF(exc_tb);
+            return 0;
+        } else {
+            return -1;
+        }
+    }
+    return 0;
+#else
+    if (unlikely(PyErr_Occurred())) {
+        if (likely(PyErr_ExceptionMatches(PyExc_StopIteration))) {
+            PyErr_Clear();
+            return 0;
+        } else {
+            return -1;
+        }
+    }
+    return 0;
+#endif
+}
+
+/* UnpackItemEndCheck */
+    static int __Pyx_IternextUnpackEndCheck(PyObject *retval, Py_ssize_t expected) {
+    if (unlikely(retval)) {
+        Py_DECREF(retval);
+        __Pyx_RaiseTooManyValuesError(expected);
+        return -1;
+    } else {
+        return __Pyx_IterFinish();
+    }
     return 0;
 }
 

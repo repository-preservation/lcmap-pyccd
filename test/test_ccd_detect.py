@@ -33,13 +33,13 @@ def test_sample_data_sets():
     for sample in samples:
         data = read_data(sample)
         results = ccd.detect(np.asarray(data[0], dtype=np.long), 
-                             np.asarray(data[1], dtype=np.float64), 
-                             np.asarray(data[2], dtype=np.float64), 
-                             np.asarray(data[3], dtype=np.float64), 
-                             np.asarray(data[4], dtype=np.float64),
-                             np.asarray(data[5], dtype=np.float64), 
-                             np.asarray(data[6], dtype=np.float64), 
-                             np.asarray(data[7], dtype=np.float64), 
+                             np.asarray(data[1], dtype=np.int16), 
+                             np.asarray(data[2], dtype=np.int16), 
+                             np.asarray(data[3], dtype=np.int16), 
+                             np.asarray(data[4], dtype=np.int16),
+                             np.asarray(data[5], dtype=np.int16), 
+                             np.asarray(data[6], dtype=np.int16), 
+                             np.asarray(data[7], dtype=np.int16), 
                              np.asarray(data[8], dtype=np.long),
                              params=params)
 

@@ -948,22 +948,31 @@ typedef npy_longdouble __pyx_t_5numpy_longdouble_t;
  * from cpython cimport bool
  * 
  * ctypedef np.float64_t STYPE_t             # <<<<<<<<<<<<<<
+ * ctypedef np.int16_t   DTYPE_t
  * ctypedef float        FTYPE_t
- * ctypedef int          ITYPE_t
  */
 typedef __pyx_t_5numpy_float64_t __pyx_t_3ccd_10procedures_STYPE_t;
 
 /* "ccd/procedures.pxd":7
  * 
  * ctypedef np.float64_t STYPE_t
+ * ctypedef np.int16_t   DTYPE_t             # <<<<<<<<<<<<<<
+ * ctypedef float        FTYPE_t
+ * ctypedef int          ITYPE_t
+ */
+typedef __pyx_t_5numpy_int16_t __pyx_t_3ccd_10procedures_DTYPE_t;
+
+/* "ccd/procedures.pxd":8
+ * ctypedef np.float64_t STYPE_t
+ * ctypedef np.int16_t   DTYPE_t
  * ctypedef float        FTYPE_t             # <<<<<<<<<<<<<<
  * ctypedef int          ITYPE_t
  * ctypedef bool         BTYPE_t
  */
 typedef float __pyx_t_3ccd_10procedures_FTYPE_t;
 
-/* "ccd/procedures.pxd":8
- * ctypedef np.float64_t STYPE_t
+/* "ccd/procedures.pxd":9
+ * ctypedef np.int16_t   DTYPE_t
  * ctypedef float        FTYPE_t
  * ctypedef int          ITYPE_t             # <<<<<<<<<<<<<<
  * ctypedef bool         BTYPE_t
@@ -971,7 +980,7 @@ typedef float __pyx_t_3ccd_10procedures_FTYPE_t;
  */
 typedef int __pyx_t_3ccd_10procedures_ITYPE_t;
 
-/* "ccd/procedures.pxd":10
+/* "ccd/procedures.pxd":11
  * ctypedef int          ITYPE_t
  * ctypedef bool         BTYPE_t
  * ctypedef np.long_t    LTYPE_t             # <<<<<<<<<<<<<<
@@ -1042,7 +1051,7 @@ typedef npy_clongdouble __pyx_t_5numpy_clongdouble_t;
  */
 typedef npy_cdouble __pyx_t_5numpy_complex_t;
 
-/* "ccd/procedures.pxd":9
+/* "ccd/procedures.pxd":10
  * ctypedef float        FTYPE_t
  * ctypedef int          ITYPE_t
  * ctypedef bool         BTYPE_t             # <<<<<<<<<<<<<<
@@ -1718,6 +1727,7 @@ static PyObject *__pyx_f_3ccd_10procedures_lookforward(PyArrayObject *, PyArrayO
 static PyObject *__pyx_f_3ccd_10procedures_lookback(PyArrayObject *, PyArrayObject *, PyObject *, PyObject *, __pyx_t_3ccd_10procedures_ITYPE_t, PyArrayObject *, PyArrayObject *, PyObject *); /*proto*/
 static PyObject *__pyx_f_3ccd_10procedures_catch(PyArrayObject *, PyArrayObject *, PyObject *, PyArrayObject *, PyObject *, __pyx_t_3ccd_10procedures_ITYPE_t, PyObject *, PyObject *); /*proto*/
 static __Pyx_TypeInfo __Pyx_TypeInfo_nn___pyx_t_3ccd_10procedures_LTYPE_t = { "LTYPE_t", NULL, sizeof(__pyx_t_3ccd_10procedures_LTYPE_t), { 0 }, 0, IS_UNSIGNED(__pyx_t_3ccd_10procedures_LTYPE_t) ? 'U' : 'I', IS_UNSIGNED(__pyx_t_3ccd_10procedures_LTYPE_t), 0 };
+static __Pyx_TypeInfo __Pyx_TypeInfo_nn___pyx_t_3ccd_10procedures_DTYPE_t = { "DTYPE_t", NULL, sizeof(__pyx_t_3ccd_10procedures_DTYPE_t), { 0 }, 0, IS_UNSIGNED(__pyx_t_3ccd_10procedures_DTYPE_t) ? 'U' : 'I', IS_UNSIGNED(__pyx_t_3ccd_10procedures_DTYPE_t), 0 };
 static __Pyx_TypeInfo __Pyx_TypeInfo_nn___pyx_t_3ccd_10procedures_STYPE_t = { "STYPE_t", NULL, sizeof(__pyx_t_3ccd_10procedures_STYPE_t), { 0 }, 0, 'R', 0, 0 };
 #define __Pyx_MODULE_NAME "ccd.procedures"
 int __pyx_module_is_main_ccd__procedures = 0;
@@ -4228,7 +4238,7 @@ static PyObject *__pyx_f_3ccd_10procedures_standard_procedure(PyArrayObject *__p
   __pyx_pybuffernd_dates.diminfo[0].strides = __pyx_pybuffernd_dates.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_dates.diminfo[0].shape = __pyx_pybuffernd_dates.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_observations.rcbuffer->pybuffer, (PyObject*)__pyx_v_observations, &__Pyx_TypeInfo_nn___pyx_t_3ccd_10procedures_STYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 209, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_observations.rcbuffer->pybuffer, (PyObject*)__pyx_v_observations, &__Pyx_TypeInfo_nn___pyx_t_3ccd_10procedures_DTYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 209, __pyx_L1_error)
   }
   __pyx_pybuffernd_observations.diminfo[0].strides = __pyx_pybuffernd_observations.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_observations.diminfo[0].shape = __pyx_pybuffernd_observations.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_observations.diminfo[1].strides = __pyx_pybuffernd_observations.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_observations.diminfo[1].shape = __pyx_pybuffernd_observations.rcbuffer->pybuffer.shape[1];
   {
@@ -5876,7 +5886,7 @@ static PyObject *__pyx_pf_3ccd_10procedures_6standard_procedure(CYTHON_UNUSED Py
   __pyx_pybuffernd_dates.diminfo[0].strides = __pyx_pybuffernd_dates.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_dates.diminfo[0].shape = __pyx_pybuffernd_dates.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_observations.rcbuffer->pybuffer, (PyObject*)__pyx_v_observations, &__Pyx_TypeInfo_nn___pyx_t_3ccd_10procedures_STYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 209, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_observations.rcbuffer->pybuffer, (PyObject*)__pyx_v_observations, &__Pyx_TypeInfo_nn___pyx_t_3ccd_10procedures_DTYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 209, __pyx_L1_error)
   }
   __pyx_pybuffernd_observations.diminfo[0].strides = __pyx_pybuffernd_observations.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_observations.diminfo[0].shape = __pyx_pybuffernd_observations.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_observations.diminfo[1].strides = __pyx_pybuffernd_observations.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_observations.diminfo[1].shape = __pyx_pybuffernd_observations.rcbuffer->pybuffer.shape[1];
   {
@@ -5982,7 +5992,7 @@ static PyObject *__pyx_f_3ccd_10procedures_initialize(PyArrayObject *__pyx_v_dat
   __pyx_pybuffernd_dates.diminfo[0].strides = __pyx_pybuffernd_dates.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_dates.diminfo[0].shape = __pyx_pybuffernd_dates.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_observations.rcbuffer->pybuffer, (PyObject*)__pyx_v_observations, &__Pyx_TypeInfo_nn___pyx_t_3ccd_10procedures_STYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 374, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_observations.rcbuffer->pybuffer, (PyObject*)__pyx_v_observations, &__Pyx_TypeInfo_nn___pyx_t_3ccd_10procedures_DTYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 374, __pyx_L1_error)
   }
   __pyx_pybuffernd_observations.diminfo[0].strides = __pyx_pybuffernd_observations.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_observations.diminfo[0].shape = __pyx_pybuffernd_observations.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_observations.diminfo[1].strides = __pyx_pybuffernd_observations.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_observations.diminfo[1].shape = __pyx_pybuffernd_observations.rcbuffer->pybuffer.shape[1];
   {
@@ -7600,7 +7610,7 @@ static PyObject *__pyx_f_3ccd_10procedures_lookforward(PyArrayObject *__pyx_v_da
   __pyx_pybuffernd_dates.diminfo[0].strides = __pyx_pybuffernd_dates.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_dates.diminfo[0].shape = __pyx_pybuffernd_dates.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_observations.rcbuffer->pybuffer, (PyObject*)__pyx_v_observations, &__Pyx_TypeInfo_nn___pyx_t_3ccd_10procedures_STYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 499, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_observations.rcbuffer->pybuffer, (PyObject*)__pyx_v_observations, &__Pyx_TypeInfo_nn___pyx_t_3ccd_10procedures_DTYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 499, __pyx_L1_error)
   }
   __pyx_pybuffernd_observations.diminfo[0].strides = __pyx_pybuffernd_observations.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_observations.diminfo[0].shape = __pyx_pybuffernd_observations.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_observations.diminfo[1].strides = __pyx_pybuffernd_observations.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_observations.diminfo[1].shape = __pyx_pybuffernd_observations.rcbuffer->pybuffer.shape[1];
   {
@@ -10403,7 +10413,7 @@ static PyObject *__pyx_f_3ccd_10procedures_lookback(PyArrayObject *__pyx_v_dates
   __pyx_pybuffernd_dates.diminfo[0].strides = __pyx_pybuffernd_dates.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_dates.diminfo[0].shape = __pyx_pybuffernd_dates.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_observations.rcbuffer->pybuffer, (PyObject*)__pyx_v_observations, &__Pyx_TypeInfo_nn___pyx_t_3ccd_10procedures_STYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 685, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_observations.rcbuffer->pybuffer, (PyObject*)__pyx_v_observations, &__Pyx_TypeInfo_nn___pyx_t_3ccd_10procedures_DTYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 685, __pyx_L1_error)
   }
   __pyx_pybuffernd_observations.diminfo[0].strides = __pyx_pybuffernd_observations.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_observations.diminfo[0].shape = __pyx_pybuffernd_observations.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_observations.diminfo[1].strides = __pyx_pybuffernd_observations.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_observations.diminfo[1].shape = __pyx_pybuffernd_observations.rcbuffer->pybuffer.shape[1];
   {
@@ -11715,7 +11725,7 @@ static PyObject *__pyx_f_3ccd_10procedures_catch(PyArrayObject *__pyx_v_dates, P
   __pyx_pybuffernd_dates.diminfo[0].strides = __pyx_pybuffernd_dates.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_dates.diminfo[0].shape = __pyx_pybuffernd_dates.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_observations.rcbuffer->pybuffer, (PyObject*)__pyx_v_observations, &__Pyx_TypeInfo_nn___pyx_t_3ccd_10procedures_STYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 784, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_observations.rcbuffer->pybuffer, (PyObject*)__pyx_v_observations, &__Pyx_TypeInfo_nn___pyx_t_3ccd_10procedures_DTYPE_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 784, __pyx_L1_error)
   }
   __pyx_pybuffernd_observations.diminfo[0].strides = __pyx_pybuffernd_observations.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_observations.diminfo[0].shape = __pyx_pybuffernd_observations.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_observations.diminfo[1].strides = __pyx_pybuffernd_observations.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_observations.diminfo[1].shape = __pyx_pybuffernd_observations.rcbuffer->pybuffer.shape[1];
 
