@@ -43,7 +43,7 @@ def tmask(dates,
         observations: spectral values, assumed to be shaped as
             (n-bands, n-moments)
         bands: list of band indices used for outlier detection, by default
-            bands 2 and 5.
+            it's the green and SWIR1 bands.
         t_const: constant used to scale a variogram value for thresholding on
             whether a value is an outlier or not
 
@@ -52,7 +52,7 @@ def tmask(dates,
     # variogram = calculate_variogram(observations)
     # Time and expected values using a four-part matrix of coefficients.
     # regression = lm.LinearRegression()
-    #regression = robust_fit.RLM(maxiter=5)
+
     tmask_matrix = tmask_coefficient_matrix(dates, avg_days_yr)
 
     #print("tmask_matrix {} {} {}".format(type(tmask_matrix), tmask_matrix.ndim, tmask_matrix.dtype))
@@ -68,7 +68,7 @@ def tmask(dates,
     # values exceeds the threshold. If it does, then it is an outlier.
     #regression_fit = regression.fit
     for band_ix in bands:
-        #fit = regression_fit(tmask_matrix, observations[band_ix])
+        # TODO this needs to be configurable.
         fit = RLM(maxiter=5).fit(tmask_matrix, observations[band_ix])
         predicted = fit.predict(tmask_matrix)
         outliers += np.abs(predicted - observations[band_ix]) > variogram[band_ix] * t_const

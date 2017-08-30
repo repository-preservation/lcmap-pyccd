@@ -429,6 +429,7 @@ def initialize(dates,
 
         # Count outliers in the window, if there are too many outliers then
         # try again.
+
         tmask_outliers = tmask(period[model_window],
                                spectral_obs[:, model_window],
                                variogram, tmask_bands, tmask_scale,

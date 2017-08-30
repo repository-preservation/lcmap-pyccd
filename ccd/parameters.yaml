@@ -28,7 +28,7 @@ SWIR2_IDX: 5
 THERMAL_IDX: 6
 QA_IDX: 7
 
-# Spectral bands that are utilized for detecting change
+# Spectral bands that are utilized for detecting change. 0 based array notation.
 DETECTION_BANDS:
   - 1
   - 2
@@ -36,10 +36,11 @@ DETECTION_BANDS:
   - 4
   - 5
 
-# Spectral bands that are utilized for Tmask filtering
+# Spectral bands that are utilized for Tmask filtering. 0 based array notation.
+# This is in relation to the DETECTION_BANDS selected.
 TMASK_BANDS:
-  - 1
-  - 4
+  - 0
+  - 3
 
 ############################
 # Representative values in the QA band
