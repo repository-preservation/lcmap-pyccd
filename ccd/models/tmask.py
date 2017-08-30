@@ -1,9 +1,7 @@
-#import logging
 import numpy as np
 
 from ccd.models.robust_fit import RLM
 
-#log = logging.getLogger(__name__)
 
 def tmask_coefficient_matrix(dates, avg_days_yr):
     """Coefficient matrix that is used for Tmask modeling
