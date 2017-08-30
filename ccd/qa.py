@@ -47,6 +47,13 @@ def qabitval(packedint, proc_params):
         return proc_params.QA_WATER
     elif checkbit(packedint, proc_params.QA_CLEAR):
         return proc_params.QA_CLEAR
+    # L8 Cirrus and Terrain Occlusion
+    elif (checkbit(packedint, proc_params.QA_CIRRUS1) &
+          checkbit(packedint, proc_params.QA_CIRRUS2)):
+        return proc_params.QA_CLEAR
+    elif checkbit(packedint, proc_params.QA_OCCLUSION):
+        return proc_params.QA_CLEAR
+
     else:
         raise ValueError('Unsupported bitpacked QA value {}'.format(packedint))
 
