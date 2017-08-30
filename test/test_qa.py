@@ -2,6 +2,7 @@
 Tests for the basic masking and filtering operations
 """
 from ccd.qa import *
+from ccd.app import get_default_params
 
 
 clear = 0
@@ -22,11 +23,18 @@ snow_thresh = 0.75
 #
 #     assert not checkbit(packint, offset)
 
+default_params = get_default_params()
 
-# def test_qabitval():
-#     packint = 3
-#
-#     assert qabitval(packint, params) == fill
+
+
+def test_qabitval():
+    # [fill, clear, water, cloud shadow, snow, cloud,
+    # High Cirrus + low cloud conf, high cirrus + medium cloud conf, terrain occlusion]
+    packints = [1, 2, 4, 8, 16, 32, 832, 896, 1024]
+    ans = [0, 1, 2, 3, 4, 5, 1, 1, 1]
+
+    for i, a in zip(packints, ans):
+        assert qabitval(i, default_params) == a
 
 
 def test_count_clear_or_water():

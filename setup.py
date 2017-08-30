@@ -52,7 +52,7 @@ setup(
 
     # __version__ is defined in version.py
     version=__version__,
-    
+
     description='Python implementation of Continuous Change Detection',
     long_description=__doc__,
     url='https://github.com/usgs-eros/lcmap-pyccd',
@@ -96,6 +96,7 @@ setup(
                  'pytest-watch>=4.1.0',
                  'xarray>=0.9.6'],
         'dev': ['jupyter',
+                'line_profiler',
                 'cython>=0.26'],
     },
 

@@ -61,7 +61,9 @@ QA_SHADOW: 3
 QA_SNOW: 4
 QA_CLOUD: 5
 QA_NAN: -1
-
+QA_CIRRUS1: 8
+QA_CIRRUS2: 9
+QA_OCCLUSION: 10
 
 ############################
 # Representative values for the curve QA

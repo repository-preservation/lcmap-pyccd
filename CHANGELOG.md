@@ -1,5 +1,9 @@
 # pyccd change log
-All notable changes to this project will be documented in this file. Changes before 1.0.0.b1 are not tracked.  
+All notable changes to this project will be documented in this file. Changes before 1.0.0.b1 are not tracked.
+  
+## [RC]
+### Added
+ - Conditional treatment of cirrus confidence and terrain occlusion bits from Landsat 8 pixelQA
 
 ## [2017.06.20]
 ### Bug Fixes
