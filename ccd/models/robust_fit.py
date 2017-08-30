@@ -122,15 +122,6 @@ class RLM(object):
             robust iteratively reweighted least squares
 
     """
-    # cdef public FTYPE_t tune
-    # cdef public FTYPE_t scale_constant
-    # cdef public BTYPE_t update_scale
-    # cdef public ITYPE_t maxiter
-    # cdef public STYPE_t tol
-    # cdef public numpy.ndarray coef_
-    # cdef public STYPE_t intercept_
-    # cdef public STYPE_t scale
-    # cdef public numpy.ndarray weights
 
     def __init__(self, tune=4.685, scale_constant=0.6745,
                  update_scale=True, maxiter=50, tol=1e-8):

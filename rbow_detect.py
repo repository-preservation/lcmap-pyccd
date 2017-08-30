@@ -31,22 +31,23 @@ def run_detect(rbow):
         #return datetime.strptime(dtstr, _fmt).toordinal()
 
     # 1.8 seconds start
-    row, col = 97, 57
+    #row, col = 97, 57
     # 2.6 seconds start
-    row, col = 60, 5
+    #row, col = 60, 5
     # 1.8 seconds in mesos
     row, col = 95, 33
 
+
     #rainbow_date_array = np.array(rbow['t'].values)
     result = ccd.detect([dtstr_to_ordinal(i) for i in rbow['t'].values],
-                        rbow['blue'].values[:, row, col],
-                        rbow['green'].values[:, row, col],
-                        rbow['red'].values[:, row, col],
-                        rbow['nir'].values[:, row, col],
-                        rbow['swir1'].values[:, row, col],
-                        rbow['swir2'].values[:, row, col],
-                        rbow['thermal'].values[:, row, col],
-                        np.array(rbow['cfmask'].values[:, row, col], dtype=int),
+                        np.asarray(rbow['blue'].values[:, row, col], dtype=np.int16),
+                        np.asarray(rbow['green'].values[:, row, col], dtype=np.int16),
+                        np.asarray(rbow['red'].values[:, row, col], dtype=np.int16),
+                        np.asarray(rbow['nir'].values[:, row, col], dtype=np.int16),
+                        np.asarray(rbow['swir1'].values[:, row, col], dtype=np.int16),
+                        np.asarray(rbow['swir2'].values[:, row, col], dtype=np.int16),
+                        np.asarray(rbow['thermal'].values[:, row, col], dtype=np.int16),
+                        np.array(rbow['cfmask'].values[:, row, col], dtype=np.int16),
                         params={})
     return True
 
