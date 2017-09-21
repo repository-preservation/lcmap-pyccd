@@ -15,16 +15,12 @@ statsmodels and can reach ~4x faster if Numba is available to accelerate.
 # Don't alias to ``np`` until fix is implemented
 # https://github.com/numba/numba/issues/1559
 import numpy
-import sklearn
 import scipy
-
-# from yatsm.accel import try_jit
 
 EPS = numpy.finfo('float').eps
 
 
 # Weight scaling methods
-# @try_jit(nopython=True)
 def bisquare(resid, c=4.685):
     """
     Returns weighting for each residual using bisquare weight function
@@ -101,7 +97,7 @@ def _weight_fit(X, y, w):
 
 
 # Robust regression
-class RLM(sklearn.base.BaseEstimator):
+class RLM(object):
     """ Robust Linear Model using Iterative Reweighted Least Squares (RIRLS)
 
     Perform robust fitting regression via iteratively reweighted least squares
@@ -121,7 +117,6 @@ class RLM(sklearn.base.BaseEstimator):
         scale_constant (float): normalization constant (default: 0.6745)
         update_scale (bool, optional): update scale estimate for weights
             across iterations (default: True)
-        M (callable): function for scaling residuals
         tune (float): tuning constant for scale estimate
 
     Attributes:
@@ -132,12 +127,9 @@ class RLM(sklearn.base.BaseEstimator):
 
     """
 
-    def __init__(self, M=bisquare, tune=4.685,
-                 scale_est=mad, scale_constant=0.6745,
+    def __init__(self, tune=4.685, scale_constant=0.6745,
                  update_scale=True, maxiter=50, tol=1e-8):
-        self.M = M
         self.tune = tune
-        self.scale_est = scale_est
         self.scale_constant = scale_constant
         self.update_scale = update_scale
         self.maxiter = maxiter
@@ -158,8 +150,8 @@ class RLM(sklearn.base.BaseEstimator):
                 chaining
 
         """
-        self.coef_, resid = _weight_fit(X, y, numpy.ones_like(y))
-        self.scale = self.scale_est(resid, c=self.scale_constant)
+        self.coef_, resid = _weight_fit(X, y, numpy.ones_like(y, dtype=float))
+        self.scale = mad(resid, c=self.scale_constant)
 
 
         Q, R = scipy.linalg.qr(X)
@@ -186,11 +178,11 @@ class RLM(sklearn.base.BaseEstimator):
 
             if self.update_scale:
                 self.scale = max(EPS*numpy.std(y),
-                                 self.scale_est(resid, c=self.scale_constant))
+                                 mad(resid, c=self.scale_constant))
             # print self.scale
             # print iteration,numpy.sort(numpy.abs(resid)/self.scale_constant)
 
-            self.weights = self.M(resid / self.scale, c=self.tune)
+            self.weights = bisquare(resid / self.scale, c=self.tune)
             self.coef_, resid = _weight_fit(X, y, self.weights)
             # print 'w: ', self.weights
 

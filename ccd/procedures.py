@@ -186,7 +186,9 @@ def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
     return (result,), processing_mask
 
 
-def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
+def standard_procedure(dates,
+                       observations,
+                       fitter_fn, quality, proc_params):
     """
     Runs the core change detection algorithm.
 
@@ -227,9 +229,9 @@ def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
     thermal_idx = proc_params.THERMAL_IDX
     curve_qa = proc_params.CURVE_QA
 
-    log.debug('Build change models - dates: %s, obs: %s, '
-              'meow_size: %s, peek_size: %s',
-              dates.shape[0], observations.shape, meow_size, peek_size)
+    #log.debug('Build change models - dates: %s, obs: %s, '
+    #          'meow_size: %s, peek_size: %s',
+    #          dates.shape[0], observations.shape, meow_size, peek_size)
 
     # First we need to filter the observations based on the spectra values
     # and qa information and convert kelvin to celsius.

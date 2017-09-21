@@ -84,6 +84,9 @@ System requirements (Centos)
 * graphviz
 * python-virtualenv
 
+Python requirements
+* numpy (for install of C compiled extensions)
+
 It's highly recommended to do all your development & testing in a virtual environment.
 ```bash
 user@dev:/home/user/$ mkdir pyccd

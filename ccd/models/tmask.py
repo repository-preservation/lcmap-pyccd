@@ -52,7 +52,7 @@ def tmask(dates, observations, variogram, bands, t_const, avg_days_yr):
 
     # Accumulator for outliers. This starts off as a list of False values
     # because we don't assume anything is an outlier.
-    _, sample_count = observations.shape
+    sample_count = observations.shape[1]
     outliers = np.zeros(sample_count, dtype=bool)
 
     # For each band, determine if the delta between predeicted and actual

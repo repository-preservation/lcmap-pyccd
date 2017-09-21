@@ -148,9 +148,14 @@ def detect(dates, blues, greens, reds, nirs,
     dates = np.asarray(dates)
     quality = np.asarray(quality)
 
-    spectra = np.stack((blues, greens,
-                        reds, nirs, swir1s,
-                        swir2s, thermals))
+    spectra = np.stack((np.asarray(blues, dtype=np.int16),
+                        np.asarray(greens, dtype=np.int16),
+                        np.asarray(reds, dtype=np.int16),
+                        np.asarray(nirs, dtype=np.int16),
+                        np.asarray(swir1s, dtype=np.int16),
+                        np.asarray(swir2s, dtype=np.int16),
+                        np.asarray(thermals, dtype=np.int16)
+                        ))
 
     __check_inputs(dates, quality, spectra)
 

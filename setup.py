@@ -11,9 +11,32 @@ Texas Tech University, TX, USA
 
 from setuptools import setup
 from os import path
-import io
+from distutils.extension import Extension
+import numpy as np
 
 here = path.abspath(path.dirname(__file__))
+
+np_incl = np.get_include()
+
+USE_CYTHON = False
+EXT_TYPE = ".c"
+try:
+    import cython
+    USE_CYTHON = True
+    EXT_TYPE = ".py"
+except ImportError:
+    print("Cython unavailable")
+
+extensions = [Extension('ccd.models.lasso',      ['ccd/models/lasso'+EXT_TYPE],      include_dirs=[np_incl]),
+              Extension('ccd.models.robust_fit', ['ccd/models/robust_fit'+EXT_TYPE], include_dirs=[np_incl]),
+              Extension('ccd.models.tmask',      ['ccd/models/tmask'+EXT_TYPE],      include_dirs=[np_incl]),
+              Extension('ccd.procedures',        ['ccd/procedures'+EXT_TYPE],        include_dirs=[np_incl]),
+              # Extension('test.test_models',      ['test/test_models' + EXT_TYPE],    include_dirs=[np_incl])
+              ]
+
+if USE_CYTHON:
+    from Cython.Build import cythonize
+    extensions = cythonize(extensions)
 
 
 # bring in __version__ and __name from version.py for install.
@@ -52,13 +75,16 @@ setup(
         # 'Programming Language :: Python :: 2.7',
         # 'Programming Language :: Python :: 3',
         # 'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
+        #'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
     ],
 
     keywords='python change detection',
 
     packages=['ccd', 'ccd.models'],
+
+    ext_modules=extensions,
 
     install_requires=['numpy>=1.10.0',
                       'scipy>=0.18.1',
@@ -75,12 +101,14 @@ setup(
                  'pytest>=3.0.2',
                  'pytest-profiling>=1.1.1',
                  'gprof2dot>=2015.12.1',
-                 'pytest-watch>=4.1.0'],
+                 'pytest-watch>=4.1.0',
+                 'xarray>=0.9.6'],
         'dev': ['jupyter',
-                'line_profiler'],
+                'line_profiler',
+                'cython>=0.26'],
     },
 
-    setup_requires=['pytest-runner', 'pip'],
+    setup_requires=['pytest-runner', 'pip', 'numpy'],
     tests_require=['pytest>=3.0.2'],
 
     package_data={
