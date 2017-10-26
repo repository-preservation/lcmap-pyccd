@@ -1,7 +1,13 @@
 import numpy as np
-import datetime
+from datetime import datetime
 import logging
 import aniso8601
+
+# sample1 = read_data("test/resources/sample_1.csv")
+# sample2 = read_data("test/resources/sample_2.csv")
+# persistent_snow = read_data("test/resources/sample_WA_grid08_row9_col2267_persistent_snow.csv")
+# standard_procedure = read_data("test/resources/sample_WA_grid08_row999_col1_normal.csv")
+# fmask_fail = read_data("test/resources/sample_WA_grid08_row12_col2265_fmask_fail.csv")
 
 
 log = logging.getLogger(__name__)
@@ -67,7 +73,7 @@ def gen_acquisition_delta(interval):
     Example:
         gen_acquisition_delta('R90/P16D/2000-01-01')
     """
-    epoch = datetime.datetime.utcfromtimestamp(0).date()
+    epoch = datetime.utcfromtimestamp(0).date()
     dates = gen_acquisition_dates(interval)
     yield [(date-epoch).days for date in dates]
 
@@ -113,10 +119,3 @@ def sample_line(time_range, bands=7):
     times = np.array(acquisition_delta(time_range))
     observations = np.array([line(times) for _ in range(bands)])
     return times, observations
-
-
-# sample1 = read_data("test/resources/sample_1.csv")
-# sample2 = read_data("test/resources/sample_2.csv")
-# persistent_snow = read_data("test/resources/sample_WA_grid08_row9_col2267_persistent_snow.csv")
-# standard_procedure = read_data("test/resources/sample_WA_grid08_row999_col1_normal.csv")
-# fmask_fail = read_data("test/resources/sample_WA_grid08_row12_col2265_fmask_fail.csv")
