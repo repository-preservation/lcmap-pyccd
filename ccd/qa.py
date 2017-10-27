@@ -144,6 +144,42 @@ def ratio_snow(quality, clear, water, snow):
     return snowy_count / (clear_count + snowy_count + 0.01)
 
 
+def ratio_cloud(quality, fill, cloud):
+    """
+    Calculate the ratio of observations that are cloud.
+
+    Args:
+        quality: 1-d ndarray of quality information, cannot be bitpacked
+        fill: int value representing fill
+        cloud: int value representing cloud
+
+    Returns:
+        float
+    """
+    cloud_count = count_value(quality, cloud)
+    total = count_total(quality, fill)
+
+    return cloud_count / total
+
+
+def ratio_water(quality, clear, water):
+    """
+        Calculate the ratio of observations that are water.
+
+        Args:
+            quality: 1-d ndarray of quality information, cannot be bitpacked
+            clear: int value representing clear
+            water: int value representing water
+
+        Returns:
+            float
+        """
+    clear_count = count_clear_or_water(quality, clear, water)
+    water_count = count_value(quality, water)
+
+    return water_count / (clear_count + 0.01)
+
+
 def enough_clear(quality, clear, water, fill, threshold):
     """
     Determine if clear observations exceed threshold.
@@ -337,3 +373,30 @@ def insufficient_clear_filter(observations, quality, dates, proc_params):
     standard_mask[standard_mask] = date_mask
 
     return standard_mask
+
+
+def quality_probabilities(quality, proc_params):
+    """
+    Provide probabilities that any given observation falls into one of three
+    categories - cloud, snow, or water.
+
+    This is mainly used in further downstream processing, and helps ensure
+    consistency.
+
+    Args:
+        quality: 1-d ndarray of quality information, cannot be bitpacked
+        proc_params: dictionary of global processing parameters
+
+    Returns:
+        float probability cloud
+        float probability snow
+        float probability water
+    """
+    snow = ratio_snow(quality, proc_params.QA_CLEAR, proc_params.QA_WATER,
+                      proc_params.QA_SNOW)
+
+    cloud = ratio_cloud(quality, proc_params.QA_FILL, proc_params.QA_CLOUD)
+
+    water = ratio_water(quality, proc_params.QA_CLEAR, proc_params.QA_WATER)
+
+    return cloud, snow, water
