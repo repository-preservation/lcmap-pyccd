@@ -30,7 +30,7 @@ def attr_from_str(value):
         return None
 
 
-def __attach_metadata(procedure_results, procedure):
+def __attach_metadata(procedure_results, procedure, probs):
     """
     Attach some information on the algorithm version, what procedure was used,
     and which inputs were used
@@ -82,9 +82,12 @@ def __attach_metadata(procedure_results, procedure):
     change_models, processing_mask = procedure_results
 
     return {'algorithm': algorithm,
-            'processing_mask': processing_mask,
+            'processing_mask': tuple(int(_) for _ in processing_mask),
             'procedure': procedure.__name__,
-            'change_models': change_models}
+            'change_models': change_models,
+            'cloud_prob': probs[0],
+            'snow_prob': probs[1],
+            'water_prob': probs[2]}
 
 
 def __split_dates_spectra(matrix):
@@ -165,6 +168,8 @@ def detect(dates, blues, greens, reds, nirs,
     if proc_params.QA_BITPACKED is True:
         quality = qa.unpackqa(quality, proc_params)
 
+    probs = qa.quality_probabilities(quality, proc_params)
+
     # Determine which procedure to use for the detection
     procedure = __determine_fit_procedure(quality, proc_params)
 
@@ -172,4 +177,4 @@ def detect(dates, blues, greens, reds, nirs,
     log.debug('Total time for algorithm: %s', time.time() - t1)
 
     # call detect and return results as the detections namedtuple
-    return __attach_metadata(results, procedure)
+    return __attach_metadata(results, procedure, probs)
