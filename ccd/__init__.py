@@ -82,7 +82,7 @@ def __attach_metadata(procedure_results, procedure, probs):
     change_models, processing_mask = procedure_results
 
     return {'algorithm': algorithm,
-            'processing_mask': processing_mask,
+            'processing_mask': tuple(int(_) for _ in processing_mask),
             'procedure': procedure.__name__,
             'change_models': change_models,
             'cloud_prob': probs[0],
