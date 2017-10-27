@@ -1,7 +1,17 @@
 # pyccd change log
 All notable changes to this project will be documented in this file. Changes before 1.0.0.b1 are not tracked.
   
-## [RC]
+## [2017.10.27]
+### Added
+ - Probability that any given observation will be cloud, snow, or water, based on the QA information passed in
+ - Efficiencies to filling out the lasso coefficient matrix
+ - Release checklist
+
+### Changed
+ - Removed unused py files that may have been causing confusion
+ - Results should use standard Python types, this helps with any downstream applications
+
+## [2017.08.18]
 ### Added
  - Conditional treatment of cirrus confidence and terrain occlusion bits from Landsat 8 pixelQA
 
@@ -86,3 +96,5 @@ All notable changes to this project will be documented in this file. Changes bef
 [1.4.0]: https://github.com/usgs-eros/lcmap-pyccd/compare/v1.3.1...v1.4.0
 [2017.6.8]: https://github.com/usgs-eros/lcmap-pyccd/compare/v1.4.0...v2017.6.8
 [2017.06.20]: https://github.com/usgs-eros/lcmap-pyccd/compare/v2017.6.8...v2017.06.20
+[2017.08.18]: https://github.com/usgs-eros/lcmap-pyccd/compare/v2017.06.20...v2017.08.18
+[2017.10.27]: https://github.com/usgs-eros/lcmap-pyccd/compare/v2017.08.18...v2017.10.27
