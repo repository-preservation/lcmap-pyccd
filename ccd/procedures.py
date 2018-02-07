@@ -5,15 +5,20 @@ must accept the processing parameters, then use those values for the more
 functional methods that they call. The hope is that this will eventually get
 converted more and more away from procedural and move more towards the
 functional paradigm.
+
 Any methods determined by the fit_procedure call must accept same 5 arguments,
 in the same order: dates, observations, fitter_fn, quality, proc_params.
+
 The results of this process is a list-of-lists of change models that correspond
 to observation spectra. A processing mask is also returned, outlining which
 observations were utilized and which were not.
+
 Pre-processing routines are essential to, but distinct from, the core change
 detection algorithm. See the `ccd.qa` for more details related to this
 step.
+
 For more information please refer to the pyccd Algorithm Description Document.
+
 .. _Algorithm Description Document:
    https://drive.google.com/drive/folders/0BzELHvbrg1pDREJlTF8xOHBZbEU
 """
@@ -35,10 +40,13 @@ log = logging.getLogger(__name__)
 
 def fit_procedure(quality, proc_params):
     """Determine which curve fitting method to use
+
     This is based on information from the QA band
+
     Args:
         quality: QA information for each observation
         proc_params: dictionary of processing parameters
+
     Returns:
         method: the corresponding method that will be use to generate
          the curves
@@ -70,8 +78,10 @@ def permanent_snow_procedure(dates, observations, fitter_fn, quality,
     """
     Snow procedure for when there is a significant amount snow represented
     in the quality information
+
     This method essentially fits a 4 coefficient model across all the
     observations
+
     Args:
         dates: list of ordinal day numbers relative to some epoch,
             the particular epoch does not matter.
@@ -81,6 +91,7 @@ def permanent_snow_procedure(dates, observations, fitter_fn, quality,
             acquisition dates for each spectra.
         quality: QA information for each observation
         proc_params: dictionary of processing parameters
+
     Returns:
         list: Change models for each observation of each spectra.
         1-d ndarray: processing mask indicating which values were used
@@ -125,8 +136,10 @@ def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
     """
     insufficient clear procedure for when there is an insufficient quality
     observations
+
     This method essentially fits a 4 coefficient model across all the
     observations
+
     Args:
         dates: list of ordinal day numbers relative to some epoch,
             the particular epoch does not matter.
@@ -136,6 +149,7 @@ def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
             acquisition dates for each spectra.
         quality: QA information for each observation
         proc_params: dictionary of processing parameters
+
     Returns:
         list: Change models for each observation of each spectra.
         1-d ndarray: processing mask indicating which values were used
@@ -177,16 +191,23 @@ def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
 def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
     """
     Runs the core change detection algorithm.
+
     Step 1: initialize -- Find an initial stable time-frame to build from.
+
     Step 2: lookback -- The initlize step may have iterated the start of the
     model past the previous break point. If so then we need too look back at
     previous values to see if they can be included within the new
     initialized model.
+
     Step 3: catch -- Fit a general model to values that may have been skipped
     over by the previous steps.
+
     Step 4: lookforward -- Expand the time-frame until a change is detected.
+
     Step 5: Iterate.
+
     Step 6: catch -- End of time series considerations.
+
     Args:
         dates: list of ordinal day numbers relative to some epoch,
             the particular epoch does not matter.
@@ -196,6 +217,7 @@ def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
             acquisition dates for each spectra.
         quality: QA information for each observation
         proc_params: dictionary of processing parameters
+
     Returns:
         list: Change models for each observation of each spectra.
         1-d ndarray: processing mask indicating which values were used
@@ -328,6 +350,7 @@ def initialize(dates, observations, fitter_fn, model_window, processing_mask,
     """
     Determine a good starting point at which to build off of for the
     subsequent process of change detection, both forward and backward.
+
     Args:
         dates: 1-d ndarray of ordinal day values
         observations: 2-d ndarray representing the spectral values
@@ -338,6 +361,7 @@ def initialize(dates, observations, fitter_fn, model_window, processing_mask,
         variogram: 1-d array of variogram values to compare against for the
             normalization factor
         proc_params: dictionary of processing parameters
+
     Returns:
         slice: model window that was deemed to be a stable start
         namedtuple: fitted regression models
@@ -444,6 +468,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
                 variogram, proc_params):
     """Increase observation window until change is detected or
     we are out of observations.
+
     Args:
         dates: list of ordinal day numbers relative to some epoch,
             the particular epoch does not matter.
@@ -456,6 +481,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
         variogram: 1-d array of variogram values to compare against for the
             normalization factor
         proc_params: dictionary of processing parameters
+
     Returns:
         namedtuple: representation of the time segment
         1-d bool ndarray: processing mask that may have been modified
@@ -648,6 +674,7 @@ def lookback(dates, observations, model_window, models, previous_break,
     and the previous model break point, this can include values that were
     excluded during the initialization step.
     Args:
+
         dates: list of ordinal days
         observations: spectral values across bands
         model_window: current window of values that is being considered
@@ -659,6 +686,7 @@ def lookback(dates, observations, model_window, models, previous_break,
         variogram: 1-d array of variogram values to compare against for the
             normalization factor
         proc_params: dictionary of processing parameters
+
     Returns:
         slice: window of indices to be used
         array: indices of data that have been flagged as outliers
@@ -735,6 +763,7 @@ def catch(dates, observations, fitter_fn, processing_mask, model_window,
     """
     Handle special cases where general models just need to be fitted and return
     their results.
+
     Args:
         dates: list of ordinal day numbers relative to some epoch,
             the particular epoch does not matter.
@@ -744,6 +773,7 @@ def catch(dates, observations, fitter_fn, processing_mask, model_window,
         fitter_fn: function used to model observations
         processing_mask: 1-d boolean array identifying which values to
             consider for processing
+
     Returns:
         namedtuple representing the time segment
     """
