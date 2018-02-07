@@ -32,7 +32,7 @@ from ccd.change import enough_samples, enough_time,\
 from ccd.models import results_to_changemodel, tmask
 from ccd.math_utils import kelvin_to_celsius, adjusted_variogram, euclidean_norm
 
-from ccd.lassoFromSumArrays import coefficient_matrix,fitted_model_sums
+from ccd.models.lasso import coefficient_matrix,fitted_model_using_sums
 from ccd.interactWithSums import createSumArrays,incrementSums,centerSumMatrices
 
 log = logging.getLogger(__name__)
@@ -570,7 +570,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             sumYSquaredsubset = np.copy(sumYSquared)
             centerSumMatrices(matrixXTXsubset, vectorsXTYsubset, sumXsubset, sumYsubset, sumYSquaredsubset, nObservationsInSumArrays)
 
-            models = [fitted_model_sums(X[fit_window,1:nCoefficientsHere+1], spectral_obs[band, fit_window],
+            models = [fitted_model_using_sums(X[fit_window,1:nCoefficientsHere+1], spectral_obs[band, fit_window],
                     fit_max_iter, matrixXTXsubset, vectorsXTYsubset[band,:], sumYSquared[band],
                     sumXsubset/nObservationsInSumArrays, sumYsubset[band]/nObservationsInSumArrays, np.ones(nCoefficientsHere), True)
                     for band in range(sumYsubset.shape[0])]
@@ -602,7 +602,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
                 sumYSquaredsubset = np.copy(sumYSquared)
                 centerSumMatrices(matrixXTXsubset, vectorsXTYsubset, sumXsubset, sumYsubset, sumYSquaredsubset, nObservationsInSumArrays)
 
-                models = [fitted_model_sums(X[fit_window,1:nCoefficientsHere+1], spectral_obs[band, fit_window],
+                models = [fitted_model_using_sums(X[fit_window,1:nCoefficientsHere+1], spectral_obs[band, fit_window],
                         fit_max_iter, matrixXTXsubset, vectorsXTYsubset[band,:], sumYSquared[band],
                         sumXsubset/nObservationsInSumArrays, sumYsubset[band]/nObservationsInSumArrays, np.ones(nCoefficientsHere), True)
                         for band in range(sumYsubset.shape[0])]
