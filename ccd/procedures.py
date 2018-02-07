@@ -673,8 +673,8 @@ def lookback(dates, observations, model_window, models, previous_break,
     Special case when there is a gap between the start of a time series model
     and the previous model break point, this can include values that were
     excluded during the initialization step.
-    Args:
 
+    Args:
         dates: list of ordinal days
         observations: spectral values across bands
         model_window: current window of values that is being considered
@@ -776,6 +776,7 @@ def catch(dates, observations, fitter_fn, processing_mask, model_window,
 
     Returns:
         namedtuple representing the time segment
+
     """
     # TODO do this better
     avg_days_yr = proc_params.AVG_DAYS_YR
