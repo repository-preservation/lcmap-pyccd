@@ -5,20 +5,15 @@ must accept the processing parameters, then use those values for the more
 functional methods that they call. The hope is that this will eventually get
 converted more and more away from procedural and move more towards the
 functional paradigm.
-
 Any methods determined by the fit_procedure call must accept same 5 arguments,
 in the same order: dates, observations, fitter_fn, quality, proc_params.
-
 The results of this process is a list-of-lists of change models that correspond
 to observation spectra. A processing mask is also returned, outlining which
 observations were utilized and which were not.
-
 Pre-processing routines are essential to, but distinct from, the core change
 detection algorithm. See the `ccd.qa` for more details related to this
 step.
-
 For more information please refer to the pyccd Algorithm Description Document.
-
 .. _Algorithm Description Document:
    https://drive.google.com/drive/folders/0BzELHvbrg1pDREJlTF8xOHBZbEU
 """
@@ -32,19 +27,18 @@ from ccd.change import enough_samples, enough_time,\
 from ccd.models import results_to_changemodel, tmask
 from ccd.math_utils import kelvin_to_celsius, adjusted_variogram, euclidean_norm
 
+from ccd.lassoFromSumArrays import coefficient_matrix,fitted_model_sums
+from ccd.interactWithSums import createSumArrays,incrementSums,centerSumMatrices
 
 log = logging.getLogger(__name__)
 
 
 def fit_procedure(quality, proc_params):
     """Determine which curve fitting method to use
-
     This is based on information from the QA band
-
     Args:
         quality: QA information for each observation
         proc_params: dictionary of processing parameters
-
     Returns:
         method: the corresponding method that will be use to generate
          the curves
@@ -76,10 +70,8 @@ def permanent_snow_procedure(dates, observations, fitter_fn, quality,
     """
     Snow procedure for when there is a significant amount snow represented
     in the quality information
-
     This method essentially fits a 4 coefficient model across all the
     observations
-
     Args:
         dates: list of ordinal day numbers relative to some epoch,
             the particular epoch does not matter.
@@ -89,7 +81,6 @@ def permanent_snow_procedure(dates, observations, fitter_fn, quality,
             acquisition dates for each spectra.
         quality: QA information for each observation
         proc_params: dictionary of processing parameters
-
     Returns:
         list: Change models for each observation of each spectra.
         1-d ndarray: processing mask indicating which values were used
@@ -134,10 +125,8 @@ def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
     """
     insufficient clear procedure for when there is an insufficient quality
     observations
-
     This method essentially fits a 4 coefficient model across all the
     observations
-
     Args:
         dates: list of ordinal day numbers relative to some epoch,
             the particular epoch does not matter.
@@ -147,7 +136,6 @@ def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
             acquisition dates for each spectra.
         quality: QA information for each observation
         proc_params: dictionary of processing parameters
-
     Returns:
         list: Change models for each observation of each spectra.
         1-d ndarray: processing mask indicating which values were used
@@ -189,23 +177,16 @@ def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
 def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
     """
     Runs the core change detection algorithm.
-
     Step 1: initialize -- Find an initial stable time-frame to build from.
-
     Step 2: lookback -- The initlize step may have iterated the start of the
     model past the previous break point. If so then we need too look back at
     previous values to see if they can be included within the new
     initialized model.
-
     Step 3: catch -- Fit a general model to values that may have been skipped
     over by the previous steps.
-
     Step 4: lookforward -- Expand the time-frame until a change is detected.
-
     Step 5: Iterate.
-
     Step 6: catch -- End of time series considerations.
-
     Args:
         dates: list of ordinal day numbers relative to some epoch,
             the particular epoch does not matter.
@@ -215,7 +196,6 @@ def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
             acquisition dates for each spectra.
         quality: QA information for each observation
         proc_params: dictionary of processing parameters
-
     Returns:
         list: Change models for each observation of each spectra.
         1-d ndarray: processing mask indicating which values were used
@@ -348,7 +328,6 @@ def initialize(dates, observations, fitter_fn, model_window, processing_mask,
     """
     Determine a good starting point at which to build off of for the
     subsequent process of change detection, both forward and backward.
-
     Args:
         dates: 1-d ndarray of ordinal day values
         observations: 2-d ndarray representing the spectral values
@@ -359,7 +338,6 @@ def initialize(dates, observations, fitter_fn, model_window, processing_mask,
         variogram: 1-d array of variogram values to compare against for the
             normalization factor
         proc_params: dictionary of processing parameters
-
     Returns:
         slice: model window that was deemed to be a stable start
         namedtuple: fitted regression models
@@ -466,7 +444,6 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
                 variogram, proc_params):
     """Increase observation window until change is detected or
     we are out of observations.
-
     Args:
         dates: list of ordinal day numbers relative to some epoch,
             the particular epoch does not matter.
@@ -479,7 +456,6 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
         variogram: 1-d array of variogram values to compare against for the
             normalization factor
         proc_params: dictionary of processing parameters
-
     Returns:
         namedtuple: representation of the time segment
         1-d bool ndarray: processing mask that may have been modified
@@ -514,9 +490,20 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     # have occurred if we reach the end of the time series.
     change = 0
 
+    # Create arrays for incrementing sums through time
+    matrixXTX, vectorsXTY, sumX, sumY, sumYSquared = createSumArrays(observations.shape[0], coef_max)
+    nextIndexForSumArrays = 0
+    nObservationsInSumArrays = 0
+
     # Initial subset of the data
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
+
+    # Design matrix X
+    XAllTimeNoIntercept = coefficient_matrix(dates, avg_days_yr, coef_max)
+    XAllTime = np.ones(shape=(len(dates), 8), order='F', dtype=np.float64)
+    XAllTime[:,1:coef_max] = XAllTimeNoIntercept
+    X = XAllTime[processing_mask,:]
 
     # Used for comparison purposes
     fit_span = period[model_window.stop - 1] - period[model_window.start]
@@ -533,6 +520,12 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
 
         log.debug('Detecting change for %s', peek_window)
 
+        # Increment sum matrices up to the current index
+        for indexToAdd in range(nextIndexForSumArrays,model_window.stop):
+            incrementSums(indexToAdd,X,spectral_obs,matrixXTX,vectorsXTY,sumX,sumY,sumYSquared)
+            nObservationsInSumArrays += 1
+        nextIndexForSumArrays = model_window.stop
+
         # If we have less than 24 observations covered by the model_window
         # or it the first iteration, then we always fit a new window
         if not models or model_window.stop - model_window.start < 24:
@@ -541,14 +534,24 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
 
             fit_window = model_window
             log.debug('Retrain models, less than 24 samples')
-            models = [fitter_fn(period[fit_window], spectrum,
-                                fit_max_iter, avg_days_yr, num_coefs)
-                      for spectrum in spectral_obs[:, fit_window]]
 
-            residuals = np.array([calc_residuals(period[peek_window],
-                                                 spectral_obs[idx, peek_window],
-                                                 models[idx], avg_days_yr)
-                                  for idx in range(observations.shape[0])])
+            # Subset and center the sum matrices for use in fitting
+            nCoefficientsHere = num_coefs-1
+            matrixXTXsubset = np.copy(matrixXTX[1:nCoefficientsHere+1,1:nCoefficientsHere+1])
+            vectorsXTYsubset = np.copy(vectorsXTY[:,1:nCoefficientsHere+1])
+            sumXsubset = np.copy(sumX[1:nCoefficientsHere+1])
+            sumYsubset = np.copy(sumY)
+            sumYSquaredsubset = np.copy(sumYSquared)
+            centerSumMatrices(matrixXTXsubset, vectorsXTYsubset, sumXsubset, sumYsubset, sumYSquaredsubset, nObservationsInSumArrays)
+
+            models = [fitted_model_sums(X[fit_window,1:nCoefficientsHere+1], spectral_obs[band, fit_window],
+                    fit_max_iter, matrixXTXsubset, vectorsXTYsubset[band,:], sumYSquared[band],
+                    sumXsubset/nObservationsInSumArrays, sumYsubset[band]/nObservationsInSumArrays, np.ones(nCoefficientsHere), True)
+                    for band in range(sumYsubset.shape[0])]
+
+            comparePointResiduals = np.array([
+                    np.abs(spectral_obs[idx, peek_window] - models[idx].fitted_model.predict(X[peek_window, 1:nCoefficientsHere+1]))
+                    for idx in range(observations.shape[0])])
 
             comp_rmse = [models[idx].rmse for idx in detection_bands]
 
@@ -564,14 +567,25 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
                     model_window.start]
                 fit_window = model_window
 
-                models = [fitter_fn(period[fit_window], spectrum,
-                                    fit_max_iter, avg_days_yr, num_coefs)
-                          for spectrum in spectral_obs[:, fit_window]]
+                # Subset and normalize the sum matrices for use in fitting
+                nCoefficientsHere = num_coefs-1
+                matrixXTXsubset = np.copy(matrixXTX[1:nCoefficientsHere+1,1:nCoefficientsHere+1])
+                vectorsXTYsubset = np.copy(vectorsXTY[:,1:nCoefficientsHere+1])
+                sumXsubset = np.copy(sumX[1:nCoefficientsHere+1])
+                sumYsubset = np.copy(sumY)
+                sumYSquaredsubset = np.copy(sumYSquared)
+                centerSumMatrices(matrixXTXsubset, vectorsXTYsubset, sumXsubset, sumYsubset, sumYSquaredsubset, nObservationsInSumArrays)
 
-            residuals = np.array([calc_residuals(period[peek_window],
-                                                 spectral_obs[idx, peek_window],
-                                                 models[idx], avg_days_yr)
-                                  for idx in range(observations.shape[0])])
+                models = [fitted_model_sums(X[fit_window,1:nCoefficientsHere+1], spectral_obs[band, fit_window],
+                        fit_max_iter, matrixXTXsubset, vectorsXTYsubset[band,:], sumYSquared[band],
+                        sumXsubset/nObservationsInSumArrays, sumYsubset[band]/nObservationsInSumArrays, np.ones(nCoefficientsHere), True)
+                        for band in range(sumYsubset.shape[0])]
+
+            # The number of coefficients in the model might be different than the number for the current number of observations
+            nCoefficientsInModel=models[1].fitted_model.precompute.shape[0]
+            comparePointResiduals = np.array([
+                    np.abs(spectral_obs[idx, peek_window] - models[idx].fitted_model.predict(X[peek_window, 1:nCoefficientsInModel+1]))
+                    for idx in range(observations.shape[0])])
 
             # We want to use the closest residual values to the peek_window
             # values based on seasonality.
@@ -609,6 +623,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             # without issue.
             period = dates[processing_mask]
             spectral_obs = observations[:, processing_mask]
+            X = XAllTime[processing_mask,:]
             continue
 
         model_window = slice(model_window.start, model_window.stop + 1)
@@ -617,7 +632,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
                                     start_day=period[model_window.start],
                                     end_day=period[model_window.stop - 1],
                                     break_day=period[peek_window.start],
-                                    magnitudes=np.median(residuals, axis=1),
+                                    magnitudes=np.median(comparePointResiduals, axis=1),
                                     observation_count=(
                                     model_window.stop - model_window.start),
                                     change_probability=change,
@@ -632,7 +647,6 @@ def lookback(dates, observations, model_window, models, previous_break,
     Special case when there is a gap between the start of a time series model
     and the previous model break point, this can include values that were
     excluded during the initialization step.
-
     Args:
         dates: list of ordinal days
         observations: spectral values across bands
@@ -645,7 +659,6 @@ def lookback(dates, observations, model_window, models, previous_break,
         variogram: 1-d array of variogram values to compare against for the
             normalization factor
         proc_params: dictionary of processing parameters
-
     Returns:
         slice: window of indices to be used
         array: indices of data that have been flagged as outliers
@@ -722,7 +735,6 @@ def catch(dates, observations, fitter_fn, processing_mask, model_window,
     """
     Handle special cases where general models just need to be fitted and return
     their results.
-
     Args:
         dates: list of ordinal day numbers relative to some epoch,
             the particular epoch does not matter.
@@ -732,10 +744,8 @@ def catch(dates, observations, fitter_fn, processing_mask, model_window,
         fitter_fn: function used to model observations
         processing_mask: 1-d boolean array identifying which values to
             consider for processing
-
     Returns:
         namedtuple representing the time segment
-
     """
     # TODO do this better
     avg_days_yr = proc_params.AVG_DAYS_YR
@@ -769,4 +779,4 @@ def catch(dates, observations, fitter_fn, processing_mask, model_window,
                                     change_probability=0,
                                     curve_qa=curve_qa)
 
-    return result
+return result
