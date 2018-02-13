@@ -562,21 +562,21 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             log.debug('Retrain models, less than 24 samples')
 
             # Subset and center the sum matrices for use in fitting
-            nCoefficientsInModelFit = num_coefs-1
-            matrixXTXsubset = np.copy(matrixXTX[1:nCoefficientsInModelFit+1,1:nCoefficientsInModelFit+1])
-            vectorsXTYsubset = np.copy(vectorsXTY[:,1:nCoefficientsInModelFit+1])
-            sumXsubset = np.copy(sumX[1:nCoefficientsInModelFit+1])
+            nCoefficientsInModelFit = num_coefs
+            matrixXTXsubset = np.copy(matrixXTX[1:nCoefficientsInModelFit,1:nCoefficientsInModelFit])
+            vectorsXTYsubset = np.copy(vectorsXTY[:,1:nCoefficientsInModelFit])
+            sumXsubset = np.copy(sumX[1:nCoefficientsInModelFit])
             sumYsubset = np.copy(sumY)
             sumYSquaredsubset = np.copy(sumYSquared)
             centerSumMatrices(matrixXTXsubset, vectorsXTYsubset, sumXsubset, sumYsubset, sumYSquaredsubset, nObservationsInSumArrays)
 
-            models = [fitted_model_using_sums(X[fit_window,1:nCoefficientsInModelFit+1], spectral_obs[band, fit_window],
+            models = [fitted_model_using_sums(X[fit_window,1:nCoefficientsInModelFit], spectral_obs[band, fit_window],
                     fit_max_iter, matrixXTXsubset, vectorsXTYsubset[band,:], sumYSquared[band],
-                    sumXsubset/nObservationsInSumArrays, sumYsubset[band]/nObservationsInSumArrays, np.ones(nCoefficientsInModelFit), True)
+                    sumXsubset/nObservationsInSumArrays, sumYsubset[band]/nObservationsInSumArrays, np.ones(nCoefficientsInModelFit-1), True)
                     for band in range(sumYsubset.shape[0])]
 
             comparePointResiduals = np.array([
-                    np.abs(spectral_obs[idx, peek_window] - models[idx].fitted_model.predict(X[peek_window, 1:nCoefficientsInModelFit+1]))
+                    np.abs(spectral_obs[idx, peek_window] - models[idx].fitted_model.predict(X[peek_window, 1:nCoefficientsInModelFit]))
                     for idx in range(observations.shape[0])])
 
             comp_rmse = [models[idx].rmse for idx in detection_bands]
@@ -594,21 +594,21 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
                 fit_window = model_window
 
                 # Subset and normalize the sum matrices for use in fitting
-                nCoefficientsInModelFit = num_coefs-1
-                matrixXTXsubset = np.copy(matrixXTX[1:nCoefficientsInModelFit+1,1:nCoefficientsInModelFit+1])
-                vectorsXTYsubset = np.copy(vectorsXTY[:,1:nCoefficientsInModelFit+1])
-                sumXsubset = np.copy(sumX[1:nCoefficientsInModelFit+1])
+                nCoefficientsInModelFit = num_coefs
+                matrixXTXsubset = np.copy(matrixXTX[1:nCoefficientsInModelFit,1:nCoefficientsInModelFit])
+                vectorsXTYsubset = np.copy(vectorsXTY[:,1:nCoefficientsInModelFit])
+                sumXsubset = np.copy(sumX[1:nCoefficientsInModelFit])
                 sumYsubset = np.copy(sumY)
                 sumYSquaredsubset = np.copy(sumYSquared)
                 centerSumMatrices(matrixXTXsubset, vectorsXTYsubset, sumXsubset, sumYsubset, sumYSquaredsubset, nObservationsInSumArrays)
 
-                models = [fitted_model_using_sums(X[fit_window,1:nCoefficientsInModelFit+1], spectral_obs[band, fit_window],
+                models = [fitted_model_using_sums(X[fit_window,1:nCoefficientsInModelFit], spectral_obs[band, fit_window],
                         fit_max_iter, matrixXTXsubset, vectorsXTYsubset[band,:], sumYSquared[band],
-                        sumXsubset/nObservationsInSumArrays, sumYsubset[band]/nObservationsInSumArrays, np.ones(nCoefficientsInModelFit), True)
+                        sumXsubset/nObservationsInSumArrays, sumYsubset[band]/nObservationsInSumArrays, np.ones(nCoefficientsInModelFit-1), True)
                         for band in range(sumYsubset.shape[0])]
 
             comparePointResiduals = np.array([
-                    np.abs(spectral_obs[idx, peek_window] - models[idx].fitted_model.predict(X[peek_window, 1:nCoefficientsInModelFit+1]))
+                    np.abs(spectral_obs[idx, peek_window] - models[idx].fitted_model.predict(X[peek_window, 1:nCoefficientsInModelFit]))
                     for idx in range(observations.shape[0])])
 
             # We want to use the closest residual values to the peek_window
