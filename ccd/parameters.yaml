@@ -4,7 +4,7 @@
 MEOW_SIZE: 12
 PEEK_SIZE: 6
 DAY_DELTA: 365
-AVG_DAYS_YR: 365.25
+AVG_DAYS_YR: 365.2425
 
 # 2 for tri-modal; 2 for bi-modal; 2 for seasonality; 2 for linear
 COEFFICIENT_MIN: 4
