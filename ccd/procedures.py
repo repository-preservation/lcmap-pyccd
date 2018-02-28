@@ -518,7 +518,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
 
     # Create arrays for incrementing sums through time
     matrixXTX, vectorsXTY, sumX, sumY, sumYSquared = createSumArrays(observations.shape[0], coef_max)
-    nextIndexForSumArrays = 0
+    nextIndexForSumArrays = model_window.start
     nObservationsInSumArrays = 0
 
     # Initial subset of the data
