@@ -89,5 +89,5 @@ MEDIAN_GREEN_FILTER: 400
 ############################
 # Values related to model fitting
 ############################
-FITTER_FN: 'ccd.models.lasso.fitted_model'
+FITTER_FN: 'ccd.models.lasso.fitted_model_select_function'
 LASSO_MAX_ITER: 1000
