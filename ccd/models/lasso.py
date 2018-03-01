@@ -60,10 +60,10 @@ def coefficient_matrix(dates, avg_days_yr, num_coefficients):
 # Create a selection function that can be dropped in as fitter_fn
 # This is rather messy, in order to handle multiple modes for fitting
 # A better long term solution might be to modify all fitter_fn calls
-def fitted_model_select_function(arg1, arg2, arg3, arg4, arg5, calculateX=True, calculateResiduals=False,
+def fitted_model_select_function(arg1, arg2, arg3, arg4, arg5, functionNeedsToCalculateX=True, calculateResiduals=False,
         matrixXTXcentered=None, vectorsXTYcentered=None, sumYSquaredCentered=None, meanX=None, meanY=None, normX=None):
 
-    if calculateX is True:
+    if functionNeedsToCalculateX is True:
         return fitted_model_need_to_calculate_X(arg1, arg2, arg3, arg4, arg5)
     else:
         if matrixXTXcentered is None:
@@ -103,12 +103,12 @@ def fitted_model_using_X(noInterceptX, spectra_obs, max_iter, degreesOfFreedomFo
     predictions = model.predict(noInterceptX)
 #    rmse, residuals = calc_rmse(spectra_obs, predictions)
     residuals = spectra_obs-predictions
-    rmse = np.sqrt(np.sum(np.power(residuals,2),axis=1)/degreesOfFreedomForRMSE)
+    rmse = np.sqrt(np.sum(np.power(residuals,2))/degreesOfFreedomForRMSE)
 
     return FittedModel(fitted_model=model, rmse=rmse, residual=residuals)
 
 
-def fitted_model_using_sums(noInterceptX, y, max_iter, degreesOfFreedomForRMSE, calculateResiduals=False,
+def fitted_model_using_sums(noInterceptX, yIn, max_iter, degreesOfFreedomForRMSE, calculateResiduals=False,
         matrixXTXcentered=None, vectorsXTYcentered=None, sumYSquaredCentered=None, meanX=None, meanY=None, normX=None):
     """ Fit the Lasso model, using the precomputed cumulative sum matrices
     Cumulative sum matrices are assumed to be already centered
@@ -116,9 +116,14 @@ def fitted_model_using_sums(noInterceptX, y, max_iter, degreesOfFreedomForRMSE, 
     the RMSE is calculated based on the precomputed cumulative sum matrices.
     """
 
-    if matrixXTXcentered is None or vectorsXTYcentered is None or sumYSquaredCentered is None or
-            meanX is None or meanY is None or normX is None:
+    if matrixXTXcentered is None or vectorsXTYcentered is None or sumYSquaredCentered is None or meanX is None or \
+            meanY is None or normX is None:
         raise Exception('This function requires cumulative sum arrays for input')
+
+    if yIn.dtype==np.int32:
+        y = yIn.astype(np.float64)
+    else:
+        y = yIn
 
     lasso = LassoFromMatricesForCCD(precompute=matrixXTXcentered,max_iter=max_iter)
     model = lasso.fit(noInterceptX, y, vectorsXTYcentered, meanX, meanY, normX)
@@ -128,7 +133,7 @@ def fitted_model_using_sums(noInterceptX, y, max_iter, degreesOfFreedomForRMSE, 
         predictions = model.predict(noInterceptX)
 #        rmse, residuals = calc_rmse(y, predictions)
         residuals = y-predictions
-        rmse = np.sqrt(np.sum(np.power(residuals,2),axis=1)/degreesOfFreedomForRMSE)
+        rmse = np.sqrt(np.sum(np.power(residuals,2))/degreesOfFreedomForRMSE)
 
     # Calculate the RMSE using the cumulative sum arrays.
     else:
@@ -139,6 +144,12 @@ def fitted_model_using_sums(noInterceptX, y, max_iter, degreesOfFreedomForRMSE, 
 
     return FittedModel(fitted_model=model, rmse=rmse, residual=residuals)
 
+
+
+def predict(model, dates, avg_days_yr):
+    coef_matrix = coefficient_matrix(dates, avg_days_yr, 8)
+
+    return model.fitted_model.predict(coef_matrix)
 
 
 
