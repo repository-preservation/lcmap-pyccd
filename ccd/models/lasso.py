@@ -4,7 +4,7 @@ import numpy as np
 from cachetools import LRUCache
 
 from ccd.models import FittedModel
-from ccd.math_utils import calc_rmse
+# from ccd.math_utils import calc_rmse
 
 from ccd.interactWithSums import ssrForModelUsingMatrixXTX
 
