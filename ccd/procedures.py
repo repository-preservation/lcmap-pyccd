@@ -579,16 +579,16 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
                     for band in range(nBands)]
 
 
-            # Retrieve the appropriate RMSE: total fit RMSE for 24 or fewer points, otherwise calculate
-            #    RMSE for the 24 that are closest to the day of year of the final fit point (?)
-            if model_window.stop - model_window.start < 24:
-                comp_rmse = [models[idx].rmse for idx in detection_bands]
-            else:
-                closest_indexes = find_closest_doy(period, peek_window.stop - 1,
-                                               fit_window, 24)
-               # For RMSE calculation, use 16 degrees of freedom (i.e., 24-8)
-                comp_rmse = [euclidean_norm(models[idx].residual[closest_indexes]) / 4
-                         for idx in detection_bands]
+        # Retrieve the appropriate RMSE: total fit RMSE for 24 or fewer points, otherwise calculate
+        #    RMSE for the 24 that are closest to the day of year of the final fit point (?)
+        if model_window.stop - model_window.start < 24:
+            comp_rmse = [models[idx].rmse for idx in detection_bands]
+        else:
+            closest_indexes = find_closest_doy(period, peek_window.stop - 1,
+                                           fit_window, 24)
+            # For RMSE calculation, use 16 degrees of freedom (i.e., 24-8)
+            comp_rmse = [euclidean_norm(models[idx].residual[closest_indexes]) / 4
+                     for idx in detection_bands]
 
         compareObservationResiduals = np.array([
                 np.abs(spectral_obs[band, peek_window] -
