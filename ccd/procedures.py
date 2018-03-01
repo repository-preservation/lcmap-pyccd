@@ -572,8 +572,8 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
                     nObservationsInSumArrays)
 
             models = [fitter_fn(X[fit_window,1:nCoefficientsInModelFit], spectral_obs[band, fit_window],
-                    fit_max_iter, nObservationsInSumArrays-nCoefficientsInModelFit, calculateResiduals=True,
-                    matrixXTXcentered=matrixXTXsubset, vectorsXTYcentered=vectorsXTYsubset[band,:],
+                    fit_max_iter, nObservationsInSumArrays-nCoefficientsInModelFit, None, functionNeedsToCalculateX=False,
+                    calculateResiduals=True, matrixXTXcentered=matrixXTXsubset, vectorsXTYcentered=vectorsXTYsubset[band,:],
                     sumYSquaredCentered=sumYSquared[band], meanX=sumXsubset/nObservationsInSumArrays,
                     meanY=sumYsubset[band]/nObservationsInSumArrays, normX=np.ones(nCoefficientsInModelFit-1))
                     for band in range(nBands)]
@@ -783,4 +783,4 @@ def catch(dates, observations, fitter_fn, processing_mask, model_window,
                                     change_probability=0,
                                     curve_qa=curve_qa)
 
-return result
+    return result
