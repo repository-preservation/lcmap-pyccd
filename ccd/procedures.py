@@ -34,6 +34,7 @@ from ccd.math_utils import kelvin_to_celsius, adjusted_variogram, euclidean_norm
 
 from ccd.models.lasso import coefficient_matrix
 from ccd.interactWithSums import createSumArrays,incrementSums,centerSumMatrices
+from ccd.breakTest import breakTestIncludingModelError,readCutoffsFromFile
 
 log = logging.getLogger(__name__)
 
@@ -499,6 +500,10 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     avg_days_yr = proc_params.AVG_DAYS_YR
     fit_max_iter = proc_params.LASSO_MAX_ITER
 
+
+    desiredTotalPValue = .000001 # Hardcode here for testing/evaluation
+
+
     # Step 4: lookforward.
     # The second step is to update a model until observations that do not
     # fit the model are found.
@@ -518,7 +523,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
 
     # Create arrays for incrementing sums through time
     nBands = observations.shape[0]
-    matrixXTX, vectorsXTY, sumX, sumY, sumYSquared = createSumArrays(nBands, coef_max)
+    matrixXTX, vectorsXTY, sumYSquared = createSumArrays(nBands, coef_max)
     nextIndexForSumArrays = model_window.start
     nObservationsInSumArrays = 0
 
@@ -535,6 +540,9 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     # Used for comparison purposes
     fit_span = period[model_window.stop - 1] - period[model_window.start]
 
+    # Read in lookup table containing cutoff values for use in the break test
+    cutoffLookupTable = readCutoffsFromFile()
+
     # stop is always exclusive
     while model_window.stop + peek_size < period.shape[0] or models is None:
         num_coefs = determine_num_coefs(period[model_window], coef_min,
@@ -549,7 +557,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
 
         # Increment sum matrices up to the current index
         for indexToAdd in range(nextIndexForSumArrays,model_window.stop):
-            incrementSums(indexToAdd,X,spectral_obs,matrixXTX,vectorsXTY,sumX,sumY,sumYSquared)
+            incrementSums(indexToAdd,X,spectral_obs,matrixXTX,vectorsXTY,sumYSquared)
             nObservationsInSumArrays += 1
         nextIndexForSumArrays = model_window.stop
 
@@ -565,12 +573,13 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             nCoefficientsInModelFit = num_coefs
             matrixXTXsubset = np.copy(matrixXTX[1:nCoefficientsInModelFit,1:nCoefficientsInModelFit])
             vectorsXTYsubset = np.copy(vectorsXTY[:,1:nCoefficientsInModelFit])
-            sumXsubset = np.copy(sumX[1:nCoefficientsInModelFit])
-            sumYsubset = np.copy(sumY)
+            sumXsubset = np.copy(matrixXTX[1:nCoefficientsInModelFit,0])
+            sumYsubset = np.copy(vectorsXTY[:,0])
             sumYSquaredsubset = np.copy(sumYSquared)
             centerSumMatrices(matrixXTXsubset, vectorsXTYsubset, sumXsubset, sumYsubset, sumYSquaredsubset,
                     nObservationsInSumArrays)
 
+            # Fit the current data with the Lasso model
             models = [fitter_fn(X[fit_window,1:nCoefficientsInModelFit], spectral_obs[band, fit_window],
                     fit_max_iter, nObservationsInSumArrays-nCoefficientsInModelFit, None, functionNeedsToCalculateX=False,
                     calculateResiduals=True, matrixXTXcentered=matrixXTXsubset, vectorsXTYcentered=vectorsXTYsubset[band,:],
@@ -578,37 +587,31 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
                     meanY=sumYsubset[band]/nObservationsInSumArrays, normX=np.ones(nCoefficientsInModelFit-1))
                     for band in range(nBands)]
 
+            rmseOfCurrentModels = [models[band].rmse for band in detection_bands]
 
-        # Retrieve the appropriate RMSE: total fit RMSE for 24 or fewer points, otherwise calculate
-        #    RMSE for the 24 that are closest to the day of year of the final fit point (?)
-        if model_window.stop - model_window.start < 24:
-            comp_rmse = [models[idx].rmse for idx in detection_bands]
-        else:
-            closest_indexes = find_closest_doy(period, peek_window.stop - 1,
-                                           fit_window, 24)
-            # For RMSE calculation, use 16 degrees of freedom (i.e., 24-8)
-            comp_rmse = [euclidean_norm(models[idx].residual[closest_indexes]) / 4
-                     for idx in detection_bands]
-
+        # Calculate residuals for the next observations after the end of the current model
         compareObservationResiduals = np.array([
                 np.abs(spectral_obs[band, peek_window] -
                 models[band].fitted_model.predict(X[peek_window, 1:nCoefficientsInModelFit]))
                 for band in range(nBands)])
 
+        # Test for a break in the model
+        inverseMatrixXTX = np.linalg.inv(matrixXTX[0:nCoefficientsInModelFit,0:nCoefficientsInModelFit])
+        breakFound,potentialBreakMagnitudes = breakTestIncludingModelError(compareObservationResiduals[detection_bands,:],
+                X[peek_window,0:nCoefficientsInModelFit], np.power(rmseOfCurrentModels,2), nObservationsInSumArrays,
+                cutoffLookupTable, desiredTotalPValue, inverseMatrixXTX)
 
-        # Calculate the change magnitude values for each observation in the
-        # peek_window.
-        magnitude = change_magnitude(compareObservationResiduals[detection_bands, :],
-                                     variogram[detection_bands],
-                                     comp_rmse)
-
-        if detect_change(magnitude, change_thresh):
+        if breakFound:
             log.debug('Change detected at: %s', peek_window.start)
 
             # Change was detected, return to parent method
             change = 1
             break
-        elif detect_outlier(magnitude[0], outlier_thresh):
+
+
+        # Test next observation for clouds or other extreme outliers that are probably not representative
+        #    measurements of surface reflectance
+        elif detect_outlier(potentialBreakMagnitudes[0], outlier_thresh):
             log.debug('Outlier detected at: %s', peek_window.start)
 
             # Keep track of any outliers so they will be excluded from future
