@@ -518,7 +518,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
 
     # Create arrays for incrementing sums through time
     nBands = observations.shape[0]
-    matrixXTX, vectorsXTY, sumX, sumY, sumYSquared = createSumArrays(nBands, coef_max)
+    matrixXTX, vectorsXTY, sumYSquared = createSumArrays(nBands, coef_max)
     nextIndexForSumArrays = model_window.start
     nObservationsInSumArrays = 0
 
@@ -549,7 +549,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
 
         # Increment sum matrices up to the current index
         for indexToAdd in range(nextIndexForSumArrays,model_window.stop):
-            incrementSums(indexToAdd,X,spectral_obs,matrixXTX,vectorsXTY,sumX,sumY,sumYSquared)
+            incrementSums(indexToAdd,X,spectral_obs,matrixXTX,vectorsXTY,sumYSquared)
             nObservationsInSumArrays += 1
         nextIndexForSumArrays = model_window.stop
 
@@ -565,8 +565,8 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             nCoefficientsInModelFit = num_coefs
             matrixXTXsubset = np.copy(matrixXTX[1:nCoefficientsInModelFit,1:nCoefficientsInModelFit])
             vectorsXTYsubset = np.copy(vectorsXTY[:,1:nCoefficientsInModelFit])
-            sumXsubset = np.copy(sumX[1:nCoefficientsInModelFit])
-            sumYsubset = np.copy(sumY)
+            sumXsubset = np.copy(matrixXTX[1:nCoefficientsInModelFit,0])
+            sumYsubset = np.copy(vectorsXTY[:,0])
             sumYSquaredsubset = np.copy(sumYSquared)
             centerSumMatrices(matrixXTXsubset, vectorsXTYsubset, sumXsubset, sumYsubset, sumYSquaredsubset,
                     nObservationsInSumArrays)
