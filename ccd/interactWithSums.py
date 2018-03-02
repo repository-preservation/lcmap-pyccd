@@ -13,11 +13,6 @@
 #    Y - Satellite reflectance values for a pixel; [nBands, nObservations]
 
 
-# When the intercept is included as all ones in the first column in the X matrix, could pull sumX and
-#    sumY out of matrixXTX and vectorsXTY (respectively) instead of calculating them separately, but
-#    this way is maybe easier to keep track of (although it does cost a little performance).
-
-
 # Matrices are calculated (all sums are across time) as:
 #    matrixXTX[i,j] = sum(X[timeRange,i]*X[timeRange,j])
 #    vectorsXTY[band,i] = sum(X[timeRange,i]*y[band,timeRange])
@@ -29,7 +24,8 @@
 import numpy as np
 
 
-def incrementSums(indexToAdd,X,Y,matrixXTX,vectorsXTY,sumX,sumY,sumYSquared):
+#def incrementSums(indexToAdd,X,Y,matrixXTX,vectorsXTY,sumX,sumY,sumYSquared):
+def incrementSums(indexToAdd,X,Y,matrixXTX,vectorsXTY,sumYSquared):
     """Increment the sum matrices (matrixXTX,vectorsXTY,sumX,sumY,sumYSquared) using X and y as input
     indexToAdd is the index (out of nObservations) at which to take values from X and y
     """
@@ -46,22 +42,23 @@ def incrementSums(indexToAdd,X,Y,matrixXTX,vectorsXTY,sumX,sumY,sumYSquared):
             vectorsXTY[band,i] += X[indexToAdd,i]*Y[band,indexToAdd]
 
     # sum X
-    for i in range(nCoefficients):
-        sumX[i] += X[indexToAdd,i]
+#    for i in range(nCoefficients):
+#        sumX[i] += X[indexToAdd,i]
 
     # sum Y and sum Y^2
     for band in range(nBands):
-        sumY[band] += Y[band,indexToAdd]
+#        sumY[band] += Y[band,indexToAdd]
         sumYSquared[band] += Y[band,indexToAdd]**2
 
 
 def createSumArrays(nBands, nCoefficients):
     matrixXTX = np.zeros((nCoefficients,nCoefficients),order='C')
     vectorsXTY = np.zeros((nBands,nCoefficients),order='F')
-    sumX = np.zeros((nCoefficients),order='F')
-    sumY = np.zeros((nBands),order='F')
+#    sumX = np.zeros((nCoefficients),order='F')
+#    sumY = np.zeros((nBands),order='F')
     sumYSquared = np.zeros((nBands),order='F')
-    return matrixXTX, vectorsXTY, sumX, sumY, sumYSquared
+#    return matrixXTX, vectorsXTY, sumX, sumY, sumYSquared
+    return matrixXTX, vectorsXTY, sumYSquared
 
 
 def centerSumMatrices(matrixXTX, vectorsXTY, sumX, sumY, sumYSquared, nObservationsInMatrices):
