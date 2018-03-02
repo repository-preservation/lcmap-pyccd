@@ -503,7 +503,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
 
     # Hardcode break parameters here during testing/evaluation of different break tests
     desiredTotalPValue = .000001
-    minimumDaysElapsedToTestForBreak = 120
+    minimumDaysElapsedToTestForBreak = 90
     minimumNumberOfCompareObservations = peek_size
 
 
