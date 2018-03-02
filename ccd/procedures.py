@@ -562,7 +562,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
         nextIndexForSumArrays = model_window.stop
 
         # If statement for fitting the model
-        if not models or model_window.stop - model_window.start < 24 or model_span >= 1.33 * fit_span:
+        if not models or model_window.stop - model_window.start < 24 or model_span >= 0.99 * fit_span:
             fit_span = period[model_window.stop - 1] - period[
                 model_window.start]
 
