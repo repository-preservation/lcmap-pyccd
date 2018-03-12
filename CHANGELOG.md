@@ -10,7 +10,8 @@ All notable changes to this project will be documented in this file. Changes bef
  - Average number of days per year from 365.25 -> 365.2425 . While seemingly insignificant, this can add up depending on where your ordinal 0 starting point is at.
  
 ### Removed
- - The click and cachetools dependencies as they were unused. 
+ - The click and cachetools dependencies as they were unused.
+ - procedure from the ccd.detect dictionary return. This is redundant with the curve fit information returned with each segment.
 
 ## [2017.10.27]
 ### Added
