@@ -13,8 +13,6 @@ from Flask.
 """
 import yaml, os, hashlib
 
-from cachetools import LRUCache
-
 
 # Simplify parameter setting and make it easier for adjustment
 class Parameters(dict):
@@ -43,8 +41,6 @@ class Parameters(dict):
 def numpy_hashkey(array):
     return hashlib.sha1(array).hexdigest()
 
-# Configure caching
-cache = LRUCache(maxsize=2000)
 
 # This is a string.fully.qualified.reference to the fitter function.
 # Cannot import and supply the function directly or we'll get a
