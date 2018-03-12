@@ -30,7 +30,7 @@ def attr_from_str(value):
         return None
 
 
-def __attach_metadata(procedure_results, procedure, probs):
+def __attach_metadata(procedure_results, probs):
     """
     Attach some information on the algorithm version, what procedure was used,
     and which inputs were used
@@ -40,7 +40,6 @@ def __attach_metadata(procedure_results, procedure, probs):
 
     {algorithm: 'pyccd:x.x.x',
      processing_mask: (bool, bool, ...),
-     procedure: string,
      change_models: [
          {start_day: int,
           end_day: int,
@@ -82,8 +81,7 @@ def __attach_metadata(procedure_results, procedure, probs):
     change_models, processing_mask = procedure_results
 
     return {'algorithm': algorithm,
-            'processing_mask': tuple(int(_) for _ in processing_mask),
-            'procedure': procedure.__name__,
+            'processing_mask': [int(_) for _ in processing_mask],
             'change_models': change_models,
             'cloud_prob': probs[0],
             'snow_prob': probs[1],
@@ -177,4 +175,4 @@ def detect(dates, blues, greens, reds, nirs,
     log.debug('Total time for algorithm: %s', time.time() - t1)
 
     # call detect and return results as the detections namedtuple
-    return __attach_metadata(results, procedure, probs)
+    return __attach_metadata(results, probs)

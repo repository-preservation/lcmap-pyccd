@@ -11,8 +11,7 @@ pyccd exists to provide the simplest possible implementation of ccd.
 >>>
 >>> results
 {algorithm: 'pyccd:x.x.x',
- processing_mask: (bool, bool, ...),
- procedure: string,
+ processing_mask: [bool, bool, ...],
  change_models: [
      {start_day: int,
       end_day: int,
