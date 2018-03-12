@@ -1,6 +1,17 @@
 # pyccd change log
 All notable changes to this project will be documented in this file. Changes before 1.0.0.b1 are not tracked.
   
+## [2018.03.12]
+### Added
+ - Number of parameters option for RMSE, for influencing the calculation based on model complexity versus your sample size.
+
+### Changed
+ - Variable name change on the main ccd.detect function signature slightly. quality -> qas. This was requested to better support downstream processing.
+ - Average number of days per year from 365.25 -> 365.2425 . While seemingly insignificant, this can add up depending on where your ordinal 0 starting point is at.
+ 
+### Removed
+ - The click and cachetools dependencies as they were unused. 
+
 ## [2017.10.27]
 ### Added
  - Probability that any given observation will be cloud, snow, or water, based on the QA information passed in
@@ -98,3 +109,4 @@ All notable changes to this project will be documented in this file. Changes bef
 [2017.06.20]: https://github.com/usgs-eros/lcmap-pyccd/compare/v2017.6.8...v2017.06.20
 [2017.08.18]: https://github.com/usgs-eros/lcmap-pyccd/compare/v2017.06.20...v2017.08.18
 [2017.10.27]: https://github.com/usgs-eros/lcmap-pyccd/compare/v2017.08.18...v2017.10.27
+[2018.03.12]: https://github.com/usgs-eros/lcmap-pyccd/compare/v2017.10.27...v2018.03.12
