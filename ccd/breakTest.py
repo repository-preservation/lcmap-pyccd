@@ -11,9 +11,9 @@ import os.path
 # These values still need to be updated at some point, but they should be roughly correct
 # Also need documentation if this version of PyCCD is used
 # Also would be good to add p-value labels to the file
-def readCutoffsFromFile():
-    cutoffs = np.loadtxt(os.path.join(os.path.dirname(__file__), 'StatsCurrent.txt'))
-    return cutoffs
+#def readCutoffsFromFile():
+#    cutoffs = np.loadtxt(os.path.join(os.path.dirname(__file__), 'StatsCurrent.txt'))
+#    return cutoffs
 
 
 
