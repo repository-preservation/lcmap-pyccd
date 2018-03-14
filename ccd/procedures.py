@@ -34,7 +34,8 @@ from ccd.math_utils import kelvin_to_celsius, adjusted_variogram, euclidean_norm
 
 from ccd.models.lasso import coefficient_matrix
 from ccd.interactWithSums import createSumArrays,incrementSums,centerSumMatrices
-from ccd.breakTest import breakTestIncludingModelError,readCutoffsFromFile
+from ccd.breakTest import breakTestIncludingModelError
+from ccd.statsCurrent import cutoffLookupTable
 
 log = logging.getLogger(__name__)
 
@@ -545,7 +546,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     fit_span = period[model_window.stop - 1] - period[model_window.start]
 
     # Read in lookup table containing cutoff values for use in the break test
-    cutoffLookupTable = readCutoffsFromFile()
+#    cutoffLookupTable = readCutoffsFromFile()
 
     # Main loop: add one observation to the model after each trip through the while loop
     while model_window.stop + minimumNumberOfCompareObservations < period.shape[0] or models is None:
