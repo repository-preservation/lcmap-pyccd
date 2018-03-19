@@ -30,7 +30,7 @@ def attr_from_str(value):
         return None
 
 
-def __attach_metadata(procedure_results, procedure, probs):
+def __attach_metadata(procedure_results, probs):
     """
     Attach some information on the algorithm version, what procedure was used,
     and which inputs were used
@@ -40,7 +40,9 @@ def __attach_metadata(procedure_results, procedure, probs):
 
     {algorithm: 'pyccd:x.x.x',
      processing_mask: (bool, bool, ...),
-     procedure: string,
+     snow_prob: float,
+     water_prob: float,
+     cloud_prob: float,
      change_models: [
          {start_day: int,
           end_day: int,
@@ -82,8 +84,7 @@ def __attach_metadata(procedure_results, procedure, probs):
     change_models, processing_mask = procedure_results
 
     return {'algorithm': algorithm,
-            'processing_mask': tuple(int(_) for _ in processing_mask),
-            'procedure': procedure.__name__,
+            'processing_mask': [int(_) for _ in processing_mask],
             'change_models': change_models,
             'cloud_prob': probs[0],
             'snow_prob': probs[1],
@@ -118,7 +119,7 @@ def __check_inputs(dates, quality, spectra):
 
 
 def detect(dates, blues, greens, reds, nirs,
-           swir1s, swir2s, thermals, quality,
+           swir1s, swir2s, thermals, qas,
            params=None):
     """Entry point call to detect change
 
@@ -134,7 +135,7 @@ def detect(dates, blues, greens, reds, nirs,
         swir1s:   1d-array or list of swir1 band values
         swir2s:   1d-array or list of swir2 band values
         thermals: 1d-array or list of thermal band values
-        quality:  1d-array or list of qa band values
+        qas:  1d-array or list of qa band values
         params: python dictionary to change module wide processing
             parameters
 
@@ -149,32 +150,32 @@ def detect(dates, blues, greens, reds, nirs,
         proc_params.update(params)
 
     dates = np.asarray(dates)
-    quality = np.asarray(quality)
+    qas = np.asarray(qas)
 
     spectra = np.stack((blues, greens,
                         reds, nirs, swir1s,
                         swir2s, thermals))
 
-    __check_inputs(dates, quality, spectra)
+    __check_inputs(dates, qas, spectra)
 
     indices = __sort_dates(dates)
     dates = dates[indices]
     spectra = spectra[:, indices]
-    quality = quality[indices]
+    qas = qas[indices]
 
     # load the fitter_fn
     fitter_fn = attr_from_str(proc_params.FITTER_FN)
 
     if proc_params.QA_BITPACKED is True:
-        quality = qa.unpackqa(quality, proc_params)
+        qas = qa.unpackqa(qas, proc_params)
 
-    probs = qa.quality_probabilities(quality, proc_params)
+    probs = qa.quality_probabilities(qas, proc_params)
 
     # Determine which procedure to use for the detection
-    procedure = __determine_fit_procedure(quality, proc_params)
+    procedure = __determine_fit_procedure(qas, proc_params)
 
-    results = procedure(dates, spectra, fitter_fn, quality, proc_params)
+    results = procedure(dates, spectra, fitter_fn, qas, proc_params)
     log.debug('Total time for algorithm: %s', time.time() - t1)
 
     # call detect and return results as the detections namedtuple
-    return __attach_metadata(results, procedure, probs)
+    return __attach_metadata(results, probs)
