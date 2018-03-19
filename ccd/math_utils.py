@@ -79,13 +79,15 @@ def sum_of_squares(vector, axis=None):
     return np.sum(vector ** 2, axis=axis)
 
 
-def calc_rmse(actual, predicted):
+def calc_rmse(actual, predicted, num_pm=0):
     """
     Calculate the root mean square of error for the given inputs
 
     Args:
         actual: 1-d array of values, observed
         predicted: 1-d array of values, predicted
+        num_pm: number of parameters to use for the calculation if based on a
+            smaller sample set
 
     Returns:
         float: root mean square value
@@ -93,7 +95,8 @@ def calc_rmse(actual, predicted):
     """
     residuals = calc_residuals(actual, predicted)
 
-    return (residuals ** 2).mean() ** 0.5, residuals
+    return ((np.sum(residuals ** 2) / (residuals.shape[0] - num_pm)) ** 0.5,
+            residuals)
 
 
 def calc_median(vector):
