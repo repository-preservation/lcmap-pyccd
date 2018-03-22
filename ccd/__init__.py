@@ -154,7 +154,7 @@ def detect(dates, blues, greens, reds, nirs,
 
     spectra = np.stack((blues, greens,
                         reds, nirs, swir1s,
-                        swir2s, thermals))
+                        swir2s, thermals)).astype(float)
 
     __check_inputs(dates, qas, spectra)
 

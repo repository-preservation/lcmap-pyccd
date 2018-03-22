@@ -1,3 +1,5 @@
+import logging
+
 from sklearn import linear_model
 from sklearn.linear_model.coordinate_descent import ElasticNet, enet_path
 import numpy as np
@@ -6,6 +8,9 @@ from ccd.models import FittedModel
 # from ccd.math_utils import calc_rmse
 
 from ccd.interactWithSums import ssrForModelUsingMatrixXTX
+
+
+log = logging.getLogger(__name__)
 
 
 def __coefficient_cache_key(observation_dates):
