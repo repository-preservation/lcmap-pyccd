@@ -502,9 +502,13 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     fit_max_iter = proc_params.LASSO_MAX_ITER
 
 
-    desiredTotalPValue = .000001 # Hardcode here for testing/evaluation
+    # Hardcode break parameters here during testing/evaluation of different break tests
+    desiredTotalPValue = .000001
+    minimumDaysElapsedToTestForBreak = 90
+    minimumNumberOfCompareObservations = peek_size
 
 
+   
     # Step 4: lookforward.
     # The second step is to update a model until observations that do not
     # fit the model are found.
@@ -542,14 +546,27 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     fit_span = period[model_window.stop - 1] - period[model_window.start]
 
     # Read in lookup table containing cutoff values for use in the break test
-#    cutoffLookupTable = readCutoffsFromFile()
+    # cutoffLookupTable = readCutoffsFromFile()
 
-    # stop is always exclusive
-    while model_window.stop + peek_size < period.shape[0] or models is None:
+    # Main loop: add one observation to the model after each trip through the while loop
+    while model_window.stop + minimumNumberOfCompareObservations < period.shape[0] or models is None:
+
+        # Find the number of observations to use in break detection at this time step
+        nCompareObservations = minimumNumberOfCompareObservations
+        while model_window.stop-1+nCompareObservations < period.shape[0]:
+            # period = date of observation
+            # Check if the time covered by the comparison observations is greater than the minimum required
+            if period[model_window.stop-1+nCompareObservations] >= period[model_window.stop]+minimumDaysElapsedToTestForBreak:
+                break
+            nCompareObservations += 1
+        # Break out of the full while loop if there are not enough observations remaining
+        else:
+            break
+        # Set the comparison window based on the number of comparison observations
+        peek_window = slice(model_window.stop, model_window.stop + nCompareObservations)
+
         num_coefs = determine_num_coefs(period[model_window], coef_min,
                                         coef_mid, coef_max, num_obs_fact)
-
-        peek_window = slice(model_window.stop, model_window.stop + peek_size)
 
         # Used for comparison against fit_span
         model_span = period[model_window.stop - 1] - period[model_window.start]
