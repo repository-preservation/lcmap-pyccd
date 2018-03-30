@@ -28,7 +28,8 @@ import numpy as np
 from ccd import qa
 from ccd.change import enough_samples, enough_time,\
     update_processing_mask, stable, determine_num_coefs, calc_residuals, \
-    find_closest_doy, change_magnitude, detect_change, detect_outlier
+    find_closest_doy, change_magnitude, detect_change, detect_outlier, \
+    adjustpeek, adjustchgthresh
 from ccd.models import results_to_changemodel, tmask
 from ccd.math_utils import kelvin_to_celsius, adjusted_variogram, euclidean_norm
 
@@ -223,13 +224,13 @@ def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
     """
     # TODO do this better
     meow_size = proc_params.MEOW_SIZE
-    peek_size = proc_params.PEEK_SIZE
+    defpeek = proc_params.PEEK_SIZE
     thermal_idx = proc_params.THERMAL_IDX
     curve_qa = proc_params.CURVE_QA
 
     log.debug('Build change models - dates: %s, obs: %s, '
               'meow_size: %s, peek_size: %s',
-              dates.shape[0], observations.shape, meow_size, peek_size)
+              dates.shape[0], observations.shape, meow_size, defpeek)
 
     # First we need to filter the observations based on the spectra values
     # and qa information and convert kelvin to celsius.
@@ -255,6 +256,13 @@ def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
     obs_count = np.sum(processing_mask)
 
     log.debug('Processing mask initial count: %s', obs_count)
+
+    # TODO Temporary setup on this to just get it going
+    peek_size = adjustpeek(dates[processing_mask], defpeek)
+    proc_params.PEEK_SIZE = peek_size
+    proc_params.CHANGE_THRESHOLD = adjustchgthresh(peek_size, defpeek,
+                                                   proc_params.CHANGE_THRESHOLD)
+
 
     # Accumulator for models. This is a list of ChangeModel named tuples
     results = []
