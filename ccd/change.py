@@ -299,7 +299,7 @@ def adjustpeek(dates, defpeek):
 
 
 def adjustchgthresh(peek, defpeek, defthresh):
-    if peek < defpeek:
+    if peek <= defpeek:
         return defthresh
 
     pt_cg = 1 - (1 - defthresh) ** (defpeek / peek)
