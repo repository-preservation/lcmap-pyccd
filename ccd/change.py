@@ -302,5 +302,5 @@ def adjustchgthresh(peek, defpeek, defthresh):
     if peek <= defpeek:
         return defthresh
 
-    pt_cg = 1 - (1 - defthresh) ** (defpeek / peek)
+    pt_cg = 1 - (1 - 0.99) ** (defpeek / peek)
     return chi2.ppf(pt_cg, 5)
