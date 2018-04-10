@@ -502,7 +502,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     fit_max_iter = proc_params.LASSO_MAX_ITER
 
 
-    desiredTotalPValue = .000001 # Hardcode here for testing/evaluation
+    desiredTotalPValue = 1e-12 # Hardcode here for testing/evaluation
 
 
     # Step 4: lookforward.
@@ -545,7 +545,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
 #    cutoffLookupTable = readCutoffsFromFile()
 
     # stop is always exclusive
-    while model_window.stop + peek_size < period.shape[0] or models is None:
+    while model_window.stop < period.shape[0] or models is None:
         num_coefs = determine_num_coefs(period[model_window], coef_min,
                                         coef_mid, coef_max, num_obs_fact)
 
@@ -628,6 +628,9 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             spectral_obs = observations[:, processing_mask]
             X = allTimeX[processing_mask,:]
             continue
+
+        if model_window.stop + peek_size < period.shape[0]:
+            break
 
         model_window = slice(model_window.start, model_window.stop + 1)
 
