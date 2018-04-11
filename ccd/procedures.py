@@ -518,61 +518,25 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
 
-    # Used for comparison purposes
-    fit_span = period[model_window.stop - 1] - period[model_window.start]
-
     # stop is always exclusive
-    while model_window.stop + peek_size < period.shape[0] or models is None:
+    while model_window.stop < period.shape[0] or models is None:
         num_coefs = determine_num_coefs(period[model_window], coef_min,
                                         coef_mid, coef_max, num_obs_fact)
 
         peek_window = slice(model_window.stop, model_window.stop + peek_size)
 
-        # Used for comparison against fit_span
-        model_span = period[model_window.stop - 1] - period[model_window.start]
-
         log.debug('Detecting change for %s', peek_window)
 
-        # If we have less than 24 observations covered by the model_window
-        # or it the first iteration, then we always fit a new window
-        if not models or model_window.stop - model_window.start < 24:
-            fit_span = period[model_window.stop - 1] - period[
-                model_window.start]
+        models = [fitter_fn(period[fit_window], spectrum,
+                            fit_max_iter, avg_days_yr, num_coefs)
+                  for spectrum in spectral_obs[:, fit_window]]
 
-            fit_window = model_window
-            log.debug('Retrain models, less than 24 samples')
-            models = [fitter_fn(period[fit_window], spectrum,
-                                fit_max_iter, avg_days_yr, num_coefs)
-                      for spectrum in spectral_obs[:, fit_window]]
+        residuals = np.array([calc_residuals(period[peek_window],
+                                             spectral_obs[idx, peek_window],
+                                             models[idx], avg_days_yr)
+                              for idx in range(observations.shape[0])])
 
-            residuals = np.array([calc_residuals(period[peek_window],
-                                                 spectral_obs[idx, peek_window],
-                                                 models[idx], avg_days_yr)
-                                  for idx in range(observations.shape[0])])
-
-            comp_rmse = [models[idx].rmse for idx in detection_bands]
-
-        # More than 24 points
-        else:
-            # If the number of observations that the current fitted models
-            # expand past a threshold, then we need to fit new ones.
-            # The 1.33 should be parametrized at some point.
-            if model_span >= 1.33 * fit_span:
-                log.debug('Retrain models, model_span: %s fit_span: %s',
-                          model_span, fit_span)
-                fit_span = period[model_window.stop - 1] - period[
-                    model_window.start]
-                fit_window = model_window
-
-                models = [fitter_fn(period[fit_window], spectrum,
-                                    fit_max_iter, avg_days_yr, num_coefs)
-                          for spectrum in spectral_obs[:, fit_window]]
-
-            residuals = np.array([calc_residuals(period[peek_window],
-                                                 spectral_obs[idx, peek_window],
-                                                 models[idx], avg_days_yr)
-                                  for idx in range(observations.shape[0])])
-
+        if model_window.stop - model_window.start >= 24:
             # We want to use the closest residual values to the peek_window
             # values based on seasonality.
             closest_indexes = find_closest_doy(period, peek_window.stop - 1,
@@ -582,6 +546,8 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             # as the degrees of freedom.
             comp_rmse = [euclidean_norm(models[idx].residual[closest_indexes]) / 4
                          for idx in detection_bands]
+        else:
+            comp_rmse = [models[idx].rmse for idx in detection_bands]
 
         # Calculate the change magnitude values for each observation in the
         # peek_window.
@@ -610,6 +576,9 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             period = dates[processing_mask]
             spectral_obs = observations[:, processing_mask]
             continue
+
+        if model_window.stop + peek_size >= period.shape[0]:
+            break
 
         model_window = slice(model_window.start, model_window.stop + 1)
 
