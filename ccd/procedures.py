@@ -536,7 +536,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     fit_span = period[model_window.stop - 1] - period[model_window.start]
 
     # stop is always exclusive
-    while model_window.stop + peek_size < period.shape[0] or models is None:
+    while model_window.stop <= period.shape[0]:
         num_coefs = determine_num_coefs(period[model_window], coef_min,
                                         coef_mid, coef_max, num_obs_fact)
 
@@ -553,13 +553,15 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             nObservationsInSumArrays += 1
         nextIndexForSumArrays = model_window.stop
 
-        # If statement for fitting the model
+        # Fit new models on first iteration, if there are less than 24 observations in model_window,
+        # or if far enough past the current fit_span
         if not models or model_window.stop - model_window.start < 24 or model_span >= 1.33 * fit_span:
             fit_span = period[model_window.stop - 1] - period[
                 model_window.start]
 
             fit_window = model_window
             log.debug('Retrain models')
+
 
             # Subset and center the sum matrices for use in fitting
             nCoefficientsInModelFit = num_coefs
@@ -578,12 +580,20 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
                     meanY=sumYsubset[band]/nObservationsInSumArrays, normX=np.ones(nCoefficientsInModelFit-1))
                     for band in range(nBands)]
 
+        # Hypothetically, this should only happen on the first pass through the loop
+        if model_window.stop == period.shape[0]:
+            compareObservationResiduals = np.zeros((nBands,2))
+            compareObservationResiduals[:,:] = np.nan
+            break
 
         # Retrieve the appropriate RMSE: total fit RMSE for 24 or fewer points, otherwise calculate
-        #    RMSE for the 24 that are closest to the day of year of the final fit point (?)
-        if model_window.stop - model_window.start < 24:
+        #    RMSE for the 24 that are closest to the day of year of the final compare point
+        if model_window.stop - model_window.start <= 24:
             comp_rmse = [models[idx].rmse for idx in detection_bands]
+
         else:
+            # We want to use the closest residual values to the peek_window
+            # values based on seasonality.
             closest_indexes = find_closest_doy(period, peek_window.stop - 1,
                                            fit_window, 24)
             # For RMSE calculation, use 16 degrees of freedom (i.e., 24-8)
@@ -625,7 +635,14 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             X = allTimeX[processing_mask,:]
             continue
 
+        if model_window.stop + peek_size >= period.shape[0]:
+            break
+
         model_window = slice(model_window.start, model_window.stop + 1)
+
+    # This is triggered if the while loop is not ended via a break. It should not happen. This code can be removed later.
+    else:
+        raise Exception('lookforward: should not reach the end of the while loop')
 
     result = results_to_changemodel(fitted_models=models,
                                     start_day=period[model_window.start],
