@@ -547,28 +547,15 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     # Read in lookup table containing cutoff values for use in the break test
 #    cutoffLookupTable = readCutoffsFromFile()
 
-#<<<<<<< min-break-time
-    # Main loop: add one observation to the model after each trip through the while loop
-    while model_window.stop + minimumNumberOfCompareObservations < period.shape[0] or models is None:
+    nCompareObservations, enoughObservationsRemaining = findNumberOfCompareObservations(
+            minimumNumberOfCompareObservations, minimumDaysElapsedToTestForBreak, period, model_window.stop)
 
-        # Find the number of observations to use in break detection at this time step
-        nCompareObservations = minimumNumberOfCompareObservations
-        while model_window.stop-1+nCompareObservations < period.shape[0]:
-            # period = date of observation
-            # Check if the time covered by the comparison observations is greater than the minimum required
-            if period[model_window.stop-1+nCompareObservations] >= period[model_window.stop]+minimumDaysElapsedToTestForBreak:
-                break
-            nCompareObservations += 1
-        # Break out of the full while loop if there are not enough observations remaining
-        else:
-            break
+    # Main loop: add one observation to the model after each trip through the while loop
+    while model_window.stop <= period.shape[0]:
+
         # Set the comparison window based on the number of comparison observations
         peek_window = slice(model_window.stop, model_window.stop + nCompareObservations)
 
-#=======
-    # stop is always exclusive
-    while model_window.stop <= period.shape[0]:
-#>>>>>>> a-min_break_time
         num_coefs = determine_num_coefs(period[model_window], coef_min,
                                         coef_mid, coef_max, num_obs_fact)
 
@@ -614,7 +601,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
 
             rmseOfCurrentModels = [models[band].rmse for band in detection_bands]
 
-        # Hypothetically, this should only happen on the first pass through the loop
+        # If there are no observations remaining beyond model_window, just return (this can happen on the first iteration)
         if model_window.stop == period.shape[0]:
             compareObservationResiduals = np.zeros((nBands,2))
             compareObservationResiduals[:,:] = np.nan
@@ -659,6 +646,13 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             X = allTimeX[processing_mask,:]
             continue
 
+        # Check if there are enough observations remaining to go through another loop
+        nCompareObservations, enoughObservationsRemaining = findNumberOfCompareObservations(
+                minimumNumberOfCompareObservations, minimumDaysElapsedToTestForBreak, period, model_window.stop+1)
+        if not enoughObservationsRemaining:
+            break
+
+        # Increment end of model for next loop
         if model_window.stop + peek_size >= period.shape[0]:
             break
 
