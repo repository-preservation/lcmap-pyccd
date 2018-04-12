@@ -28,7 +28,8 @@ import numpy as np
 from ccd import qa
 from ccd.change import enough_samples, enough_time,\
     update_processing_mask, stable, determine_num_coefs, calc_residuals, \
-    find_closest_doy, change_magnitude, detect_change, detect_outlier
+    find_closest_doy, change_magnitude, detect_change, detect_outlier, \
+    findNumberOfCompareObservations
 from ccd.models import results_to_changemodel, tmask
 from ccd.math_utils import kelvin_to_celsius, adjusted_variogram, euclidean_norm
 
