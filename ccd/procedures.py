@@ -502,7 +502,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     fit_max_iter = proc_params.LASSO_MAX_ITER
 
 
-    desiredTotalPValue = .000001 # Hardcode here for testing/evaluation
+    desiredTotalPValue = 1e-12 # Hardcode here for testing/evaluation
 
 
     # Step 4: lookforward.
