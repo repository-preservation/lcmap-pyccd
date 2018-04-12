@@ -501,9 +501,8 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     avg_days_yr = proc_params.AVG_DAYS_YR
     fit_max_iter = proc_params.LASSO_MAX_ITER
 
-
     # Hardcode break parameters here during testing/evaluation of different break tests
-    desiredTotalPValue = .000001
+    desiredTotalPValue = 1e-12
     minimumDaysElapsedToTestForBreak = 90
     minimumNumberOfCompareObservations = peek_size
 
@@ -548,6 +547,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     # Read in lookup table containing cutoff values for use in the break test
 #    cutoffLookupTable = readCutoffsFromFile()
 
+#<<<<<<< min-break-time
     # Main loop: add one observation to the model after each trip through the while loop
     while model_window.stop + minimumNumberOfCompareObservations < period.shape[0] or models is None:
 
@@ -565,6 +565,10 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
         # Set the comparison window based on the number of comparison observations
         peek_window = slice(model_window.stop, model_window.stop + nCompareObservations)
 
+#=======
+    # stop is always exclusive
+    while model_window.stop <= period.shape[0]:
+#>>>>>>> a-min_break_time
         num_coefs = determine_num_coefs(period[model_window], coef_min,
                                         coef_mid, coef_max, num_obs_fact)
 
@@ -579,13 +583,16 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             nObservationsInSumArrays += 1
         nextIndexForSumArrays = model_window.stop
 
-        # If statement for fitting the model
+        # Fit new models on first iteration, if there are less than 24 observations in model_window,
+        # or if far enough past the current fit_span
         if not models or model_window.stop - model_window.start < 24 or model_span >= 0.99 * fit_span:
+
             fit_span = period[model_window.stop - 1] - period[
                 model_window.start]
 
             fit_window = model_window
             log.debug('Retrain models')
+
 
             # Subset and center the sum matrices for use in fitting
             nCoefficientsInModelFit = num_coefs
@@ -606,6 +613,12 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
                     for band in range(nBands)]
 
             rmseOfCurrentModels = [models[band].rmse for band in detection_bands]
+
+        # Hypothetically, this should only happen on the first pass through the loop
+        if model_window.stop == period.shape[0]:
+            compareObservationResiduals = np.zeros((nBands,2))
+            compareObservationResiduals[:,:] = np.nan
+            break
 
         # Calculate residuals for the next observations after the end of the current model
         compareObservationResiduals = np.array([
@@ -646,7 +659,14 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             X = allTimeX[processing_mask,:]
             continue
 
+        if model_window.stop + peek_size >= period.shape[0]:
+            break
+
         model_window = slice(model_window.start, model_window.stop + 1)
+
+    # This is triggered if the while loop is not ended via a break. It should not happen. This code can be removed later.
+    else:
+        raise Exception('lookforward: should not reach the end of the while loop')
 
     result = results_to_changemodel(fitted_models=models,
                                     start_day=period[model_window.start],

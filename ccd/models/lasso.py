@@ -97,7 +97,7 @@ def fitted_model_using_X(noInterceptX, spectra_obs, max_iter, degreesOfFreedomFo
     model = lasso.fit(noInterceptX, spectra_obs)
 
     predictions = model.predict(noInterceptX)
-#    rmse, residuals = calc_rmse(spectra_obs, predictions)
+#    rmse, residuals = calc_rmse(spectra_obs, predictions, num_pm=num_coefficients)
     residuals = spectra_obs-predictions
     rmse = np.sqrt(np.sum(np.power(residuals,2))/degreesOfFreedomForRMSE)
 
@@ -116,7 +116,7 @@ def fitted_model_using_sums(noInterceptX, yIn, max_iter, degreesOfFreedomForRMSE
             meanY is None or normX is None:
         raise Exception('This function requires cumulative sum arrays for input')
 
-    if yIn.dtype==np.int32:
+    if np.issubdtype(yIn.dtype, np.integer):
         y = yIn.astype(np.float64)
     else:
         y = yIn
