@@ -1,18 +1,14 @@
 from sklearn import linear_model
 import numpy as np
-from cachetools import LRUCache
 
 from ccd.models import FittedModel
 from ccd.math_utils import calc_rmse
-
-cache = LRUCache(maxsize=1000)
 
 
 def __coefficient_cache_key(observation_dates):
     return tuple(observation_dates)
 
 
-# @cached(cache=cache, key=__coefficient_cache_key)
 def coefficient_matrix(dates, avg_days_yr, num_coefficients):
     """
     Fourier transform function to be used for the matrix of inputs for

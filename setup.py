@@ -54,6 +54,7 @@ setup(
         # 'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
     ],
 
     keywords='python change detection',
@@ -63,9 +64,6 @@ setup(
     install_requires=['numpy>=1.10.0',
                       'scipy>=0.18.1',
                       'scikit-learn>=0.18',
-                      'cachetools>=2.0.0',
-                      'click>=6.6',
-                      'click-plugins>=1.0.3',
                       'PyYAML>=3.12'],
 
     extras_require={
