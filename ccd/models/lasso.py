@@ -116,7 +116,7 @@ def fitted_model_using_sums(noInterceptX, yIn, max_iter, degreesOfFreedomForRMSE
             meanY is None or normX is None:
         raise Exception('This function requires cumulative sum arrays for input')
 
-    if yIn.dtype==np.int32:
+    if np.issubdtype(yIn.dtype, np.integer):
         y = yIn.astype(np.float64)
     else:
         y = yIn
