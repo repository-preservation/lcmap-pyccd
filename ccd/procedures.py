@@ -616,6 +616,8 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
         if model_window.stop == period.shape[0]:
             compareObservationResiduals = np.zeros((nBands,2))
             compareObservationResiduals[:,:] = np.nan
+            # For break_day=period[peek_window.start]
+            peek_window = slice(model_window.stop-1, model_window.stop)
             break
 
         # Calculate residuals for the next observations after the end of the current model
@@ -655,6 +657,10 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             period = dates[processing_mask]
             spectral_obs = observations[:, processing_mask]
             X = allTimeX[processing_mask,:]
+
+            if model_window.stop + peek_size >= period.shape[0]:
+                break
+
             continue
 
         # Check if there are enough observations remaining to go through another loop
