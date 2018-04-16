@@ -602,7 +602,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             period = dates[processing_mask]
             spectral_obs = observations[:, processing_mask]
 
-            if model_window.stop + peek_size >= period.shape[0]:
+            if model_window.stop + peek_size > period.shape[0]:
                 break
 
             continue
