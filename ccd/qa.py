@@ -1,8 +1,16 @@
 """Filters for pre-processing change model inputs.
 """
+import logging
+
 import numpy as np
+import pandas as pd
+import xarray as xr
+import datetime as dt
 
 from ccd.math_utils import calc_median, mask_value, count_value, mask_duplicate_values
+
+
+log = logging.getLogger(__name__)
 
 
 def checkbit(packedint, offset):
@@ -305,9 +313,15 @@ def standard_procedure_filter(observations, quality, dates, proc_params):
             filter_thermal_celsius(observations[thermal_idx]) &
             filter_saturated(observations))
 
-    date_mask = mask_duplicate_values(dates[mask])
+    log.debug('Obs after QA: %s', np.sum(mask))
 
+    date_mask = mask_duplicate_values(dates[mask])
     mask[mask] = date_mask
+    log.debug('Number of duplicate dates: %s', np.sum(date_mask))
+
+    res_mask = resamplemask(dates[mask], observations[:, mask], proc_params)
+    log.debug('Obs after date resampling: %s', np.sum(res_mask))
+    mask[mask] = res_mask
 
     return mask
 
@@ -400,3 +414,116 @@ def quality_probabilities(quality, proc_params):
     water = ratio_water(quality, proc_params.QA_CLEAR, proc_params.QA_WATER)
 
     return cloud, snow, water
+
+
+def resamplemask(dates, observations, proc_params):
+    # Hard coded everything for right now for simple testing
+    # obviously things will need to be moved to parameters file, and other
+    # such work.
+    nir = proc_params.NIR_IDX
+    bl = proc_params.BLUE_IDX
+
+    res_ords = resampledates(dates,
+                             observations[nir],
+                             observations[bl],
+                             '16D',
+                             'max')
+
+    # np.isin requires 1.13, make sure to update setup.py
+    return np.isin(dates, res_ords)
+
+
+def resampledates(dates, nirs, blues, freq, how):
+    # The criteria was just an idea (though probably a good one), would possibly
+    # need to be investigated more in-depth
+    df = xr.Dataset({'criteria': (['dates'], nirs / blues),
+                     'ordinals': (['dates'], dates)},
+                    coords={'dates': pd.to_datetime([dt.date.fromordinal(i)
+                                                     for i in dates])})
+
+    return resample_by(df, 'criteria', freq, 'dates', how)['ordinals']
+
+
+_RESAMPLE_BY_METHODS = ('min', 'max', 'first', 'last', 'median',)
+
+
+def resample_by(dataset, var, freq, dim, how='max',
+                keep_attrs=True, **resample_kwds):
+    """ Resample all variables in Dataset based on one ``var``
+
+    For example, one could resample all Landsat bands based on the
+    maximum value in the ``ndvi`` variable.
+
+    Parameters
+    ----------
+    dataset : xarray.Dataset
+        Dataset containing variables to resample. Cannot resample any
+        data containing string or object datatypes.
+    var : str
+        Variable name in ``dataset``
+    freq : str
+        Offset frequency that specifies the step-size along the resampled dimension.
+        Should look like ``{N}{offset}`` where ``N`` is an (optional) integer multipler
+        (default 1) and ``offset`` is any pandas date offset alias. The full list of
+        offset aliases is documented in pandas [1]_.
+    dim : str
+        Dimension name to resample along (e.g., 'time')
+    how : str or callable
+        Resampling reduction method (e.g., 'mean'). The method must not alter data from
+        ``dataset``, so only operations like ``first`` or ``max`` are supported.
+    keep_attrs : bool, optional
+        If True, the object's attributes (`attrs`) will be copied from the original
+        object to the new one.
+    resample_kwds
+        Keyword options to pass to :py:meth:`xarray.Dataset.resample`
+
+    Returns
+    -------
+    xarray.Dataset
+        Resampled dataset, resampled according to ``var``
+
+    Raises
+    ------
+    ValueError
+        Raised when using an unsupported resampling method
+    TypeError
+        Raised if any dataset variables are string/bytes/object datatype
+
+    References
+    ----------
+    .. [1] http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
+    """
+    # Implementation note:
+    # xarray's "argmin" and "argmax" doesn't work with more than one dimension
+    # See https://github.com/pydata/xarray/issues/1388
+    #
+    # There should be  faster way than resampling and masking and resampling again,
+    # but will need to wait on some work within `xarray`
+    if how not in _RESAMPLE_BY_METHODS:
+        raise ValueError("Cannot resample by '{0}'. Please choose from: {1}"
+                         .format(how, ', '.join(_RESAMPLE_BY_METHODS)))
+
+    # Without the ability to select based on argmin/argmax we need to use a
+    # workaround (masking the arrays), but this doesn't work on string data
+    is_str = [dv for dv in dataset.data_vars if
+              dataset[dv].dtype.type in (np.str_, np.bytes_, np.object_)]
+    if is_str:
+        raise TypeError('Cannot use `resample_by` with string or object '
+                        'datatypes (as used by {var})'
+                        .format(var=', '.join(['"%s"' % dv for dv in is_str])))
+
+    # Resample by criterion variable
+    # requires python > 3.5, update setup.py
+    kwds_re = {**{dim: freq}, **resample_kwds}
+    var_re = getattr(dataset[[var]].resample(**kwds_re), how)()
+
+    # Now that we know what observations have been selected by the reduction,
+    # reindex the resampled data to look like the original dataset
+    var_reidx = var_re.reindex_like(dataset, method='ffill')
+
+    # Find where identical, and mask the rest so that it can be ignored when we resample
+    mask = (dataset[[var]] == var_reidx[[var]])[var]
+    ds_masked = dataset.where(mask)
+
+    # Ideally we want to use 'first' instead of 'max', but it's not implemented on dask arrays
+    return ds_masked.resample(**kwds_re).max()

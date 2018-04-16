@@ -15,7 +15,8 @@ def test_sample_data_sets():
     """
     Sanity test to ensure all test data sets run to completion
     """
-    samples = ['test/resources/sample_1.csv',
+    samples = [
+        # 'test/resources/sample_1.csv',
                'test/resources/sample_2.csv',
                'test/resources/sample_WA_grid08_row9_col2267_persistent_snow.csv',
                'test/resources/sample_WA_grid08_row12_col2265_fmask_fail.csv',
