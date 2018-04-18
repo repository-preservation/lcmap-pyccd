@@ -85,7 +85,7 @@ def centerSumMatrices(matrixXTX, vectorsXTY, sumX, sumY, sumYSquared, nObservati
 
 
 
-def subsetAndCenterSumMatrices(nCoefficientsInModelFit, matrixXTX, vectorsXTY, sumYSquared, nObservationsInMatrices)
+def subsetAndCenterSumMatrices(nCoefficientsInModelFit, matrixXTX, vectorsXTY, sumYSquared, nObservationsInSumArrays):
     """ Subset the sum matrices to exclude the intercept and currently unused coefficients, then center
     """
     matrixXTXsubset = np.copy(matrixXTX[1:nCoefficientsInModelFit,1:nCoefficientsInModelFit])
