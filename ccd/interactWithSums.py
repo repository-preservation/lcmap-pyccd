@@ -85,6 +85,18 @@ def centerSumMatrices(matrixXTX, vectorsXTY, sumX, sumY, sumYSquared, nObservati
 
 
 
+def subsetAndCenterSumMatrices(nCoefficientsInModelFit, matrixXTX, vectorsXTY, sumYSquared, nObservationsInMatrices)
+    """ Subset the sum matrices to exclude the intercept and currently unused coefficients, then center
+    """
+    matrixXTXsubset = np.copy(matrixXTX[1:nCoefficientsInModelFit,1:nCoefficientsInModelFit])
+    vectorsXTYsubset = np.copy(vectorsXTY[:,1:nCoefficientsInModelFit])
+    sumXsubset = np.copy(matrixXTX[1:nCoefficientsInModelFit,0])
+    sumYsubset = np.copy(vectorsXTY[:,0])
+    sumYSquaredsubset = np.copy(sumYSquared)
+    centerSumMatrices(matrixXTXsubset, vectorsXTYsubset, sumXsubset, sumYsubset, sumYSquaredsubset,
+            nObservationsInSumArrays)
+    return matrixXTXsubset, vectorsXTYsubset, sumXsubset, sumYsubset, sumYSquaredsubset
+
 
 
 def ssrForModelUsingMatrixXTX(modelBetas,matrixXTX,vectorsXTY,sumYSquared):
