@@ -33,7 +33,7 @@ from ccd.models import results_to_changemodel, tmask
 from ccd.math_utils import kelvin_to_celsius, adjusted_variogram, euclidean_norm
 
 from ccd.models.lasso import coefficient_matrix
-from ccd.interactWithSums import createSumArrays,incrementSums,centerSumMatrices
+from ccd.interactWithSums import createSumArrays,incrementSums,subsetAndCenterSumMatrices
 
 log = logging.getLogger(__name__)
 
@@ -565,13 +565,8 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
 
             # Subset and center the sum matrices for use in fitting
             nCoefficientsInModelFit = num_coefs
-            matrixXTXsubset = np.copy(matrixXTX[1:nCoefficientsInModelFit,1:nCoefficientsInModelFit])
-            vectorsXTYsubset = np.copy(vectorsXTY[:,1:nCoefficientsInModelFit])
-            sumXsubset = np.copy(matrixXTX[1:nCoefficientsInModelFit,0])
-            sumYsubset = np.copy(vectorsXTY[:,0])
-            sumYSquaredsubset = np.copy(sumYSquared)
-            centerSumMatrices(matrixXTXsubset, vectorsXTYsubset, sumXsubset, sumYsubset, sumYSquaredsubset,
-                    nObservationsInSumArrays)
+            matrixXTXsubset,vectorsXTYsubset,sumXsubset,sumYsubset,sumYSquaredsubset = subsetAndCenterSumMatrices( \
+                    nCoefficientsInModelFit, matrixXTX, vectorsXTY, sumYSquared, nObservationsInMatrices)
 
             models = [fitter_fn(X[fit_window,1:nCoefficientsInModelFit], spectral_obs[band, fit_window],
                     fit_max_iter, nObservationsInSumArrays-nCoefficientsInModelFit, None, functionNeedsToCalculateX=False,
