@@ -50,6 +50,11 @@ def incrementSums(indexToAdd,X,Y,matrixXTX,vectorsXTY,sumYSquared):
 #        sumY[band] += Y[band,indexToAdd]
         sumYSquared[band] += Y[band,indexToAdd]**2
 
+def incrementXTX(indexToAdd,X,Y,matrixXTX):
+    nCoefficients = matrixXTX.shape[0]
+    for i in range(nCoefficients):
+        for j in range(nCoefficients):
+            matrixXTX[i,j] += X[indexToAdd,i]*X[indexToAdd,j]
 
 def createSumArrays(nBands, nCoefficients):
     matrixXTX = np.zeros((nCoefficients,nCoefficients),order='C')
@@ -60,6 +65,9 @@ def createSumArrays(nBands, nCoefficients):
 #    return matrixXTX, vectorsXTY, sumX, sumY, sumYSquared
     return matrixXTX, vectorsXTY, sumYSquared
 
+def createXTX(nCoefficients):
+    matrixXTX = np.zeros((nCoefficients,nCoefficients),order='C')
+    return matrixXTX
 
 def centerSumMatrices(matrixXTX, vectorsXTY, sumX, sumY, sumYSquared, nObservationsInMatrices):
     """ Center the sum matrices so that they have 0 intercept

@@ -18,7 +18,7 @@ import os.path
 
 
 def breakTestIncludingModelError(compareObservationResiduals,regressorsForCompareObservations,
-        msrOfCurrentModels,nObservationsInModel,cutoffLookupTable,pValueForBreakTest,inverseMatrixXTX):
+        msrOfCurrentModels,nObservationsInModel,cutoffLookupTable,pValueForBreakTest,inverseMatrixXTX,nCompareForP):
     """Test for model breaks; include observation error and model error.
     Also allows for a variable number of comparison observations.
     """
@@ -39,9 +39,9 @@ def breakTestIncludingModelError(compareObservationResiduals,regressorsForCompar
             magnitudes[i] += np.power(compareObservationResiduals[band,i],2)/(msrOfCurrentModels[band]*(1+modelErrorAdjustment))
 
     # The input p-value is for the entire test, including all nCompareObservations points. The p-value for the minimum doesn't
-    #    need to be as stringent, since we know that all the other observations have larger residuals. The chance that all of
+    #    need to be as stringent, since we know that all the other observations have larger residuals. If they are independentThe chance that all of
     #    the compare observations have p<individualPValue is individualPValue^nCompareObservations
-    individualPValue = np.power(pValueForBreakTest,1/nCompareObservations)
+    individualPValue = np.power(pValueForBreakTest,1/nCompareForP)
 
     nDegreesOfFreedom = nObservationsInModel-nCoefficients
     cutoff = cutoffLookupTable[501-int(individualPValue*1000),min(nDegreesOfFreedom,cutoffLookupTable.shape[1])-1]
