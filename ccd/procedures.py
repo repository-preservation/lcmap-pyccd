@@ -565,7 +565,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
 
             # Subset and center the sum matrices for use in fitting
             nCoefficientsInModelFit = num_coefs
-            matrixXTXsubset,vectorsXTYsubset,sumXsubset,sumYsubset,sumYSquaredsubset = subsetAndCenterSumMatrices( \
+            matrixXTXsubset,vectorsXTYsubset,sumXsubset,sumYsubset,sumYSquaredsubset = subsetAndCenterSumMatrices(
                     nCoefficientsInModelFit, matrixXTX, vectorsXTY, sumYSquared, nObservationsInSumArrays)
 
             models = [fitter_fn(X[fit_window,1:nCoefficientsInModelFit], spectral_obs[band, fit_window],
