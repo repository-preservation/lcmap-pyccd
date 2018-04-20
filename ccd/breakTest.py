@@ -43,7 +43,7 @@ def breakTestIncludingModelError(compareObservationResiduals,regressorsForCompar
     #    the compare observations have p<individualPValue is individualPValue^nCompareObservations
     individualPValue = np.power(pValueForBreakTest,1/nCompareForP)
 
-    nDegreesOfFreedom = nObservationsInModel-nCoefficients
+    nDegreesOfFreedom = max(nObservationsInModel-nCoefficients,1)
     cutoff = cutoffLookupTable[501-int(individualPValue*1000),min(nDegreesOfFreedom,cutoffLookupTable.shape[1])-1]
 
     if min(magnitudes) > cutoff:
