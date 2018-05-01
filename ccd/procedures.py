@@ -506,7 +506,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     # Hardcode break parameters here during testing/evaluation of different break tests
     desiredTotalPValue = 1e-12
     autocorrelationDaysForModel = 30
-    autocorrelationDaysForCompare = 10
+    autocorrelationDaysForCompare = 0
 
 
 
@@ -625,7 +625,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
         # Test for a break in the model
         inverseMatrixXTX = np.linalg.inv(matrixXTXForAutocorrelation[0:nCoefficientsInModelFit,0:nCoefficientsInModelFit])
         breakFound,potentialBreakMagnitudes = breakTestIncludingModelError(compareObservationResiduals[detection_bands,:],
-                X[peek_window,0:nCoefficientsInModelFit], np.power(rmseOfCurrentModels,2), nObservationsInAutocorrelateArray,
+                X[peek_window,0:nCoefficientsInModelFit], np.power(rmseOfCurrentModels,2), nObservationsInSumArrays,
                 cutoffLookupTable, desiredTotalPValue, inverseMatrixXTX, peek_size)
 
         if breakFound:
