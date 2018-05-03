@@ -523,7 +523,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     # Initialized for a check at the first iteration.
     models = None
 
-    # Simple value to determine if change has occured or not. Change may not
+    # Simple value to determine if change has occurred or not. Change may not
     # have occurred if we reach the end of the time series.
     change = 0
 
@@ -576,7 +576,8 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
         for indexToAdd in range(nextIndexForSumArrays,model_window.stop):
             incrementSums(indexToAdd,X,spectral_obs,matrixXTX,vectorsXTY,sumYSquared)
             nObservationsInSumArrays += 1
-            if period[indexToAdd]-period[previousIndexXTXForAutocorrelation] > autocorrelationDaysForModel:
+            if period[indexToAdd]-period[previousIndexXTXForAutocorrelation] > autocorrelationDaysForModel or \
+                    indexToAdd == model_window.start:
                 incrementXTX(indexToAdd,X,spectral_obs,matrixXTXForAutocorrelation)
                 nObservationsInAutocorrelateArray += 1
                 previousIndexXTXForAutocorrelation = indexToAdd
