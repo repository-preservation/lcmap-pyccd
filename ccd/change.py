@@ -299,8 +299,9 @@ def adjustpeek(dates, defpeek):
 
 
 def adjustchgthresh(peek, defpeek, defthresh):
-    if peek <= defpeek:
-        return defthresh
+    thresh = defthresh
+    if peek > defpeek:
+        pt_cg = 1 - (1 - 0.99) ** (defpeek / peek)
+        thresh = chi2.ppf(pt_cg, 5)
 
-    pt_cg = 1 - (1 - 0.99) ** (defpeek / peek)
-    return chi2.ppf(pt_cg, 5)
+    return thresh
