@@ -293,7 +293,7 @@ def find_closest_doy(dates, date_idx, window, num):
 
 def adjustpeek(dates, defpeek):
     delta = np.median(np.diff(dates))
-    adj_peek = np.round(defpeek * 16 / delta)
+    adj_peek = int(np.round(defpeek * 16 / delta))
 
     return adj_peek if adj_peek > defpeek else defpeek
 

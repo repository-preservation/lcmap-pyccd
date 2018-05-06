@@ -263,6 +263,9 @@ def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
     proc_params.CHANGE_THRESHOLD = adjustchgthresh(peek_size, defpeek,
                                                    proc_params.CHANGE_THRESHOLD)
 
+    log.debug('Peek size: %s', proc_params.PEEK_SIZE)
+    log.debug('Chng thresh: %s', proc_params.CHANGE_THRESHOLD)
+
 
     # Accumulator for models. This is a list of ChangeModel named tuples
     results = []
