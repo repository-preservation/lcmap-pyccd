@@ -530,7 +530,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     fit_span = period[model_window.stop - 1] - period[model_window.start]
 
     # stop is always exclusive
-    while model_window.stop + peek_size < period.shape[0] or models is None:
+    while model_window.stop <= period.shape[0]:
         num_coefs = determine_num_coefs(period[model_window], coef_min,
                                         coef_mid, coef_max, num_obs_fact)
 
@@ -543,44 +543,36 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
 
         # If we have less than 24 observations covered by the model_window
         # or it the first iteration, then we always fit a new window
-        if not models or model_window.stop - model_window.start < 24:
+        # If the number of observations that the current fitted models
+        # expand past a threshold, then we need to fit new ones.
+        if not models or model_window.stop - model_window.start < 24 or model_span >= 1.33 * fit_span:
             fit_span = period[model_window.stop - 1] - period[
                 model_window.start]
 
             fit_window = model_window
-            log.debug('Retrain models, less than 24 samples')
+            log.debug('Retrain models')
             models = [fitter_fn(period[fit_window], spectrum,
                                 fit_max_iter, avg_days_yr, num_coefs)
                       for spectrum in spectral_obs[:, fit_window]]
 
-            residuals = np.array([calc_residuals(period[peek_window],
-                                                 spectral_obs[idx, peek_window],
-                                                 models[idx], avg_days_yr)
-                                  for idx in range(observations.shape[0])])
+        # Hypothetically, this should only happen on the first pass through the loop
+        if model_window.stop == period.shape[0]:
+            residuals = np.zeros((nBands,2))
+            residuals[:,:] = np.nan
+            # For break_day=period[peek_window.start]
+            peek_window = slice(model_window.stop-1, model_window.stop)
+            break
 
+        residuals = np.array([calc_residuals(period[peek_window],
+                                             spectral_obs[idx, peek_window],
+                                             models[idx], avg_days_yr)
+                              for idx in range(observations.shape[0])])
+
+        if model_window.stop - model_window.start <= 24:
             comp_rmse = [models[idx].rmse for idx in detection_bands]
 
         # More than 24 points
         else:
-            # If the number of observations that the current fitted models
-            # expand past a threshold, then we need to fit new ones.
-            # The 1.33 should be parametrized at some point.
-            if model_span >= 1.33 * fit_span:
-                log.debug('Retrain models, model_span: %s fit_span: %s',
-                          model_span, fit_span)
-                fit_span = period[model_window.stop - 1] - period[
-                    model_window.start]
-                fit_window = model_window
-
-                models = [fitter_fn(period[fit_window], spectrum,
-                                    fit_max_iter, avg_days_yr, num_coefs)
-                          for spectrum in spectral_obs[:, fit_window]]
-
-            residuals = np.array([calc_residuals(period[peek_window],
-                                                 spectral_obs[idx, peek_window],
-                                                 models[idx], avg_days_yr)
-                                  for idx in range(observations.shape[0])])
-
             # We want to use the closest residual values to the peek_window
             # values based on seasonality.
             closest_indexes = find_closest_doy(period, peek_window.stop - 1,
@@ -617,9 +609,20 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             # without issue.
             period = dates[processing_mask]
             spectral_obs = observations[:, processing_mask]
+
+            if model_window.stop + peek_size > period.shape[0]:
+                break
+
             continue
 
+        if model_window.stop + peek_size >= period.shape[0]:
+            break
+
         model_window = slice(model_window.start, model_window.stop + 1)
+
+    # This is triggered if the while loop is not ended via a break. It should not happen. This code can be removed later.
+    else:
+        raise Exception('lookforward: should not reach the end of the while loop')
 
     result = results_to_changemodel(fitted_models=models,
                                     start_day=period[model_window.start],
