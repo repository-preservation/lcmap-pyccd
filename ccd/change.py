@@ -291,3 +291,29 @@ def find_closest_doy(dates, date_idx, window, num):
 
 
 
+def findNumberOfCompareObservations(autocorrelationDaysForCompare, numberOfCompareObservations,
+        period, firstCompareIndex):
+    """
+    Find the number of observations after the end of the model to use for break detection
+    """
+    nCompareObservations = 0
+    nCompareWithAutocorrelation = 1
+    currentStartIndex = firstCompareIndex
+    while firstCompareIndex+nCompareObservations < period.shape[0]:
+        # Increment number of observations included for comparison
+        nCompareObservations += 1
+        if period[firstCompareIndex+nCompareObservations-1]-period[currentStartIndex] > autocorrelationDaysForCompare:
+            currentStartIndex = firstCompareIndex+nCompareObservations-1
+            nCompareWithAutocorrelation += 1
+
+        # Check if the time covered by the comparison observations is greater than the minimum required
+        if nCompareWithAutocorrelation == numberOfCompareObservations:
+            enoughObservationsRemaining = True
+            break
+    # If the if statement is never triggered, there are not enough observations remaining
+    else:
+        enoughObservationsRemaining = False
+
+    return nCompareObservations,enoughObservationsRemaining
+
+

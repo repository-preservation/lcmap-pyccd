@@ -28,10 +28,16 @@ import numpy as np
 from ccd import qa
 from ccd.change import enough_samples, enough_time,\
     update_processing_mask, stable, determine_num_coefs, calc_residuals, \
-    find_closest_doy, change_magnitude, detect_change, detect_outlier
+    find_closest_doy, change_magnitude, detect_change, detect_outlier, \
+    findNumberOfCompareObservations
 from ccd.models import results_to_changemodel, tmask
 from ccd.math_utils import kelvin_to_celsius, adjusted_variogram, euclidean_norm
 
+from ccd.models.lasso import coefficient_matrix
+from ccd.interactWithSums import createSumArrays,incrementSums, \
+    subsetAndCenterSumMatrices,createXTX,incrementXTX
+from ccd.breakTest import breakTestIncludingModelError
+from ccd.statsCurrent import cutoffLookupTable
 
 log = logging.getLogger(__name__)
 
@@ -497,6 +503,13 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     avg_days_yr = proc_params.AVG_DAYS_YR
     fit_max_iter = proc_params.LASSO_MAX_ITER
 
+    # Hardcode break parameters here during testing/evaluation of different break tests
+    desiredTotalPValue = 1e-12
+    autocorrelationDaysForModel = 30
+    autocorrelationDaysForCompare = 0
+
+
+
     # Step 4: lookforward.
     # The second step is to update a model until observations that do not
     # fit the model are found.
@@ -510,84 +523,123 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     # Initialized for a check at the first iteration.
     models = None
 
-    # Simple value to determine if change has occured or not. Change may not
+    # Simple value to determine if change has occurred or not. Change may not
     # have occurred if we reach the end of the time series.
     change = 0
+
+    # Create arrays for incrementing sums through time
+    nBands = observations.shape[0]
+    matrixXTX, vectorsXTY, sumYSquared = createSumArrays(nBands, coef_max)
+    nextIndexForSumArrays = model_window.start
+    nObservationsInSumArrays = 0
+
+    # For an estimate of the model error assuming temporal autocorrelation, only use a subset of
+    #    the observations in the model to compute the model error correction
+    matrixXTXForAutocorrelation = createXTX(coef_max)
+    previousIndexXTXForAutocorrelation = model_window.start
+    nObservationsInAutocorrelateArray = 0
 
     # Initial subset of the data
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
 
+    # Design matrix X
+    allTimeNoInterceptX = coefficient_matrix(dates, avg_days_yr, coef_max)
+    allTimeX = np.ones(shape=(len(dates), 8), order='F', dtype=np.float64)
+    allTimeX[:,1:coef_max] = allTimeNoInterceptX
+    X = allTimeX[processing_mask,:]
+
     # Used for comparison purposes
     fit_span = period[model_window.stop - 1] - period[model_window.start]
 
-    # stop is always exclusive
+    # Read in lookup table containing cutoff values for use in the break test
+#    cutoffLookupTable = readCutoffsFromFile()
+
+    nCompareObservations, enoughObservationsRemaining = findNumberOfCompareObservations(
+            autocorrelationDaysForCompare, peek_size, period, model_window.stop)
+
+    # Main loop: add one observation to the model after each trip through the while loop
     while model_window.stop <= period.shape[0]:
+
+        # Set the comparison window based on the number of comparison observations
+        peek_window = slice(model_window.stop, model_window.stop + nCompareObservations)
+
         num_coefs = determine_num_coefs(period[model_window], coef_min,
                                         coef_mid, coef_max, num_obs_fact)
-
-        peek_window = slice(model_window.stop, model_window.stop + peek_size)
 
         # Used for comparison against fit_span
         model_span = period[model_window.stop - 1] - period[model_window.start]
 
         log.debug('Detecting change for %s', peek_window)
 
-        # If we have less than 24 observations covered by the model_window
-        # or it the first iteration, then we always fit a new window
-        # If the number of observations that the current fitted models
-        # expand past a threshold, then we need to fit new ones.
-        if not models or model_window.stop - model_window.start < 24 or model_span >= 1.33 * fit_span:
+        # Increment sum matrices up to the current index
+        for indexToAdd in range(nextIndexForSumArrays,model_window.stop):
+            incrementSums(indexToAdd,X,spectral_obs,matrixXTX,vectorsXTY,sumYSquared)
+            nObservationsInSumArrays += 1
+            if period[indexToAdd]-period[previousIndexXTXForAutocorrelation] > autocorrelationDaysForModel or \
+                    indexToAdd == model_window.start:
+                incrementXTX(indexToAdd,X,spectral_obs,matrixXTXForAutocorrelation)
+                nObservationsInAutocorrelateArray += 1
+                previousIndexXTXForAutocorrelation = indexToAdd
+        nextIndexForSumArrays = model_window.stop
+
+        # Fit new models on first iteration, if there are less than 24 observations in model_window,
+        # or if far enough past the current fit_span
+        if not models or model_window.stop - model_window.start < 24 or model_span >= 0.99 * fit_span:
+
             fit_span = period[model_window.stop - 1] - period[
                 model_window.start]
 
             fit_window = model_window
             log.debug('Retrain models')
-            models = [fitter_fn(period[fit_window], spectrum,
-                                fit_max_iter, avg_days_yr, num_coefs)
-                      for spectrum in spectral_obs[:, fit_window]]
 
-        # Hypothetically, this should only happen on the first pass through the loop
+
+            # Subset and center the sum matrices for use in fitting
+            nCoefficientsInModelFit = num_coefs
+            matrixXTXsubset,vectorsXTYsubset,sumXsubset,sumYsubset,sumYSquaredsubset = subsetAndCenterSumMatrices(
+                    nCoefficientsInModelFit, matrixXTX, vectorsXTY, sumYSquared, nObservationsInSumArrays)
+
+            # Fit the current data with the Lasso model
+            models = [fitter_fn(X[fit_window,1:nCoefficientsInModelFit], spectral_obs[band, fit_window],
+                    fit_max_iter, nObservationsInSumArrays-nCoefficientsInModelFit, None, functionNeedsToCalculateX=False,
+                    calculateResiduals=True, matrixXTXcentered=matrixXTXsubset, vectorsXTYcentered=vectorsXTYsubset[band,:],
+                    sumYSquaredCentered=sumYSquared[band], meanX=sumXsubset/nObservationsInSumArrays,
+                    meanY=sumYsubset[band]/nObservationsInSumArrays, normX=np.ones(nCoefficientsInModelFit-1))
+                    for band in range(nBands)]
+
+            rmseOfCurrentModels = [models[band].rmse for band in detection_bands]
+
+        # If there are no observations remaining beyond model_window, just return (this can happen on the first iteration)
         if model_window.stop == period.shape[0]:
-            residuals = np.zeros((nBands,2))
-            residuals[:,:] = np.nan
+            compareObservationResiduals = np.zeros((nBands,2))
+            compareObservationResiduals[:,:] = np.nan
             # For break_day=period[peek_window.start]
             peek_window = slice(model_window.stop-1, model_window.stop)
             break
 
-        residuals = np.array([calc_residuals(period[peek_window],
-                                             spectral_obs[idx, peek_window],
-                                             models[idx], avg_days_yr)
-                              for idx in range(observations.shape[0])])
+        # Calculate residuals for the next observations after the end of the current model
+        compareObservationResiduals = np.array([
+                np.abs(spectral_obs[band, peek_window] -
+                models[band].fitted_model.predict(X[peek_window, 1:nCoefficientsInModelFit]))
+                for band in range(nBands)])
 
-        if model_window.stop - model_window.start <= 24:
-            comp_rmse = [models[idx].rmse for idx in detection_bands]
+        # Test for a break in the model
+        inverseMatrixXTX = np.linalg.inv(matrixXTXForAutocorrelation[0:nCoefficientsInModelFit,0:nCoefficientsInModelFit])
+        breakFound,potentialBreakMagnitudes = breakTestIncludingModelError(compareObservationResiduals[detection_bands,:],
+                X[peek_window,0:nCoefficientsInModelFit], np.power(rmseOfCurrentModels,2), nObservationsInSumArrays,
+                cutoffLookupTable, desiredTotalPValue, inverseMatrixXTX, peek_size)
 
-        # More than 24 points
-        else:
-            # We want to use the closest residual values to the peek_window
-            # values based on seasonality.
-            closest_indexes = find_closest_doy(period, peek_window.stop - 1,
-                                               fit_window, 24)
-
-            # Calculate an RMSE for the seasonal residual values, using 8
-            # as the degrees of freedom.
-            comp_rmse = [euclidean_norm(models[idx].residual[closest_indexes]) / 4
-                         for idx in detection_bands]
-
-        # Calculate the change magnitude values for each observation in the
-        # peek_window.
-        magnitude = change_magnitude(residuals[detection_bands, :],
-                                     variogram[detection_bands],
-                                     comp_rmse)
-
-        if detect_change(magnitude, change_thresh):
+        if breakFound:
             log.debug('Change detected at: %s', peek_window.start)
 
             # Change was detected, return to parent method
             change = 1
             break
-        elif detect_outlier(magnitude[0], outlier_thresh):
+
+
+        # Test next observation for clouds or other extreme outliers that are probably not representative
+        #    measurements of surface reflectance
+        elif detect_outlier(potentialBreakMagnitudes[0], outlier_thresh):
             log.debug('Outlier detected at: %s', peek_window.start)
 
             # Keep track of any outliers so they will be excluded from future
@@ -601,15 +653,22 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             # without issue.
             period = dates[processing_mask]
             spectral_obs = observations[:, processing_mask]
+            X = allTimeX[processing_mask,:]
 
-            if model_window.stop + peek_size > period.shape[0]:
+            nCompareObservations, enoughObservationsRemaining = findNumberOfCompareObservations(
+                    autocorrelationDaysForCompare, peek_size, period, model_window.stop)
+            if not enoughObservationsRemaining:
                 break
 
             continue
 
-        if model_window.stop + peek_size >= period.shape[0]:
+        # Check if there are enough observations remaining to go through another loop
+        nCompareObservations, enoughObservationsRemaining = findNumberOfCompareObservations(
+                autocorrelationDaysForCompare, peek_size, period, model_window.stop+1)
+        if not enoughObservationsRemaining:
             break
 
+        # Increment end of model for next loop
         model_window = slice(model_window.start, model_window.stop + 1)
 
     # This is triggered if the while loop is not ended via a break. It should not happen. This code can be removed later.
@@ -620,7 +679,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
                                     start_day=period[model_window.start],
                                     end_day=period[model_window.stop - 1],
                                     break_day=period[peek_window.start],
-                                    magnitudes=np.median(residuals, axis=1),
+                                    magnitudes=np.median(compareObservationResiduals, axis=1),
                                     observation_count=(
                                     model_window.stop - model_window.start),
                                     change_probability=change,
