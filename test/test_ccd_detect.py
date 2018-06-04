@@ -37,6 +37,17 @@ def test_sample_data_sets():
                              params=params)
 
 
+def test_npy():
+    """
+    Sanity tests for npy test data sets
+    """
+    samples = ['test/resources/h03v09_-2010765_1964625_pixel.npy']  # Main loop failure in LF
+
+    for sample in samples:
+        dat = np.load(sample)
+        results = ccd.detect(**dat[1])
+
+
 def test_sort_dates():
     arr = [1, 3, 2, 5, 2]
     ans = np.array([0, 2, 4, 1, 3])
