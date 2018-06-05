@@ -325,6 +325,11 @@ def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
                                  curve_qa['START'], proc_params))
             start = False
 
+        # Handle specific case where if we are at the end of a time series and
+        # the peek size is greater than what remains of the data.
+        if model_window.stop + peek_size > dates[processing_mask].shape[0]:
+            break
+
         # Step 4: lookforward
         log.debug('Extend change model')
         lf = lookforward(dates, observations, model_window, fitter_fn,
@@ -533,7 +538,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     fit_span = period[model_window.stop - 1] - period[model_window.start]
 
     # stop is always exclusive
-    while model_window.stop <= period.shape[0]:
+    while model_window.stop + peek_size <= period.shape[0]:
         num_coefs = determine_num_coefs(period[model_window], coef_min,
                                         coef_mid, coef_max, num_obs_fact)
 
@@ -557,14 +562,6 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             models = [fitter_fn(period[fit_window], spectrum,
                                 fit_max_iter, avg_days_yr, num_coefs)
                       for spectrum in spectral_obs[:, fit_window]]
-
-        # Hypothetically, this should only happen on the first pass through the loop
-        if model_window.stop == period.shape[0]:
-            residuals = np.zeros((nBands,2))
-            residuals[:,:] = np.nan
-            # For break_day=period[peek_window.start]
-            peek_window = slice(model_window.stop-1, model_window.stop)
-            break
 
         residuals = np.array([calc_residuals(period[peek_window],
                                              spectral_obs[idx, peek_window],
@@ -612,20 +609,14 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             # without issue.
             period = dates[processing_mask]
             spectral_obs = observations[:, processing_mask]
-
-            if model_window.stop + peek_size > period.shape[0]:
-                break
-
             continue
 
-        if model_window.stop + peek_size >= period.shape[0]:
+        # Check before incrementing the model window, otherwise the reporting
+        # can get a little messy.
+        if model_window.stop + peek_size > period.shape[0]:
             break
 
         model_window = slice(model_window.start, model_window.stop + 1)
-
-    # This is triggered if the while loop is not ended via a break. It should not happen. This code can be removed later.
-    else:
-        raise Exception('lookforward: should not reach the end of the while loop')
 
     result = results_to_changemodel(fitted_models=models,
                                     start_day=period[model_window.start],
