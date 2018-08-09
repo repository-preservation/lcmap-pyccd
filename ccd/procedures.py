@@ -257,6 +257,12 @@ def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
 
     log.debug('Processing mask initial count: %s', obs_count)
 
+    # Accumulator for models. This is a list of ChangeModel named tuples
+    results = []
+
+    if obs_count <= meow_size:
+        return results, processing_mask
+
     # TODO Temporary setup on this to just get it going
     peek_size = adjustpeek(dates[processing_mask], defpeek)
     proc_params.PEEK_SIZE = peek_size
@@ -265,13 +271,6 @@ def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
 
     log.debug('Peek size: %s', proc_params.PEEK_SIZE)
     log.debug('Chng thresh: %s', proc_params.CHANGE_THRESHOLD)
-
-
-    # Accumulator for models. This is a list of ChangeModel named tuples
-    results = []
-
-    if obs_count <= meow_size:
-        return results, processing_mask
 
     # Initialize the window which is used for building the models
     model_window = slice(0, meow_size)
