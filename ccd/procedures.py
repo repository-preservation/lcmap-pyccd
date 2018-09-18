@@ -121,7 +121,7 @@ def permanent_snow_procedure(dates, observations, fitter_fn, quality,
     result = results_to_changemodel(fitted_models=models,
                                     start_day=dates[0],
                                     end_day=dates[-1],
-                                    break_day=0,
+                                    break_day=dates[-1],
                                     magnitudes=magnitudes,
                                     observation_count=np.sum(processing_mask),
                                     change_probability=0,
@@ -178,7 +178,7 @@ def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
     result = results_to_changemodel(fitted_models=models,
                                     start_day=dates[0],
                                     end_day=dates[-1],
-                                    break_day=0,
+                                    break_day=dates[-1],
                                     magnitudes=magnitudes,
                                     observation_count=np.sum(processing_mask),
                                     change_probability=0,
@@ -758,10 +758,10 @@ def catch(dates, observations, fitter_fn, processing_mask, model_window,
                         num_coef)
               for spectrum in model_spectral]
 
-    try:
-        break_day = period[model_window.stop]
-    except:
+    if model_window.stop >= period.shape[0]:
         break_day = period[-1]
+    else:
+        break_day = period[model_window.stop]
 
     result = results_to_changemodel(fitted_models=models,
                                     start_day=period[model_window.start],
