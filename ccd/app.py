@@ -11,24 +11,16 @@ Module level constructs are only evaluated once in a Python application's
 lifecycle, usually at the time of first import. This pattern is borrowed
 from Flask.
 """
-import yaml, os, hashlib, zipfile
+import hashlib
+
+from ccd import parameters
 
 
 # Simplify parameter setting and make it easier for adjustment
 class Parameters(dict):
-    def __init__(self, config_path='parameters.yaml'):
-        if '.zip' in config_path:
-            zp, ym = config_path.split('.zip/')
+    def __init__(self, params):
 
-            with zipfile.ZipFile('{}.zip'.format(zp), 'r') as myzip:
-                with myzip.open(ym) as f:
-                    conf = f.read()
-
-        else:
-            with open(config_path, 'r') as f:
-                conf = f.read()
-
-        super(Parameters, self).__init__(yaml.load(conf))
+        super(Parameters, self).__init__(params)
 
     def __getattr__(self, name):
         if name in self:
@@ -59,4 +51,4 @@ FITTER_FN = 'ccd.models.lasso.fitted_model'
 
 
 def get_default_params():
-    return Parameters(os.path.join(os.path.dirname(__file__), 'parameters.yaml'))
+    return Parameters(parameters.defaults)
