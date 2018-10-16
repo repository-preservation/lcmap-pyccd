@@ -10,6 +10,8 @@ from test.shared import read_data
 #
 import ccd
 
+params = ccd.app.get_default_params()
+
 
 def test_sample_data_sets():
     """
@@ -46,6 +48,50 @@ def test_npy():
     for sample in samples:
         dat = np.load(sample)
         results = ccd.detect(**dat[1])
+
+
+def test_insuff_clear():
+    """
+    Flex the insufficient clear procedure code to make sure it runs.
+    """
+    sample = 'test/resources/h04v03_-1947075_2846265_pixel_insuff.npy'
+
+    result = ccd.detect(**np.load(sample)[1])
+
+    assert result['change_models'][0]['curve_qa'] == params.CURVE_QA['INSUF_CLEAR']
+
+
+def test_perm_snow():
+    """
+    Flex the permanent snow procedure code.
+    """
+    sample = 'test/resources/h04v03_-1947105_2846265_pixel_snow.npy'
+
+    result = ccd.detect(**np.load(sample)[1])
+
+    assert result['change_models'][0]['curve_qa'] == params.CURVE_QA['PERSIST_SNOW']
+
+
+def test_startfit():
+    """
+    Flex the code the generates start fits.
+    """
+    sample = 'test/resources/h04v03_-1945155_2844645_pixel_startfit.npy'
+
+    result = ccd.detect(**np.load(sample)[1])
+
+    assert result['change_models'][0]['curve_qa'] == params.CURVE_QA['START']
+
+
+def test_endfit():
+    """
+    Flex the code the generates start fits.
+    """
+    sample = 'test/resources/h04v03_-1945125_2844645_pixel_endfit.npy'
+
+    result = ccd.detect(**np.load(sample)[1])
+
+    assert result['change_models'][-1]['curve_qa'] == params.CURVE_QA['END']
 
 
 def test_sort_dates():
