@@ -63,8 +63,7 @@ setup(
 
     install_requires=['numpy>=1.10.0',
                       'scipy>=0.18.1',
-                      'scikit-learn>=0.18',
-                      'PyYAML>=3.12'],
+                      'scikit-learn>=0.18'],
 
     extras_require={
         'test': ['aniso8601>=1.1.0',
@@ -80,10 +79,6 @@ setup(
 
     setup_requires=['pytest-runner', 'pip'],
     tests_require=['pytest>=3.0.2'],
-
-    package_data={
-        'ccd': ['parameters.yaml'],
-    },
 
     # data_files=[('my_data', ['data/data_file'])],
 
