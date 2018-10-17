@@ -9,3 +9,4 @@ pip-selfcheck.json
 *.venv/*
 *.ipynb_checkpoints
 .idea/
+.pytest_cache/

@@ -28,7 +28,8 @@ import numpy as np
 from ccd import qa
 from ccd.change import enough_samples, enough_time,\
     update_processing_mask, stable, determine_num_coefs, calc_residuals, \
-    find_closest_doy, change_magnitude, detect_change, detect_outlier
+    find_closest_doy, change_magnitude, detect_change, detect_outlier, \
+    adjustpeek, adjustchgthresh
 from ccd.models import results_to_changemodel, tmask
 from ccd.math_utils import kelvin_to_celsius, adjusted_variogram, euclidean_norm
 
@@ -120,7 +121,7 @@ def permanent_snow_procedure(dates, observations, fitter_fn, quality,
     result = results_to_changemodel(fitted_models=models,
                                     start_day=dates[0],
                                     end_day=dates[-1],
-                                    break_day=0,
+                                    break_day=dates[-1],
                                     magnitudes=magnitudes,
                                     observation_count=np.sum(processing_mask),
                                     change_probability=0,
@@ -177,7 +178,7 @@ def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
     result = results_to_changemodel(fitted_models=models,
                                     start_day=dates[0],
                                     end_day=dates[-1],
-                                    break_day=0,
+                                    break_day=dates[-1],
                                     magnitudes=magnitudes,
                                     observation_count=np.sum(processing_mask),
                                     change_probability=0,
@@ -223,13 +224,13 @@ def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
     """
     # TODO do this better
     meow_size = proc_params.MEOW_SIZE
-    peek_size = proc_params.PEEK_SIZE
+    defpeek = proc_params.PEEK_SIZE
     thermal_idx = proc_params.THERMAL_IDX
     curve_qa = proc_params.CURVE_QA
 
     log.debug('Build change models - dates: %s, obs: %s, '
               'meow_size: %s, peek_size: %s',
-              dates.shape[0], observations.shape, meow_size, peek_size)
+              dates.shape[0], observations.shape, meow_size, defpeek)
 
     # First we need to filter the observations based on the spectra values
     # and qa information and convert kelvin to celsius.
@@ -261,6 +262,15 @@ def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
 
     if obs_count <= meow_size:
         return results, processing_mask
+
+    # TODO Temporary setup on this to just get it going
+    peek_size = adjustpeek(dates[processing_mask], defpeek)
+    proc_params.PEEK_SIZE = peek_size
+    proc_params.CHANGE_THRESHOLD = adjustchgthresh(peek_size, defpeek,
+                                                   proc_params.CHANGE_THRESHOLD)
+
+    log.debug('Peek size: %s', proc_params.PEEK_SIZE)
+    log.debug('Chng thresh: %s', proc_params.CHANGE_THRESHOLD)
 
     # Initialize the window which is used for building the models
     model_window = slice(0, meow_size)
@@ -313,6 +323,11 @@ def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
                                  slice(previous_end, model_window.start),
                                  curve_qa['START'], proc_params))
             start = False
+
+        # Handle specific case where if we are at the end of a time series and
+        # the peek size is greater than what remains of the data.
+        if model_window.stop + peek_size > dates[processing_mask].shape[0]:
+            break
 
         # Step 4: lookforward
         log.debug('Extend change model')
@@ -522,7 +537,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     fit_span = period[model_window.stop - 1] - period[model_window.start]
 
     # stop is always exclusive
-    while model_window.stop + peek_size < period.shape[0] or models is None:
+    while model_window.stop + peek_size <= period.shape[0]:
         num_coefs = determine_num_coefs(period[model_window], coef_min,
                                         coef_mid, coef_max, num_obs_fact)
 
@@ -535,44 +550,28 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
 
         # If we have less than 24 observations covered by the model_window
         # or it the first iteration, then we always fit a new window
-        if not models or model_window.stop - model_window.start < 24:
+        # If the number of observations that the current fitted models
+        # expand past a threshold, then we need to fit new ones.
+        if not models or model_window.stop - model_window.start < 24 or model_span >= 1.33 * fit_span:
             fit_span = period[model_window.stop - 1] - period[
                 model_window.start]
 
             fit_window = model_window
-            log.debug('Retrain models, less than 24 samples')
+            log.debug('Retrain models')
             models = [fitter_fn(period[fit_window], spectrum,
                                 fit_max_iter, avg_days_yr, num_coefs)
                       for spectrum in spectral_obs[:, fit_window]]
 
-            residuals = np.array([calc_residuals(period[peek_window],
-                                                 spectral_obs[idx, peek_window],
-                                                 models[idx], avg_days_yr)
-                                  for idx in range(observations.shape[0])])
+        residuals = np.array([calc_residuals(period[peek_window],
+                                             spectral_obs[idx, peek_window],
+                                             models[idx], avg_days_yr)
+                              for idx in range(observations.shape[0])])
 
+        if model_window.stop - model_window.start <= 24:
             comp_rmse = [models[idx].rmse for idx in detection_bands]
 
         # More than 24 points
         else:
-            # If the number of observations that the current fitted models
-            # expand past a threshold, then we need to fit new ones.
-            # The 1.33 should be parametrized at some point.
-            if model_span >= 1.33 * fit_span:
-                log.debug('Retrain models, model_span: %s fit_span: %s',
-                          model_span, fit_span)
-                fit_span = period[model_window.stop - 1] - period[
-                    model_window.start]
-                fit_window = model_window
-
-                models = [fitter_fn(period[fit_window], spectrum,
-                                    fit_max_iter, avg_days_yr, num_coefs)
-                          for spectrum in spectral_obs[:, fit_window]]
-
-            residuals = np.array([calc_residuals(period[peek_window],
-                                                 spectral_obs[idx, peek_window],
-                                                 models[idx], avg_days_yr)
-                                  for idx in range(observations.shape[0])])
-
             # We want to use the closest residual values to the peek_window
             # values based on seasonality.
             closest_indexes = find_closest_doy(period, peek_window.stop - 1,
@@ -610,6 +609,11 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
             period = dates[processing_mask]
             spectral_obs = observations[:, processing_mask]
             continue
+
+        # Check before incrementing the model window, otherwise the reporting
+        # can get a little messy.
+        if model_window.stop + peek_size > period.shape[0]:
+            break
 
         model_window = slice(model_window.start, model_window.stop + 1)
 
@@ -754,10 +758,10 @@ def catch(dates, observations, fitter_fn, processing_mask, model_window,
                         num_coef)
               for spectrum in model_spectral]
 
-    try:
-        break_day = period[model_window.stop]
-    except:
+    if model_window.stop >= period.shape[0]:
         break_day = period[-1]
+    else:
+        break_day = period[model_window.stop]
 
     result = results_to_changemodel(fitted_models=models,
                                     start_day=period[model_window.start],

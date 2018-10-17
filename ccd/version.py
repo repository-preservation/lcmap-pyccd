@@ -10,7 +10,7 @@ __name = 'lcmap-pyccd'
 # the core algorithm. So, the core algorithm needs it's own version
 # that actually gets reported with results, and a release version for pypi
 # and system integration purposes.
-__algorithm_version__ = '2018.03.12'
+__algorithm_version__ = '2018.10.17'
 __local_version__ = ''
 
 # __algorithm__ = ':'.join([__name, __algorithm_version__, __local_version__])

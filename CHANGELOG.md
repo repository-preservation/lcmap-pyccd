@@ -1,5 +1,17 @@
 # pyccd change log
 All notable changes to this project will be documented in this file. Changes before 1.0.0.b1 are not tracked.
+## [2018.10.17]
+### Added
+ - Additional testing for main detect() method to ensure all the code is flexed to some degree
+
+### Changed
+ - The number of observations used to detect change is now variable, and dependant on input characteristics
+ - Permanent snow and insufficient clear procedures now return the last day in the series as the break day instead of 0
+ - Replaced the parameters.yaml with a .py
+
+### Removed
+ - pyyaml dependency
+ - parameters.yaml file dependency
   
 ## [2018.03.12]
 ### Added
@@ -111,3 +123,4 @@ All notable changes to this project will be documented in this file. Changes bef
 [2017.08.18]: https://github.com/usgs-eros/lcmap-pyccd/compare/v2017.06.20...v2017.08.18
 [2017.10.27]: https://github.com/usgs-eros/lcmap-pyccd/compare/v2017.08.18...v2017.10.27
 [2018.03.12]: https://github.com/usgs-eros/lcmap-pyccd/compare/v2017.10.27...v2018.03.12
+[2018.10.17]: https://github.com/usgs-eros/lcmap-pyccd/compare/v2017.03.12...v2018.10.17

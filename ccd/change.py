@@ -7,6 +7,7 @@ These should be as close to the functional paradigm as possible.
 """
 import logging
 import numpy as np
+from scipy.stats import chi2
 
 from ccd.models import lasso
 from ccd.math_utils import sum_of_squares
@@ -290,4 +291,17 @@ def find_closest_doy(dates, date_idx, window, num):
     return np.argsort(d_yr)[:num]
 
 
+def adjustpeek(dates, defpeek):
+    delta = np.median(np.diff(dates))
+    adj_peek = int(np.round(defpeek * 16 / delta))
 
+    return adj_peek if adj_peek > defpeek else defpeek
+
+
+def adjustchgthresh(peek, defpeek, defthresh):
+    thresh = defthresh
+    if peek > defpeek:
+        pt_cg = 1 - (1 - 0.99) ** (defpeek / peek)
+        thresh = chi2.ppf(pt_cg, 5)
+
+    return thresh
