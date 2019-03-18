@@ -37,18 +37,43 @@ from ccd.math_utils import kelvin_to_celsius, adjusted_variogram, euclidean_norm
 log = logging.getLogger(__name__)
 
 
-def fit_procedure(quality, proc_params):
+def procedure_fromprev(prev_results, proc_params):
+    """
+    Determine the procedure from the previous set of results in order to remain
+    consistent.
+
+    Args:
+        prev_results:  Previous set of results to be updated with
+            new observations
+        proc_params: dictionary of processing parameters
+
+    Returns:
+        the corresponding function that will be use to generate
+         the curves
+    """
+    if prev_results['change_models']:
+        if prev_results['change_models'][0]['curve_qa'] == proc_params['CURVE_QA']['PERSIST_SNOW']:
+            return permanent_snow_procedure
+        if prev_results['change_models'][0]['curve_qa'] == proc_params['CURVE_QA']['INSUF_CLEAR']:
+            return insufficient_clear_procedure
+
+    return standard_procedure
+
+
+def fit_procedure(quality, prev_results, proc_params):
     """Determine which curve fitting method to use
 
     This is based on information from the QA band
 
     Args:
         quality: QA information for each observation
+        prev_results:  Previous set of results to be updated with
+            new observations
         proc_params: dictionary of processing parameters
 
     Returns:
-        method: the corresponding method that will be use to generate
-         the curves
+        The corresponding function that will be use to generate
+        the curves
     """
     # TODO do this better
     clear = proc_params.QA_CLEAR
@@ -58,7 +83,10 @@ def fit_procedure(quality, proc_params):
     clear_thresh = proc_params.CLEAR_PCT_THRESHOLD
     snow_thresh = proc_params.SNOW_PCT_THRESHOLD
 
-    if not qa.enough_clear(quality, clear, water, fill, clear_thresh):
+    if prev_results is not None:
+        func = procedure_fromprev(prev_results, proc_params)
+
+    elif not qa.enough_clear(quality, clear, water, fill, clear_thresh):
         if qa.enough_snow(quality, clear, water, snow, snow_thresh):
             func = permanent_snow_procedure
         else:
@@ -72,7 +100,7 @@ def fit_procedure(quality, proc_params):
     return func
 
 
-def permanent_snow_procedure(dates, observations, fitter_fn, quality,
+def permanent_snow_procedure(dates, observations, fitter_fn, quality, prev_results,
                              proc_params):
     """
     Snow procedure for when there is a significant amount snow represented
@@ -89,6 +117,8 @@ def permanent_snow_procedure(dates, observations, fitter_fn, quality,
         fitter_fn: a function used to fit observation values and
             acquisition dates for each spectra.
         quality: QA information for each observation
+        prev_results:  Previous set of results to be updated with
+            new observations
         proc_params: dictionary of processing parameters
 
     Returns:
@@ -130,7 +160,7 @@ def permanent_snow_procedure(dates, observations, fitter_fn, quality,
     return (result,), processing_mask
 
 
-def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
+def insufficient_clear_procedure(dates, observations, fitter_fn, quality, prev_results,
                                  proc_params):
     """
     insufficient clear procedure for when there is an insufficient quality
@@ -147,6 +177,8 @@ def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
         fitter_fn: a function used to fit observation values and
             acquisition dates for each spectra.
         quality: QA information for each observation
+        prev_results:  Previous set of results to be updated with
+            new observations
         proc_params: dictionary of processing parameters
 
     Returns:
@@ -187,7 +219,8 @@ def insufficient_clear_procedure(dates, observations, fitter_fn, quality,
     return (result,), processing_mask
 
 
-def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
+def standard_procedure(dates, observations, fitter_fn, quality, prev_results,
+                       proc_params):
     """
     Runs the core change detection algorithm.
 
@@ -215,6 +248,8 @@ def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
         fitter_fn: a function used to fit observation values and
             acquisition dates for each spectra.
         quality: QA information for each observation
+        prev_results:  Previous set of results to be updated with
+            new observations
         proc_params: dictionary of processing parameters
 
     Returns:
@@ -264,7 +299,13 @@ def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
         return results, processing_mask
 
     # TODO Temporary setup on this to just get it going
-    peek_size = adjustpeek(dates[processing_mask], defpeek)
+    if prev_results:
+        stat_mask = np.zeros_like(processing_mask, dtype=np.bool)
+        stat_mask[:len(prev_results['processing_mask'])] = prev_results['processing_mask']
+    else:
+        stat_mask = processing_mask
+
+    peek_size = adjustpeek(dates[stat_mask], defpeek)
     proc_params.PEEK_SIZE = peek_size
     proc_params.CHANGE_THRESHOLD = adjustchgthresh(peek_size, defpeek,
                                                    proc_params.CHANGE_THRESHOLD)
@@ -282,8 +323,8 @@ def standard_procedure(dates, observations, fitter_fn, quality, proc_params):
 
     # Calculate the variogram/madogram that will be used in subsequent
     # processing steps. See algorithm documentation for further information.
-    variogram = adjusted_variogram(dates[processing_mask],
-                                   observations[:, processing_mask])
+    variogram = adjusted_variogram(dates[stat_mask],
+                                   observations[:, stat_mask])
     log.debug('Variogram values: %s', variogram)
 
     # Only build models as long as sufficient data exists.
