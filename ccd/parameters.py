@@ -84,4 +84,9 @@ defaults = {
     ############################
     'FITTER_FN': 'ccd.models.lasso.fitted_model',
     'LASSO_MAX_ITER': 1000,
+
+    ############################
+    # Ordinal date related statistical calculations
+    ############################
+    'STAT_ORD': 736694
 }

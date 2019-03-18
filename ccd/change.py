@@ -305,3 +305,21 @@ def adjustchgthresh(peek, defpeek, defthresh):
         thresh = chi2.ppf(pt_cg, 5)
 
     return thresh
+
+
+def statmask(dates, processing_mask, max_ord):
+    """
+    Create the mask used for the one time statistics, but limit their calculation
+    based on a maximum ordinal date.
+
+    Args:
+        dates: dates array
+        processing_mask: processing mask after initial QA filtering
+        max_ord: maximum ordinal date to include in the calculations
+
+    Returns:
+        bool mask
+    """
+    stat_mask = np.copy(processing_mask)
+    stat_mask[dates > max_ord] = 0
+    return stat_mask

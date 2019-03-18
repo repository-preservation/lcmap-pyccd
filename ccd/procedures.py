@@ -29,7 +29,7 @@ from ccd import qa
 from ccd.change import enough_samples, enough_time,\
     update_processing_mask, stable, determine_num_coefs, calc_residuals, \
     find_closest_doy, change_magnitude, detect_change, detect_outlier, \
-    adjustpeek, adjustchgthresh
+    adjustpeek, adjustchgthresh, statmask
 from ccd.models import results_to_changemodel, tmask
 from ccd.math_utils import kelvin_to_celsius, adjusted_variogram, euclidean_norm
 
@@ -299,11 +299,7 @@ def standard_procedure(dates, observations, fitter_fn, quality, prev_results,
         return results, processing_mask
 
     # TODO Temporary setup on this to just get it going
-    if prev_results:
-        stat_mask = np.zeros_like(processing_mask, dtype=np.bool)
-        stat_mask[:len(prev_results['processing_mask'])] = prev_results['processing_mask']
-    else:
-        stat_mask = processing_mask
+    stat_mask = statmask(dates, processing_mask, proc_params.STAT_ORD)
 
     peek_size = adjustpeek(dates[stat_mask], defpeek)
     proc_params.PEEK_SIZE = peek_size
