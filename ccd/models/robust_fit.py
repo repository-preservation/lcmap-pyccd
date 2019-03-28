@@ -93,7 +93,7 @@ def _weight_fit(X, y, w):
     Xw = X * sw[:, None]
     yw = y * sw
 
-    beta, _, _, _ = numpy.linalg.lstsq(Xw, yw, rcond=-1)
+    beta, _, _, _ = numpy.linalg.lstsq(Xw, yw, rcond=None)
 
     resid = y - numpy.dot(X, beta)
 
