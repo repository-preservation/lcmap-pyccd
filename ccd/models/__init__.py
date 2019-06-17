@@ -58,3 +58,22 @@ def results_to_changemodel(fitted_models, start_day, end_day, break_day,
             'swir1': spectral_models[4],
             'swir2': spectral_models[5],
             'thermal': spectral_models[6]}
+
+
+def results_fromprev(prev, proc_params):
+    """
+    Load a previous set results to begin updating with some new forward
+    observations. This will trim off any segments identified as "end fits", so
+    that they can possibly updated with more stable segments.
+
+    Args:
+        prev: dictionary of previous pyccd results
+        proc_params: dictionary of processing parameters
+
+    Returns:
+        list of dictionaries
+    """
+    if prev['change_models'][-1]['change_probability'] == 0:
+        return [m for m in prev['change_models'][:-1]]
+
+    return [m for m in prev['change_models']]

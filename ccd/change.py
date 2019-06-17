@@ -323,3 +323,120 @@ def statmask(dates, processing_mask, max_ord):
     stat_mask = np.copy(processing_mask)
     stat_mask[dates > max_ord] = 0
     return stat_mask
+
+
+def prevmask(proc_mask, prev_results):
+    """
+    Load the previous set of results and "add" its processing mask to the current
+    run's mask.
+
+    Args:
+        proc_mask: the current mask
+        prev_results: Previous set of results to be updated with
+            new observations
+
+    Returns:
+        1-d boolean ndarray
+    """
+    prev_mask = np.asarray(prev_results['processing_mask'], dtype=np.bool)
+    proc_mask[:prev_mask.shape[0]] = prev_mask
+
+    return proc_mask
+
+
+def jumpstart(prev_results, dates, observations, fitter_fn, proc_params):
+    """
+    Jumpstart the fitting and pick up from a previous set of results. This
+    essentially returns a set of variables that should allow us to pick up where
+    the previous procedure left off at.
+
+    Args:
+        prev_results: Previous set of results to be updated with
+            new observations
+        dates: list of ordinal day numbers relative to some epoch,
+            the particular epoch does not matter.
+        observations: 2-d array of observed spectral values corresponding
+            to each time.
+        fitter_fn: a function used to fit observation values and
+            acquisition dates for each spectra.
+        proc_params: dictionary of processing parameters
+
+    Returns:
+        model_window, fit_window, previous_end, to_init, prev_models
+    """
+    meow = proc_params.MEOW_SIZE
+    # No results, we should try and let the procedure run through from the
+    # beginning.
+    prev_models = prev_results['change_models']
+
+    if len(prev_models) == 0:
+        return slice(0, 0 + meow), None, 0, True, None
+
+    # Ended on a break, pickup where we left off ...
+    elif prev_models[-1]['change_probability'] == 1:
+        start = np.argwhere(dates == prev_models[-1]['break_day'])[0][0]
+        return slice(start, start + meow), None, start, True, None
+
+    # Ended without a break, need to pick back up where we left off at ...
+    else:
+        start = np.argwhere(dates == prev_models[-1]['start_day'])[0][0]
+        end = np.argwhere(dates == prev_models[-1]['end_day'])[0][0]
+
+        model_window = slice(start, end)
+
+        if len(prev_models) > 1:
+            prev = np.argwhere(dates == prev_models[-2]['end_day'])[0][0] + 1
+        else:
+            prev = 0
+
+        models, fit_window = modelsfromwindow(model_window, dates, observations,
+                                              fitter_fn, proc_params)
+
+        return model_window, fit_window, prev, False, models
+
+
+def modelsfromwindow(model_window, dates, observations, fitter_fn, proc_params):
+    """
+    Build a set of fitted models from a given window that the model should apply
+    to.
+
+    Args:
+        model_window:
+        dates:
+        observations:
+        fitter_fn:
+        proc_params:
+
+    Returns:
+
+    """
+
+    coef_min = proc_params.COEFFICIENT_MIN
+    coef_mid = proc_params.COEFFICIENT_MID
+    coef_max = proc_params.COEFFICIENT_MAX
+    num_obs_fact = proc_params.NUM_OBS_FACTOR
+    avg_days_yr = proc_params.AVG_DAYS_YR
+    fit_max_iter = proc_params.LASSO_MAX_ITER
+
+    model_span = dates[model_window.stop - 1] - dates[model_window.start]
+
+    num_coefs = determine_num_coefs(dates[model_window], coef_min,
+                                    coef_mid, coef_max, num_obs_fact)
+
+    if model_span < 24:
+        return [fitter_fn(dates[model_window], spectrum,fit_max_iter,
+                          avg_days_yr, num_coefs)
+                for spectrum in observations[:, model_window]], model_window
+
+    else:
+        fit_window = slice(model_window.start, model_window.start + 24)
+        fit_span = dates[fit_window.stop - 1] - dates[fit_window.start]
+
+        for idx in range(model_window.start, model_window.stop):
+            if dates[idx] - model_window.start >= 1.33 * fit_span:
+                fit_window = slice(model_window.start, idx)
+                fit_span = dates[idx - 1] - dates[model_window.start]
+
+        return [fitter_fn(dates[fit_window], spectrum, fit_max_iter,
+                          avg_days_yr, num_coefs)
+                for spectrum in observations[:, fit_window]], fit_window
