@@ -589,7 +589,10 @@ def lookforward(dates, observations, model_window, fit_window, models, fitter_fn
     spectral_obs = observations[:, processing_mask]
 
     # Used for comparison purposes
-    fit_span = period[model_window.stop - 1] - period[model_window.start]
+    if fit_window:
+        fit_span = period[fit_window.stop - 1] - period[fit_window.start]
+    else:
+        fit_span = period[model_window.stop - 1] - period[model_window.start]
 
     # stop is always exclusive
     while model_window.stop + peek_size <= period.shape[0]:

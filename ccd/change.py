@@ -418,22 +418,23 @@ def modelsfromwindow(model_window, dates, observations, fitter_fn, proc_params):
     avg_days_yr = proc_params.AVG_DAYS_YR
     fit_max_iter = proc_params.LASSO_MAX_ITER
 
-    model_span = dates[model_window.stop - 1] - dates[model_window.start]
-
     num_coefs = determine_num_coefs(dates[model_window], coef_min,
                                     coef_mid, coef_max, num_obs_fact)
 
-    if model_span < 24:
-        return [fitter_fn(dates[model_window], spectrum,fit_max_iter,
+    # Less than 24 observations, fit the entire set.
+    if model_window.stop - model_window.start < 24:
+        return [fitter_fn(dates[model_window], spectrum, fit_max_iter,
                           avg_days_yr, num_coefs)
                 for spectrum in observations[:, model_window]], model_window
 
+    # 24 or more observations, well things get a little more complicated.
     else:
-        fit_window = slice(model_window.start, model_window.start + 24)
+        model_span = dates[model_window.stop - 1] - dates[model_window.start]
+        fit_window = slice(model_window.start, model_window.start + 23)
         fit_span = dates[fit_window.stop - 1] - dates[fit_window.start]
 
-        for idx in range(model_window.start, model_window.stop):
-            if dates[idx] - model_window.start >= 1.33 * fit_span:
+        for idx in range(model_window.start + 24, model_window.stop + 1):
+            if model_span >= 1.33 * fit_span:
                 fit_window = slice(model_window.start, idx)
                 fit_span = dates[idx - 1] - dates[model_window.start]
 
