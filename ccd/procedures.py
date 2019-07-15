@@ -29,7 +29,7 @@ from ccd import qa
 from ccd.change import enough_samples, enough_time,\
     update_processing_mask, stable, determine_num_coefs, calc_residuals, \
     find_closest_doy, change_magnitude, detect_change, detect_outlier, \
-    adjustpeek, adjustchgthresh, statmask, jumpstart, prevmask
+    adjustpeek, adjustchgthresh, statmask, jumpstart, prevmask, span
 from ccd.models import results_to_changemodel, tmask, results_fromprev
 from ccd.math_utils import kelvin_to_celsius, adjusted_variogram, euclidean_norm
 
@@ -292,11 +292,10 @@ def standard_procedure(dates, observations, fitter_fn, quality, prev_results,
     # make this even more procedural, but edits to avoid this would take more
     # significant time.
     if prev_results:
-        processing_mask = prevmask(processing_mask, prev_results)
-        results = results_fromprev(prev_results, proc_params)
-        js = jumpstart(prev_results, dates[processing_mask], observations[:, processing_mask],
-                       fitter_fn, proc_params)
-        model_window, fit_window, previous_end, to_init, models = js
+        processing_mask = prevmask(processing_mask, dates, prev_results)
+        results = results_fromprev(prev_results)
+        js = jumpstart(prev_results, dates[processing_mask], proc_params)
+        model_window, previous_end = js
 
         if model_window.start == 0:
             start = True
@@ -306,11 +305,8 @@ def standard_procedure(dates, observations, fitter_fn, quality, prev_results,
     else:
         results = []
         model_window = slice(0, meow_size)
-        fit_window = None
         previous_end = 0
-        to_init = True
         start = True
-        models = None
 
     obs_count = np.sum(processing_mask)
 
@@ -337,7 +333,7 @@ def standard_procedure(dates, observations, fitter_fn, quality, prev_results,
     log.debug('Variogram values: %s', variogram)
 
     # Only build models as long as sufficient data exists.
-    while model_window.stop <= dates[processing_mask].shape[0] - meow_size or models:
+    while model_window.stop <= dates[processing_mask].shape[0] - meow_size:
         # Step 1: Initialize
         log.debug('Initialize for change model #: %s', len(results) + 1)
         if len(results) > 0:
@@ -345,25 +341,22 @@ def standard_procedure(dates, observations, fitter_fn, quality, prev_results,
 
         # Make things a little more readable by breaking this apart
         # catch return -> break apart into components
-        if to_init:
-            initialized = initialize(dates, observations, fitter_fn, model_window,
-                                     processing_mask, variogram, proc_params)
+        initialized = initialize(dates, observations, fitter_fn, model_window,
+                                 processing_mask, variogram, proc_params)
 
-            model_window, init_models, processing_mask = initialized
+        model_window, init_models, processing_mask = initialized
 
-            # Catch for failure
-            if init_models is None:
-                log.debug('Model initialization failed')
-                break
+        # Catch for failure
+        if init_models is None:
+            log.debug('Model initialization failed')
+            break
 
-            # Step 2: Lookback
-            if model_window.start > previous_end:
-                lb = lookback(dates, observations, model_window, init_models,
-                              previous_end, processing_mask, variogram, proc_params)
+        # Step 2: Lookback
+        if model_window.start > previous_end:
+            lb = lookback(dates, observations, model_window, init_models,
+                          previous_end, processing_mask, variogram, proc_params)
 
-                model_window, processing_mask = lb
-        else:
-            to_init = True
+            model_window, processing_mask = lb
 
         # Step 3: catch
         # If we have moved > peek_size from the previous break point
@@ -384,8 +377,8 @@ def standard_procedure(dates, observations, fitter_fn, quality, prev_results,
 
         # Step 4: lookforward
         log.debug('Extend change model')
-        lf = lookforward(dates, observations, model_window, fit_window, models,
-                         fitter_fn, processing_mask, variogram, proc_params)
+        lf = lookforward(dates, observations, model_window, fitter_fn,
+                         processing_mask, variogram, proc_params)
 
         result, processing_mask, model_window = lf
         results.append(result)
@@ -395,7 +388,7 @@ def standard_procedure(dates, observations, fitter_fn, quality, prev_results,
         # Step 5: Iterate
         previous_end = model_window.stop
         model_window = slice(model_window.stop, model_window.stop + meow_size)
-        fit_window = model_window
+        fit_window = None
         models = None
 
     # Step 6: Catch
@@ -532,8 +525,8 @@ def initialize(dates, observations, fitter_fn, model_window, processing_mask,
     return model_window, models, processing_mask
 
 
-def lookforward(dates, observations, model_window, fit_window, models, fitter_fn,
-                processing_mask, variogram, proc_params):
+def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
+                variogram, proc_params):
     """Increase observation window until change is detected or
     we are out of observations.
 
@@ -575,10 +568,10 @@ def lookforward(dates, observations, model_window, fit_window, models, fitter_fn
     # The fit_window pertains to which locations are used in the model
     # regression, while the model_window identifies the locations in which
     # fitted models apply to. They are not always the same.
-    # fit_window = model_window
+    fit_window = model_window
 
     # Initialized for a check at the first iteration.
-    # models = None
+    models = None
 
     # Simple value to determine if change has occured or not. Change may not
     # have occurred if we reach the end of the time series.
@@ -589,10 +582,7 @@ def lookforward(dates, observations, model_window, fit_window, models, fitter_fn
     spectral_obs = observations[:, processing_mask]
 
     # Used for comparison purposes
-    if fit_window:
-        fit_span = period[fit_window.stop - 1] - period[fit_window.start]
-    else:
-        fit_span = period[model_window.stop - 1] - period[model_window.start]
+    fit_span = span(period, fit_window)
 
     # stop is always exclusive
     while model_window.stop + peek_size <= period.shape[0]:
@@ -602,7 +592,7 @@ def lookforward(dates, observations, model_window, fit_window, models, fitter_fn
         peek_window = slice(model_window.stop, model_window.stop + peek_size)
 
         # Used for comparison against fit_span
-        model_span = period[model_window.stop - 1] - period[model_window.start]
+        model_span = span(period, model_window)
 
         log.debug('Detecting change for %s', peek_window)
 
@@ -611,10 +601,9 @@ def lookforward(dates, observations, model_window, fit_window, models, fitter_fn
         # If the number of observations that the current fitted models
         # expand past a threshold, then we need to fit new ones.
         if not models or model_window.stop - model_window.start < 24 or model_span >= 1.33 * fit_span:
-            fit_span = period[model_window.stop - 1] - period[
-                model_window.start]
-
             fit_window = model_window
+            fit_span = span(period, fit_window)
+
             log.debug('Retrain models')
             models = [fitter_fn(period[fit_window], spectrum,
                                 fit_max_iter, avg_days_yr, num_coefs)
