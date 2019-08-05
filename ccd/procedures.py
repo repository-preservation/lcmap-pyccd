@@ -292,9 +292,9 @@ def standard_procedure(dates, observations, fitter_fn, quality, prev_results,
     # make this even more procedural, but edits to avoid this would take more
     # significant time.
     if prev_results:
-        processing_mask = prevmask(processing_mask, dates, prev_results)
         results = results_fromprev(prev_results)
-        js = jumpstart(prev_results, dates[processing_mask], proc_params)
+        processing_mask = prevmask(processing_mask, dates, prev_results['processing_mask'], results)
+        js = jumpstart(results, dates[processing_mask], proc_params)
         model_window, previous_end = js
 
         if model_window.start == 0:
@@ -388,8 +388,6 @@ def standard_procedure(dates, observations, fitter_fn, quality, prev_results,
         # Step 5: Iterate
         previous_end = model_window.stop
         model_window = slice(model_window.stop, model_window.stop + meow_size)
-        fit_window = None
-        models = None
 
     # Step 6: Catch
     # We can use previous start here as that value should be equal to
@@ -442,6 +440,7 @@ def initialize(dates, observations, fitter_fn, model_window, processing_mask,
 
     log.debug('Initial %s', model_window)
     models = None
+    print(f'Model window (INIT): {model_window}')
     while model_window.stop + meow_size < period.shape[0]:
         # Finding a sufficient window of time needs to run
         # each iteration because the starting point
@@ -522,6 +521,7 @@ def initialize(dates, observations, fitter_fn, model_window, processing_mask,
             log.debug('Stable start found: %s', model_window)
             break
 
+    print(f'Final Model window (INIT): {model_window}')
     return model_window, models, processing_mask
 
 
@@ -585,6 +585,7 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     fit_span = span(period, fit_window)
 
     # stop is always exclusive
+    print(f'Model window (LF): {model_window}')
     while model_window.stop + peek_size <= period.shape[0]:
         num_coefs = determine_num_coefs(period[model_window], coef_min,
                                         coef_mid, coef_max, num_obs_fact)

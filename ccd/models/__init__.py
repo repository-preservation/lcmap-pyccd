@@ -72,9 +72,10 @@ def results_fromprev(prev):
     Returns:
         list of dictionaries
     """
-    if len(prev['change_models']) < 1:
-        return []
-    elif prev['change_models'][-1]['change_probability'] == 0:
-        return [m for m in prev['change_models'][:-1]]
+    for idx, model in enumerate(prev['change_models'][::-1]):
+        if model['change_probability'] == 0:
+            continue
+        else:
+            return [m.copy() for m in prev['change_models'][:-idx]]
 
-    return [m for m in prev['change_models']]
+    return []

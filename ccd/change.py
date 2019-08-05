@@ -341,7 +341,7 @@ def statmask(dates, processing_mask, max_ord):
     return stat_mask
 
 
-def prevmask(proc_mask, dates, prev_results):
+def prevmask(proc_mask, dates, prev_mask, prev_results):
     """
     Load the previous set of results and "add" its processing mask to the current
     run's mask.
@@ -350,30 +350,22 @@ def prevmask(proc_mask, dates, prev_results):
         proc_mask: the current mask
         dates: list of ordinal day numbers relative to some epoch,
             the particular epoch does not matter.
-        prev_results: Previous set of results to be updated with
-            new observations
+        prev_mask: Processing mask used for the previous set of results
         prev_results: Previous set of results to be updated with
             new observations
 
     Returns:
         1-d boolean ndarray
     """
-    prev_models = prev_results['change_models']
-
-    if len(prev_models) == 0:
+    if len(prev_results) == 0:
         return proc_mask
 
     # We do not want to deal with possible edge scenarios related to skipped and
     # masked observations related to initialization from the previous run
-    prev_mask = np.asarray(prev_results['processing_mask'], dtype=np.bool)
+    prev_mask = np.asarray(prev_mask, dtype=np.bool)
+    stop = np.argwhere(dates == prev_results[-1]['break_day'])[0][0]
 
-    if prev_models[-1]['change_probability'] == 0:
-        prev_stop = np.argwhere(dates[:prev_mask.shape[0]] == prev_models[-1]['start_day'])[0][0]
-        proc_stop = np.argwhere(dates == prev_models[-1]['start_day'])[0][0]
-    else:
-        prev_stop = proc_stop = prev_mask.shape[0]
-
-    proc_mask[:proc_stop] = prev_mask[:prev_stop]
+    proc_mask[:stop] = prev_mask[:stop]
 
     return proc_mask
 
@@ -387,7 +379,7 @@ def jumpstart(prev_results, dates, proc_params):
     Args:
         prev_results: Previous set of results to be updated with
             new observations
-        dates: list of ordinal day numbers relative to some epoch,
+        dates: array of ordinal day numbers relative to some epoch,
             the particular epoch does not matter.
         proc_params: dictionary of processing parameters
 
@@ -395,22 +387,11 @@ def jumpstart(prev_results, dates, proc_params):
         model_window, previous_end
     """
     meow = proc_params.MEOW_SIZE
+
     # No results, we should try and let the procedure run through from the
     # beginning.
-    prev_models = prev_results['change_models']
-
-    if len(prev_models) == 0:
+    if len(prev_results) == 0:
         return slice(0, meow), 0
 
-    # Ended on a break, pickup where we left off ...
-    elif prev_models[-1]['change_probability'] == 1:
-        start = np.argwhere(dates == prev_models[-1]['break_day'])[0][0]
-        return slice(start, start + meow), start
-
-    # We did not end on a break, re-initialize and try again
-    else:
-        if len(prev_models) == 1:
-            return slice(0, meow), 0
-        else:
-            start = np.argwhere(dates == prev_models[-2]['break_day'])[0][0]
-            return slice(start, start + meow), start
+    start = np.argwhere(dates == prev_results[-1]['break_day'])[0][0]
+    return slice(start, start + meow), start
