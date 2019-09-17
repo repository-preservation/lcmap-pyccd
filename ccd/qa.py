@@ -363,9 +363,13 @@ def insufficient_clear_filter(observations, quality, dates, proc_params):
     """
     green_idx = proc_params.GREEN_IDX
     filter_range = proc_params.MEDIAN_GREEN_FILTER
+    max_ord = proc_params.STAT_ORD
 
     standard_mask = standard_procedure_filter(observations, quality, dates, proc_params)
-    green_mask = filter_median_green(observations[:, standard_mask][green_idx], filter_range)
+    green_mask = limited_grmedian_filter(observations[:, standard_mask][green_idx],
+                                         dates[standard_mask],
+                                         filter_range,
+                                         max_ord)
 
     standard_mask[standard_mask] &= green_mask
 
@@ -373,6 +377,26 @@ def insufficient_clear_filter(observations, quality, dates, proc_params):
     standard_mask[standard_mask] = date_mask
 
     return standard_mask
+
+
+def limited_grmedian_filter(green, dates, filter_range, max_ord):
+    """
+    Same as filter_median_green, except limits the calculation over a limited
+    time range.
+
+    Args:
+        green: array of green values
+        dates: 1-d ndarray ordinal observation dates
+        filter_range: value added to the median value, this new result is
+                      used as the value for filtering
+        max_ord: maximum ordinal date to include in the calculations
+
+    Returns:
+        1-d boolean ndarray
+    """
+    mask = dates <= max_ord
+
+    return filter_median_green(green[mask], filter_range)
 
 
 def quality_probabilities(quality, proc_params):
