@@ -264,7 +264,7 @@ def standard_procedure(dates, observations, fitter_fn, quality, prev_results,
     curve_qa = proc_params.CURVE_QA
 
     log.debug('Build change models - dates: %s, obs: %s, '
-              'meow_size: %s, peek_size: %s',
+              'initial meow_size: %s, initial peek_size: %s',
               dates.shape[0], observations.shape, meow_size, defpeek)
 
     # First we need to filter the observations based on the spectra values
@@ -288,12 +288,20 @@ def standard_procedure(dates, observations, fitter_fn, quality, prev_results,
     processing_mask = qa.standard_procedure_filter(observations, quality,
                                                    dates, proc_params)
 
+    log.debug('Processing mask initial count: %s', np.sum(processing_mask))
+
+    # TODO Temporary setup on this to just get it going
+    stat_mask = statmask(dates, processing_mask, proc_params.STAT_ORD)
+    log.debug('Stat mask count: %s', np.sum(stat_mask))
+
     # Start with a previous set results or start fresh. These edits unfortunately
     # make this even more procedural, but edits to avoid this would take more
     # significant time.
     if prev_results:
         results = results_fromprev(prev_results)
         processing_mask = prevmask(processing_mask, dates, prev_results['processing_mask'], results)
+
+        log.debug('Processing mask using previous results: %s', np.sum(processing_mask))
         js = jumpstart(results, dates[processing_mask], proc_params)
         model_window, previous_end = js
 
@@ -310,13 +318,8 @@ def standard_procedure(dates, observations, fitter_fn, quality, prev_results,
 
     obs_count = np.sum(processing_mask)
 
-    log.debug('Processing mask initial count: %s', obs_count)
-
     if obs_count <= meow_size:
         return results, processing_mask
-
-    # TODO Temporary setup on this to just get it going
-    stat_mask = statmask(dates, processing_mask, proc_params.STAT_ORD)
 
     peek_size = adjustpeek(dates[stat_mask], defpeek)
     proc_params.PEEK_SIZE = peek_size
@@ -438,9 +441,8 @@ def initialize(dates, observations, fitter_fn, model_window, processing_mask,
     period = dates[processing_mask]
     spectral_obs = observations[:, processing_mask]
 
-    log.debug('Initial %s', model_window)
+    log.debug('Initial model window %s', model_window)
     models = None
-    print(f'Model window (INIT): {model_window}')
     while model_window.stop + meow_size < period.shape[0]:
         # Finding a sufficient window of time needs to run
         # each iteration because the starting point
@@ -521,7 +523,7 @@ def initialize(dates, observations, fitter_fn, model_window, processing_mask,
             log.debug('Stable start found: %s', model_window)
             break
 
-    print(f'Final Model window (INIT): {model_window}')
+    log.debug(f'Final model window {model_window}')
     return model_window, models, processing_mask
 
 
@@ -585,7 +587,6 @@ def lookforward(dates, observations, model_window, fitter_fn, processing_mask,
     fit_span = span(period, fit_window)
 
     # stop is always exclusive
-    print(f'Model window (LF): {model_window}')
     while model_window.stop + peek_size <= period.shape[0]:
         num_coefs = determine_num_coefs(period[model_window], coef_min,
                                         coef_mid, coef_max, num_obs_fact)
