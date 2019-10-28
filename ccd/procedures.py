@@ -60,12 +60,14 @@ def procedure_fromprev(prev_results, proc_params):
     return standard_procedure
 
 
-def fit_procedure(quality, prev_results, proc_params):
+def fit_procedure(dates, quality, prev_results, proc_params):
     """Determine which curve fitting method to use
 
     This is based on information from the QA band
 
     Args:
+        dates: list of ordinal day numbers relative to some epoch,
+            the particular epoch does not matter.
         quality: QA information for each observation
         prev_results:  Previous set of results to be updated with
             new observations
@@ -83,11 +85,14 @@ def fit_procedure(quality, prev_results, proc_params):
     clear_thresh = proc_params.CLEAR_PCT_THRESHOLD
     snow_thresh = proc_params.SNOW_PCT_THRESHOLD
 
+    stat_mask = statmask(dates, np.ones_like(dates, dtype=np.bool),
+                         proc_params.STAT_ORD)
+
     if prev_results is not None:
         func = procedure_fromprev(prev_results, proc_params)
 
-    elif not qa.enough_clear(quality, clear, water, fill, clear_thresh):
-        if qa.enough_snow(quality, clear, water, snow, snow_thresh):
+    elif not qa.enough_clear(quality[stat_mask], clear, water, fill, clear_thresh):
+        if qa.enough_snow(quality[stat_mask], clear, water, snow, snow_thresh):
             func = permanent_snow_procedure
         else:
             func = insufficient_clear_procedure
