@@ -174,7 +174,7 @@ def detect(dates, blues, greens, reds, nirs,
     probs = qa.quality_probabilities(qas, proc_params)
 
     # Determine which procedure to use for the detection
-    procedure = __determine_fit_procedure(qas, prev_results, proc_params)
+    procedure = __determine_fit_procedure(dates, qas, prev_results, proc_params)
 
     results = procedure(dates, spectra, fitter_fn, qas, prev_results, proc_params)
     log.debug('Total time for algorithm: %s', time.time() - t1)
